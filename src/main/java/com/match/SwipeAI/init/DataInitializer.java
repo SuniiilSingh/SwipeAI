@@ -1,0 +1,578 @@
+package com.match.SwipeAI.init;
+
+import com.match.SwipeAI.enums.*;
+import com.match.SwipeAI.model.*;
+import com.match.SwipeAI.repository.*;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.stereotype.Component;
+
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.util.List;
+
+@Slf4j
+@Component
+@org.springframework.context.annotation.Profile("!prod")
+@RequiredArgsConstructor
+public class DataInitializer implements CommandLineRunner {
+
+    private final UserRepository userRepository;
+    private final ProfileRepository profileRepository;
+    private final SafeDateSpotRepository safeDateSpotRepository;
+    private final MatchRepository matchRepository;
+    private final ChatMessageRepository chatMessageRepository;
+
+    @Override
+    public void run(String... args) {
+        if (userRepository.count() > 0) {
+            return;
+        }
+
+        log.info("Initializing SwipeAI database with production demo seed data...");
+
+        // 1. Seed Safe Date Spots
+        SafeDateSpot spot1 = SafeDateSpot.builder()
+                .name("Blue Tokai Coffee Roasters - Indiranagar")
+                .brand("Blue Tokai")
+                .address("583, 80 Feet Road, Indiranagar, Bengaluru")
+                .city("Bengaluru")
+                .neighborhood("Indiranagar")
+                .latitude(12.9784)
+                .longitude(77.6408)
+                .discountPercent(15)
+                .couponCode("SWIPEAI15")
+                .sosEnabled(true)
+                .photoUrl("https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=500")
+                .build();
+
+        SafeDateSpot spot2 = SafeDateSpot.builder()
+                .name("Third Wave Coffee - Koramangala 4th Block")
+                .brand("Third Wave Coffee")
+                .address("80 Feet Rd, 4th Block, Koramangala, Bengaluru")
+                .city("Bengaluru")
+                .neighborhood("Koramangala")
+                .latitude(12.9352)
+                .longitude(77.6245)
+                .discountPercent(15)
+                .couponCode("VIBE15")
+                .sosEnabled(true)
+                .photoUrl("https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=500")
+                .build();
+
+        SafeDateSpot spot3 = SafeDateSpot.builder()
+                .name("Starbucks - Church Street")
+                .brand("Starbucks")
+                .address("Church St, Haridevpur, Shanthala Nagar, Bengaluru")
+                .city("Bengaluru")
+                .neighborhood("Central")
+                .latitude(12.9752)
+                .longitude(77.6053)
+                .discountPercent(15)
+                .couponCode("STARAI15")
+                .sosEnabled(true)
+                .photoUrl("https://images.unsplash.com/photo-1442512595331-e89e73853f31?w=500")
+                .build();
+
+        safeDateSpotRepository.saveAll(List.of(spot1, spot2, spot3));
+
+        // 2. Seed Demo Candidate: Ananya, 24 (DigiLocker Verified, Product Designer @ Fintech)
+        User ananyaUser = User.builder()
+                .phoneE164("+919876543210")
+                .whatsappVerified(true)
+                .digilockerVerified(true)
+                .digilockerSubHash("hash_ananya_zk_proof_2026")
+                .livenessScore(0.99)
+                .karmaScore(195)
+                .gender(Gender.FEMALE)
+                .intent(DatingIntent.SERIOUS_DATING)
+                .birthDate(LocalDate.of(2000, 7, 21))
+                .latitude(12.9716)
+                .longitude(77.5946)
+                .sparksBalance(5)
+                .hasActivePass(true)
+                .build();
+        ananyaUser = userRepository.save(ananyaUser);
+
+        Profile ananyaProfile = Profile.builder()
+                .userId(ananyaUser.getId())
+                .displayName("Ananya")
+                .bio("Product Designer @ Fintech. Ceramic pottery hobbyist, 35mm film shooter, and typography obsessive. Love exploring art galleries, quiet book cafes, and Sunday brunches.")
+                .dietaryPref(DietaryPreference.PURE_VEG)
+                .livingStatus(LivingStatus.INDEPENDENT_FLAT)
+                .smokingHabit("Non-Smoker 🚭")
+                .drinkingHabit("Social / Weekend Drinker 🍷")
+                .vacationPreference("Majestic Mountains 🏔️")
+                .hobbies("Film Photography, Coffee Brewing, Clay Pottery, Yoga, Solo Travel")
+                .languagesSpoken(List.of("English", "Hindi", "Tamil"))
+                .zodiacSign("Taurus")
+                .sunSign("Taurus")
+                .moonSign("Libra")
+                .voicePromptUrl("https://cdn.swipeai.in/v/ananya_chai_opinion.m4a")
+                .voicePromptDuration(14)
+                .voicePromptText("Convince me that Indiranagar coffee beats Mylapore filter coffee.")
+                .company("Cred")
+                .occupation("Lead Product Designer")
+                .job("Lead Product Designer")
+                .education("NID Ahmedabad (Interaction Design)")
+                .height(167)
+                .interests("Design, Specialty Coffee, Film Photography, Pottery, Yoga, Indie Pop")
+                .profilePromptQuestion("I’m looking for someone who...")
+                .profilePromptAnswer("Appreciates good typography, doesn’t rush through art galleries, and can hold a 2 AM conversation about aesthetics.")
+                .city("Bengaluru")
+                .neighborhood("HSR Layout")
+                .microCircle("Design & Creative Thinkers")
+                .photosJson("[\"https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=600\",\"https://images.unsplash.com/photo-1517841905240-472988babdf9?w=600\",\"https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=600\"]")
+                .build();
+        profileRepository.save(ananyaProfile);
+
+        // 3. Seed Demo Candidate: Rohan, 26 (Tech Lead, Indiranagar)
+        User rohanUser = User.builder()
+                .phoneE164("+919876543211")
+                .whatsappVerified(true)
+                .digilockerVerified(true)
+                .digilockerSubHash("hash_rohan_zk_proof_2026")
+                .livenessScore(0.98)
+                .karmaScore(182)
+                .gender(Gender.MALE)
+                .intent(DatingIntent.SERIOUS_DATING)
+                .birthDate(LocalDate.of(1998, 3, 12))
+                .latitude(12.9784)
+                .longitude(77.6408)
+                .sparksBalance(3)
+                .build();
+        rohanUser = userRepository.save(rohanUser);
+
+        Profile rohanProfile = Profile.builder()
+                .userId(rohanUser.getId())
+                .displayName("Rohan")
+                .bio("Tech Lead @ SaaS. Weekend cyclist, cold brew enthusiast, acoustic guitar. Looking for thoughtful banter, quiet book cafes, and someone to explore hidden culinary gems in Bangalore with.")
+                .dietaryPref(DietaryPreference.EGGETARIAN)
+                .livingStatus(LivingStatus.INDEPENDENT_FLAT)
+                .smokingHabit("Non-Smoker 🚭")
+                .drinkingHabit("Social / Weekend Drinker 🍷")
+                .vacationPreference("Majestic Mountains 🏔️")
+                .hobbies("Cycling, Acoustic guitar, Cold brew, Photography, Trekking")
+                .languagesSpoken(List.of("English", "Hindi", "Kannada"))
+                .zodiacSign("Aries")
+                .sunSign("Aries")
+                .moonSign("Leo")
+                .voicePromptUrl("https://cdn.swipeai.in/v/rohan_music.m4a")
+                .voicePromptDuration(18)
+                .voicePromptText("Dilli ki sardi ya Mumbai ki baarish? Bangalore weather wins hands down.")
+                .company("SaaS Startup")
+                .occupation("Tech Lead")
+                .job("Tech Lead")
+                .education("BITS Pilani (Computer Science & Engineering)")
+                .height(180)
+                .interests("Cricket, Cycling, Specialty Coffee, Stand-up comedy, Spotify, Road trips")
+                .profilePromptQuestion("The key to my heart is...")
+                .profilePromptAnswer("Authentic Indiranagar filter coffee, dry wit, and spontaneous Sunday morning cycling trips.")
+                .city("Bengaluru")
+                .neighborhood("Indiranagar")
+                .microCircle("Koramangala Tech Founders")
+                .photosJson("[\"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600\",\"https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=600\"]")
+                .build();
+        profileRepository.save(rohanProfile);
+
+        // 4. Seed Demo Candidate: Priya, 25 (Architect, Koramangala)
+        User priyaUser = User.builder()
+                .phoneE164("+919876543212")
+                .whatsappVerified(true)
+                .digilockerVerified(true)
+                .livenessScore(0.97)
+                .karmaScore(194)
+                .gender(Gender.FEMALE)
+                .intent(DatingIntent.SERIOUS_DATING)
+                .birthDate(LocalDate.of(1999, 11, 4))
+                .latitude(12.9352)
+                .longitude(77.6245)
+                .build();
+        priyaUser = userRepository.save(priyaUser);
+
+        Profile priyaProfile = Profile.builder()
+                .userId(priyaUser.getId())
+                .displayName("Priya")
+                .bio("Architect & Urban Sketcher. Specialty matcha, pottery, indie gigs, and documenting vintage colonial architecture before it disappears.")
+                .dietaryPref(DietaryPreference.STRICT_JAIN)
+                .livingStatus(LivingStatus.WITH_PARENTS)
+                .smokingHabit("Non-Smoker 🚭")
+                .drinkingHabit("Non-Drinker / Teetotaler 🚫🍺")
+                .vacationPreference("Sunny Beaches 🏖️")
+                .hobbies("Urban Sketching, Pottery, Architecture, Reading, Matcha")
+                .languagesSpoken(List.of("English", "Hindi", "Gujarati"))
+                .zodiacSign("Scorpio")
+                .sunSign("Scorpio")
+                .moonSign("Cancer")
+                .voicePromptUrl("https://cdn.swipeai.in/v/priya_vibe.m4a")
+                .voicePromptDuration(12)
+                .voicePromptText("Ask me about the coolest hidden cafes in Bangalore.")
+                .company("Studio Decode")
+                .occupation("Architect")
+                .job("Architect")
+                .education("CEPT Ahmedabad (Architecture & Urban Design)")
+                .height(165)
+                .interests("Architecture, Pottery, Art, Matcha, Indie music, Heritage walks, Reading")
+                .profilePromptQuestion("My most controversial opinion is...")
+                .profilePromptAnswer("Modern glass buildings have zero soul compared to red brick courtyards.")
+                .city("Bengaluru")
+                .neighborhood("Koramangala")
+                .microCircle("Indie Music & Festival Goers")
+                .photosJson("[\"https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=600\",\"https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600\"]")
+                .build();
+        profileRepository.save(priyaProfile);
+
+        // 5. Seed Candidate: Kabir Sengupta, 27 (Brand Strategist)
+        User kabirUser = User.builder()
+                .phoneE164("+919876543213")
+                .whatsappVerified(true)
+                .digilockerVerified(true)
+                .livenessScore(0.99)
+                .karmaScore(175)
+                .gender(Gender.MALE)
+                .intent(DatingIntent.SERIOUS_DATING)
+                .birthDate(LocalDate.of(1997, 8, 19))
+                .latitude(12.9752)
+                .longitude(77.6053)
+                .build();
+        kabirUser = userRepository.save(kabirUser);
+
+        Profile kabirProfile = Profile.builder()
+                .userId(kabirUser.getId())
+                .displayName("Kabir")
+                .bio("Brand Strategist. Vinyl collector, sourdough baker, and golden retriever foster dad. Passionate about indie documentaries, jazz, and midnight kitchen experiments.")
+                .dietaryPref(DietaryPreference.PURE_VEG)
+                .livingStatus(LivingStatus.INDEPENDENT_FLAT)
+                .smokingHabit("Social / Occasional 🚬")
+                .drinkingHabit("Social / Weekend Drinker 🍷")
+                .vacationPreference("Both (Mountain Streams & Beach Sunsets) 🌊⛰️")
+                .hobbies("Vinyl Records, Sourdough Baking, Dog Fostering, Jazz, Badminton")
+                .languagesSpoken(List.of("English", "Hindi", "Bengali"))
+                .zodiacSign("Sagittarius")
+                .sunSign("Sagittarius")
+                .moonSign("Gemini")
+                .company("Ogilvy & Mather")
+                .occupation("Brand Strategist")
+                .job("Brand Strategist")
+                .education("St. Xavier’s College & MICA Ahmedabad")
+                .height(178)
+                .interests("Vinyl records, Sourdough baking, Dogs, Jazz, Badminton, Travel, Coffee")
+                .profilePromptQuestion("We’ll get along if...")
+                .profilePromptAnswer("You love discovering weird retro vinyls at second-hand record shops on Church Street.")
+                .city("Bengaluru")
+                .neighborhood("Church Street")
+                .microCircle("Dog Parents & Pet Lovers")
+                .photosJson("[\"https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=600\",\"https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=600\"]")
+                .build();
+        profileRepository.save(kabirProfile);
+
+        // 6. Seed Candidate: Aarav Sharma, 28 (Fintech Founder)
+        User aaravUser = User.builder()
+                .phoneE164("+919876543214")
+                .whatsappVerified(true)
+                .digilockerVerified(true)
+                .livenessScore(0.98)
+                .karmaScore(188)
+                .gender(Gender.MALE)
+                .intent(DatingIntent.SERIOUS_DATING)
+                .birthDate(LocalDate.of(1996, 5, 14))
+                .latitude(12.9784)
+                .longitude(77.6408)
+                .build();
+        aaravUser = userRepository.save(aaravUser);
+
+        Profile aaravProfile = Profile.builder()
+                .userId(aaravUser.getId())
+                .displayName("Aarav")
+                .bio("Fintech Founder & Angel Investor. Marathon runner, scuba certified, and weekend tennis player. Love high-conviction ideas, electronic music, and late-night highway drives.")
+                .dietaryPref(DietaryPreference.NON_VEG)
+                .livingStatus(LivingStatus.INDEPENDENT_FLAT)
+                .smokingHabit("Non-Smoker 🚭")
+                .drinkingHabit("Regular Drinker 🍻")
+                .vacationPreference("Sunny Beaches 🏖️")
+                .hobbies("Scuba Diving, Marathon Running, Podcasting, Tennis, Travel")
+                .languagesSpoken(List.of("English", "Hindi", "Punjabi"))
+                .zodiacSign("Leo")
+                .sunSign("Leo")
+                .moonSign("Aries")
+                .company("SeedFin")
+                .occupation("Founder & CEO")
+                .job("Founder & CEO")
+                .education("IIT Bombay (Electrical Engineering)")
+                .height(184)
+                .interests("Startups, Tennis, Running, Scuba Diving, Electronic Music, Travel")
+                .profilePromptQuestion("A random fact I love is...")
+                .profilePromptAnswer("Honey never spoils. Also, Indiranagar auto drivers are the world’s most resilient negotiators.")
+                .city("Bengaluru")
+                .neighborhood("Indiranagar")
+                .microCircle("Koramangala Tech Founders")
+                .photosJson("[\"https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=600\",\"https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=600\"]")
+                .build();
+        profileRepository.save(aaravProfile);
+
+        // 7. Seed Candidate: Meera Nambiar, 26 (Neuroscience Researcher)
+        User meeraUser = User.builder()
+                .phoneE164("+919876543215")
+                .whatsappVerified(true)
+                .digilockerVerified(true)
+                .livenessScore(0.99)
+                .karmaScore(198)
+                .gender(Gender.FEMALE)
+                .intent(DatingIntent.SERIOUS_DATING)
+                .birthDate(LocalDate.of(1998, 9, 29))
+                .latitude(13.0033)
+                .longitude(77.5647)
+                .build();
+        meeraUser = userRepository.save(meeraUser);
+
+        Profile meeraProfile = Profile.builder()
+                .userId(meeraUser.getId())
+                .displayName("Meera")
+                .bio("Neuroscience Researcher @ IISc & Classical Bharatanatyam dancer. Plant lover, tea enthusiast, and weekend trekker. Believer in mindful living and deep empathy.")
+                .dietaryPref(DietaryPreference.VEGAN)
+                .livingStatus(LivingStatus.PG)
+                .smokingHabit("Non-Smoker 🚭")
+                .drinkingHabit("Sober / Mindful 🧘")
+                .vacationPreference("Majestic Mountains 🏔️")
+                .hobbies("Classical Dance, Hiking, Neuroscience Podcasting, Gardening, Reading")
+                .languagesSpoken(List.of("English", "Malayalam", "Hindi", "French"))
+                .zodiacSign("Virgo")
+                .sunSign("Virgo")
+                .moonSign("Taurus")
+                .company("Indian Institute of Science (IISc)")
+                .occupation("Neuroscience Researcher")
+                .job("Neuroscience Researcher")
+                .education("IISc Bengaluru & Kalakshetra Foundation")
+                .height(163)
+                .interests("Classical Dance, Neuroscience, Hiking, Books, Classical Music, Vegan Food")
+                .profilePromptQuestion("A boundary of mine is...")
+                .profilePromptAnswer("Weekend digital detox after 8 PM. Let’s talk face-to-face over artisanal chamomile tea.")
+                .city("Bengaluru")
+                .neighborhood("Malleshwaram")
+                .microCircle("Researchers & Deep Thinkers")
+                .photosJson("[\"https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600\",\"https://images.unsplash.com/photo-1517841905240-472988babdf9?w=600\"]")
+                .build();
+        profileRepository.save(meeraProfile);
+
+        // 8. Seed Candidate: Devanshu Joshi, 27 (Software Engineer @ Google)
+        User devUser = User.builder()
+                .phoneE164("+919876543216")
+                .whatsappVerified(true)
+                .digilockerVerified(true)
+                .livenessScore(0.98)
+                .karmaScore(185)
+                .gender(Gender.MALE)
+                .intent(DatingIntent.SERIOUS_DATING)
+                .birthDate(LocalDate.of(1997, 1, 10))
+                .latitude(12.9304)
+                .longitude(77.6784)
+                .build();
+        devUser = userRepository.save(devUser);
+
+        Profile devProfile = Profile.builder()
+                .userId(devUser.getId())
+                .displayName("Dev")
+                .bio("Senior Software Engineer @ Google. Astrophotographer, piano player, and serious chess nerd. Spend my long weekends chasing dark sky reserves in Himachal and Ladakh.")
+                .dietaryPref(DietaryPreference.STRICT_JAIN)
+                .livingStatus(LivingStatus.INDEPENDENT_FLAT)
+                .smokingHabit("Non-Smoker 🚭")
+                .drinkingHabit("Non-Drinker / Teetotaler 🚫🍺")
+                .vacationPreference("Majestic Mountains 🏔️")
+                .hobbies("Trekking & Hiking, Astrophotography, Board Games, Piano, Chess")
+                .languagesSpoken(List.of("English", "Hindi", "Marwari"))
+                .zodiacSign("Capricorn")
+                .sunSign("Capricorn")
+                .moonSign("Virgo")
+                .company("Google")
+                .occupation("Senior Software Engineer")
+                .job("Senior Software Engineer")
+                .education("BITS Pilani Goa (Computer Science)")
+                .height(181)
+                .interests("Trekking, Chess, Astrophotography, Piano, Board Games, Tech")
+                .profilePromptQuestion("The key to my heart is...")
+                .profilePromptAnswer("Starry Himalayan skies with zero light pollution and a hot thermos of cardamom ginger tea.")
+                .city("Bengaluru")
+                .neighborhood("Bellandur")
+                .microCircle("Stargazers & Trekkers")
+                .photosJson("[\"https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=600\",\"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600\"]")
+                .build();
+        profileRepository.save(devProfile);
+
+        // 9. Seed Candidate: Tanvi Kulkarni, 25 (Pastry Chef)
+        User tanviUser = User.builder()
+                .phoneE164("+919876543217")
+                .whatsappVerified(true)
+                .digilockerVerified(true)
+                .livenessScore(0.99)
+                .karmaScore(180)
+                .gender(Gender.FEMALE)
+                .intent(DatingIntent.SERIOUS_DATING)
+                .birthDate(LocalDate.of(1999, 6, 22))
+                .latitude(12.9719)
+                .longitude(77.5985)
+                .build();
+        tanviUser = userRepository.save(tanviUser);
+
+        Profile tanviProfile = Profile.builder()
+                .userId(tanviUser.getId())
+                .displayName("Tanvi")
+                .bio("Pastry Chef & Owner @ The Little Crumb. Sourdough whisperer, olive oil collector, and avid ocean swimmer. Weekend routine: French patisserie experiments & jazz playlists.")
+                .dietaryPref(DietaryPreference.EGGETARIAN)
+                .livingStatus(LivingStatus.INDEPENDENT_FLAT)
+                .smokingHabit("Social / Occasional 🚬")
+                .drinkingHabit("Social / Weekend Drinker 🍷")
+                .vacationPreference("Sunny Beaches 🏖️")
+                .hobbies("Cooking & Baking, Sourdough, Swimming, Watercolor Painting, Travel")
+                .languagesSpoken(List.of("English", "Marathi", "Hindi", "French"))
+                .zodiacSign("Cancer")
+                .sunSign("Cancer")
+                .moonSign("Pisces")
+                .company("The Little Crumb Patisserie")
+                .occupation("Head Pastry Chef & Founder")
+                .job("Head Pastry Chef & Founder")
+                .education("Le Cordon Bleu Paris & Welcomgroup Manipal")
+                .height(162)
+                .interests("Baking, French Pastries, Swimming, Olive Oil Tasting, Watercolor, Travel")
+                .profilePromptQuestion("We’ll get along if...")
+                .profilePromptAnswer("You can appreciate a genuinely flaky butter croissant and don’t mind being my dessert taste-tester.")
+                .city("Bengaluru")
+                .neighborhood("Lavelle Road")
+                .microCircle("Culinary Artisans & Bakers")
+                .photosJson("[\"https://images.unsplash.com/photo-1517841905240-472988babdf9?w=600\",\"https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=600\"]")
+                .build();
+        profileRepository.save(tanviProfile);
+
+        // 10. Seed Candidate: Vikramaditya Singhania, 29 (Engagement Manager)
+        User vikUser = User.builder()
+                .phoneE164("+919876543218")
+                .whatsappVerified(true)
+                .digilockerVerified(true)
+                .livenessScore(0.98)
+                .karmaScore(172)
+                .gender(Gender.MALE)
+                .intent(DatingIntent.SERIOUS_DATING)
+                .birthDate(LocalDate.of(1995, 10, 5))
+                .latitude(12.9654)
+                .longitude(77.6012)
+                .build();
+        vikUser = userRepository.save(vikUser);
+
+        Profile vikProfile = Profile.builder()
+                .userId(vikUser.getId())
+                .displayName("Vikram")
+                .bio("Engagement Manager @ McKinsey. Formula 1 fanatic, squash player, and stand-up comedy regular. When not traveling for clients, exploring Bangalore speakeasies.")
+                .dietaryPref(DietaryPreference.NON_VEG)
+                .livingStatus(LivingStatus.INDEPENDENT_FLAT)
+                .smokingHabit("Trying to Quit 🌿")
+                .drinkingHabit("Social / Weekend Drinker 🍷")
+                .vacationPreference("Both (Mountain Streams & Beach Sunsets) 🌊⛰️")
+                .hobbies("Squash, Golf, Stand-up Comedy, Wine Tasting, Formula 1")
+                .languagesSpoken(List.of("English", "Hindi"))
+                .zodiacSign("Libra")
+                .sunSign("Libra")
+                .moonSign("Aquarius")
+                .company("McKinsey & Company")
+                .occupation("Engagement Manager")
+                .job("Engagement Manager")
+                .education("SRCC Delhi & IIM Ahmedabad")
+                .height(183)
+                .interests("Formula 1, Squash, Economics, Stand-up Comedy, Wine, Road Trips")
+                .profilePromptQuestion("First concert I ever went to was...")
+                .profilePromptAnswer("Prateek Kuhad in 2017 before he blew up worldwide. Still know all the lyrics by heart.")
+                .city("Bengaluru")
+                .neighborhood("Richmond Town")
+                .microCircle("Consultants & Strategists")
+                .photosJson("[\"https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=600\",\"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600\"]")
+                .build();
+        profileRepository.save(vikProfile);
+
+        // 11. Seed Candidate: Zoya Merchant, 26 (Documentary Filmmaker)
+        User zoyaUser = User.builder()
+                .phoneE164("+919876543219")
+                .whatsappVerified(true)
+                .digilockerVerified(true)
+                .livenessScore(0.99)
+                .karmaScore(191)
+                .gender(Gender.FEMALE)
+                .intent(DatingIntent.SERIOUS_DATING)
+                .birthDate(LocalDate.of(1998, 2, 28))
+                .latitude(12.9982)
+                .longitude(77.6134)
+                .build();
+        zoyaUser = userRepository.save(zoyaUser);
+
+        Profile zoyaProfile = Profile.builder()
+                .userId(zoyaUser.getId())
+                .displayName("Zoya")
+                .bio("Documentary Filmmaker & Photojournalist. Lover of vintage thrift stores, indie cinema, vinyl records, and street food history. Always carrying a loaded 35mm camera.")
+                .dietaryPref(DietaryPreference.NON_VEG)
+                .livingStatus(LivingStatus.INDEPENDENT_FLAT)
+                .smokingHabit("Social / Occasional 🚬")
+                .drinkingHabit("Social / Weekend Drinker 🍷")
+                .vacationPreference("Majestic Mountains 🏔️")
+                .hobbies("Photography, Film Making, Cycling, Thrift Shopping, Vinyl Records")
+                .languagesSpoken(List.of("English", "Hindi", "Urdu"))
+                .zodiacSign("Pisces")
+                .sunSign("Pisces")
+                .moonSign("Scorpio")
+                .company("Independent Filmmaker")
+                .occupation("Documentary Filmmaker")
+                .job("Documentary Filmmaker")
+                .education("Jamia Millia Islamia (AJK MCRC)")
+                .height(168)
+                .interests("Cinema, Street Photography, Thrift Shopping, Vinyl Records, Travel, Chai")
+                .profilePromptQuestion("My favorite weekend activity is...")
+                .profilePromptAnswer("Wandering through Russell Market with a 35mm film camera, hunting for stories and old street snacks.")
+                .city("Bengaluru")
+                .neighborhood("Frazer Town")
+                .microCircle("Filmmakers & Visual Storytellers")
+                .photosJson("[\"https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600\",\"https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=600\"]")
+                .build();
+        profileRepository.save(zoyaProfile);
+
+        // 5. Seed an active match between Rohan and Ananya with completed icebreaker
+        Match sampleMatch = Match.builder()
+                .userAId(ananyaUser.getId())
+                .userBId(rohanUser.getId())
+                .initiatorId(rohanUser.getId())
+                .status(MatchStatus.ACTIVE_CHAT)
+                .messagesCount(3)
+                .expiresAt(OffsetDateTime.now().plusHours(42))
+                .icebreakerGameData("{\"quizId\":\"quiz_sunday_vibe\",\"title\":\"10s Rapid-Fire Quiz: Sunday Vibe\",\"question\":\"Your Ultimate Sunday Vibe:\",\"options\":[\"Filter Coffee & Dosa crawl in Indiranagar\",\"Sleep until 2 PM & binge true-crime podcasts\",\"Spontaneous drive to Nandi Hills\"],\"userAAnswer\":0,\"userBAnswer\":0,\"isCompleted\":true,\"isMutualAgreement\":true,\"wingmanRecommendation\":\"Ask if she prefers Rameshwaram or CTR butter masala dosa!\"}")
+                .build();
+        sampleMatch = matchRepository.save(sampleMatch);
+
+        // Seed initial chat messages
+        ChatMessage msg1 = ChatMessage.builder()
+                .matchId(sampleMatch.getId())
+                .senderId(rohanUser.getId())
+                .recipientId(ananyaUser.getId())
+                .content("Haha since we both agree on Rameshwaram Cafe, what's your take on their ghee podi idli?")
+                .mediaType(MessageType.TEXT)
+                .createdAt(OffsetDateTime.now().minusHours(4))
+                .build();
+
+        ChatMessage msg2 = ChatMessage.builder()
+                .matchId(sampleMatch.getId())
+                .senderId(ananyaUser.getId())
+                .recipientId(rohanUser.getId())
+                .content("Unpopular opinion: It's delicious but the ghee coma afterward is dangerous! 😅")
+                .mediaType(MessageType.TEXT)
+                .createdAt(OffsetDateTime.now().minusHours(3))
+                .build();
+
+        ChatMessage msg3 = ChatMessage.builder()
+                .matchId(sampleMatch.getId())
+                .senderId(rohanUser.getId())
+                .recipientId(ananyaUser.getId())
+                .content("CTR butter masala dosa is legendary though! Want to do a quick Virtual Chai call tonight to compare notes?")
+                .mediaType(MessageType.TEXT)
+                .createdAt(OffsetDateTime.now().minusHours(1))
+                .build();
+
+        chatMessageRepository.saveAll(List.of(msg1, msg2, msg3));
+
+        log.info("SwipeAI seed data successfully loaded: 3 users, 3 safe date cafes, 1 active match, 3 chat messages.");
+    }
+}

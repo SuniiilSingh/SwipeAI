@@ -1,0 +1,13 @@
+package com.match.SwipeAI;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class SwipeAiApplication {
+
+	public static void main(String[] args) {
+		SpringApplication.run(SwipeAiApplication.class, args);
+	}
+
+}

@@ -1,0 +1,89 @@
+# ==============================================================================
+# SwipeAI — Production Profile Configuration (spring.profiles.active=prod)
+# ==============================================================================
+
+spring:
+  config:
+    activate:
+      on-profile: prod
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:swipeai_prod}}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      pool-name: SwipeAI-HikariCP-Prod
+      maximum-pool-size: ${DB_POOL_MAX:20}
+      minimum-idle: ${DB_POOL_MIN_IDLE:5}
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      connection-timeout: 30000
+  jpa:
+    hibernate:
+      ddl-auto: ${HIBERNATE_DDL_AUTO:update}
+    show-sql: false
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: false
+        jdbc:
+          batch_size: 25
+        order_inserts: true
+        order_updates: true
+
+server:
+  port: ${PORT:8080}
+  compression:
+    enabled: true
+    mime-types: text/html,text/xml,text/plain,text/css,text/javascript,application/javascript,application/json
+
+logging:
+  level:
+    root: INFO
+    com.match.SwipeAI: INFO
+    org.springframework.security: WARN
+    org.hibernate: WARN
+
+app:
+  security:
+    jwt-secret: ${JWT_SECRET:swipeai_prod_jwt_super_secret_signing_key_2026_secure!}
+    jwt-expiration-ms: ${JWT_EXPIRATION_MS:2592000000} # 30 days
+    server-pepper: ${SERVER_PEPPER:swipeai_prod_shadow_shield_pepper_hash_key_2026}
+  features:
+    # Production Feature Flags: Live 3rd-party integrations enabled by default
+    digilocker:
+      enabled: ${FEATURE_DIGILOCKER_ENABLED:true}
+      api-url: ${DIGILOCKER_API_URL:https://api.digitallocker.gov.in}
+      client-id: ${DIGILOCKER_CLIENT_ID:}
+      client-secret: ${DIGILOCKER_CLIENT_SECRET:}
+    whatsapp:
+      enabled: ${FEATURE_WHATSAPP_ENABLED:true}
+      api-url: ${WHATSAPP_API_URL:https://graph.facebook.com/v18.0}
+      phone-number-id: ${WHATSAPP_PHONE_NUMBER_ID:}
+      access-token: ${WHATSAPP_ACCESS_TOKEN:}
+    twilio:
+      enabled: ${FEATURE_TWILIO_ENABLED:false}
+      account-sid: ${TWILIO_ACCOUNT_SID:}
+      auth-token: ${TWILIO_AUTH_TOKEN:}
+      phone-number: ${TWILIO_PHONE_NUMBER:}
+    razorpay:
+      enabled: ${FEATURE_RAZORPAY_ENABLED:true}
+      key-id: ${RAZORPAY_KEY_ID:}
+      key-secret: ${RAZORPAY_KEY_SECRET:}
+      webhook-secret: ${RAZORPAY_WEBHOOK_SECRET:}
+    livekit:
+      enabled: ${FEATURE_LIVEKIT_ENABLED:true}
+      host: ${LIVEKIT_HOST:wss://livekit.swipeai.in}
+      api-key: ${LIVEKIT_API_KEY:}
+      api-secret: ${LIVEKIT_API_SECRET:}
+    ai-wingman:
+      enabled: ${FEATURE_AI_WINGMAN_ENABLED:true}
+      api-key: ${OPENAI_API_KEY:}
+      model: ${AI_MODEL:gpt-4o-mini}
+    r2-storage:
+      enabled: ${FEATURE_R2_STORAGE_ENABLED:true}
+      account-id: ${R2_ACCOUNT_ID:}
+      access-key-id: ${R2_ACCESS_KEY_ID:}
+      secret-access-key: ${R2_SECRET_ACCESS_KEY:}
+      bucket-name: ${R2_BUCKET_NAME:swipeai-media-prod}
+      public-domain: ${R2_PUBLIC_DOMAIN:https://cdn.swipeai.in}
