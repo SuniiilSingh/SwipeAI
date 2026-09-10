@@ -25,6 +25,18 @@ public class KycController {
     private final DigiLockerKycService digiLockerKycService;
     private final LivenessService livenessService;
     private final UserRepository userRepository;
+    private final com.match.SwipeAI.config.FeatureFlagsProperties featureFlagsProperties;
+
+    /**
+     * Return active KYC feature flags.
+     */
+    @GetMapping("/features")
+    public ResponseEntity<java.util.Map<String, Object>> getKycFeatureStatus() {
+        return ResponseEntity.ok(java.util.Map.of(
+                "digilockerEnabled", featureFlagsProperties.getFeatures().getDigilocker().isEnabled(),
+                "livenessEnabled", true
+        ));
+    }
 
     /**
      * Initiate DigiLocker OAuth2 / ZK session and return authorization URL.
@@ -34,6 +46,13 @@ public class KycController {
      */
     @PostMapping("/digilocker/initiate")
     public ResponseEntity<KycDto.DigiLockerInitiateResponse> initiateDigiLocker(@AuthenticationPrincipal UUID userId) {
+        if (!featureFlagsProperties.getFeatures().getDigilocker().isEnabled()) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN)
+                    .body(KycDto.DigiLockerInitiateResponse.builder()
+                            .simulated(false)
+                            .message("DigiLocker KYC is disabled in this version build.")
+                            .build());
+        }
         KycDto.DigiLockerInitiateResponse response = digiLockerKycService.initiateKyc(userId);
         return ResponseEntity.ok(response);
     }
@@ -50,6 +69,13 @@ public class KycController {
     public ResponseEntity<KycDto.DigiLockerProofResponse> verifyDigiLockerProof(
             @AuthenticationPrincipal UUID userId,
             @RequestBody KycDto.DigiLockerProofRequest request) {
+        if (!featureFlagsProperties.getFeatures().getDigilocker().isEnabled()) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN)
+                    .body(KycDto.DigiLockerProofResponse.builder()
+                            .isVerified(false)
+                            .message("DigiLocker KYC is disabled in this version build.")
+                            .build());
+        }
         KycDto.DigiLockerProofResponse response = digiLockerKycService.verifyProof(userId, request);
 
         if (response.isVerified()) {

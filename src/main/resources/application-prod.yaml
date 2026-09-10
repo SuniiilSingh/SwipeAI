@@ -50,9 +50,9 @@ app:
     jwt-expiration-ms: ${JWT_EXPIRATION_MS:2592000000} # 30 days
     server-pepper: ${SERVER_PEPPER:swipeai_prod_shadow_shield_pepper_hash_key_2026}
   features:
-    # Production Feature Flags: Live 3rd-party integrations enabled by default
+    # Production Feature Flags: Live 3rd-party integrations
     digilocker:
-      enabled: ${FEATURE_DIGILOCKER_ENABLED:true}
+      enabled: ${FEATURE_DIGILOCKER_ENABLED:false}
       api-url: ${DIGILOCKER_API_URL:https://api.digitallocker.gov.in}
       client-id: ${DIGILOCKER_CLIENT_ID:}
       client-secret: ${DIGILOCKER_CLIENT_SECRET:}

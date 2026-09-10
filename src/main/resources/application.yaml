@@ -1,6 +1,6 @@
 spring:
   application:
-    name: SwipeAI
+    name: BlunderrDating
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:default}
   datasource:
@@ -42,15 +42,18 @@ app:
       client-id: "mock_digilocker_client"
       client-secret: "mock_digilocker_secret"
     whatsapp:
-      enabled: false
-      api-url: "https://graph.facebook.com/v18.0"
-      phone-number-id: "mock_phone_id"
-      access-token: "mock_whatsapp_token"
+      enabled: ${FEATURE_WHATSAPP_ENABLED:false}
+      api-url: ${WHATSAPP_API_URL:https://graph.facebook.com/v18.0}
+      phone-number-id: ${WHATSAPP_PHONE_NUMBER_ID:}
+      access-token: ${WHATSAPP_ACCESS_TOKEN:}
     twilio:
-      enabled: false
-      account-sid: "ACmock_twilio_account_sid"
-      auth-token: "mock_twilio_token"
-      phone-number: "+1234567890"
+      enabled: ${FEATURE_TWILIO_ENABLED:true}
+      account-sid: ${TWILIO_ACCOUNT_SID:}
+      auth-token: ${TWILIO_AUTH_TOKEN:}
+      verify-service-sid: ${TWILIO_VERIFY_SERVICE_SID:}
+      api-key-sid: ${TWILIO_API_KEY_SID:}
+      api-key-secret: ${TWILIO_API_KEY_SECRET:}
+      phone-number: ${TWILIO_PHONE_NUMBER:}
     razorpay:
       enabled: false
       key-id: "rzp_test_mock123"

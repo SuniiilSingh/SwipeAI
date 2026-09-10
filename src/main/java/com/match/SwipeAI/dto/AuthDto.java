@@ -25,6 +25,7 @@ public class AuthDto {
     public static class SendOtpRequest {
         @NotBlank(message = "Phone number is required in E.164 format")
         private String phoneE164;
+        private String channel; // "sms" or "whatsapp"
     }
 
     /**
@@ -40,6 +41,7 @@ public class AuthDto {
         @NotBlank(message = "OTP code is required")
         private String otp;
 
+        private String channel; // "sms" or "whatsapp"
         private Gender gender;
         private DatingIntent intent;
         private LocalDate birthDate;
@@ -56,6 +58,8 @@ public class AuthDto {
         private String phoneE164;
 
         private String authCode;
+        private String otp;
+        private String channel = "whatsapp";
         private Gender gender;
         private DatingIntent intent;
         private LocalDate birthDate;

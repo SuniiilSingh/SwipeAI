@@ -22,18 +22,23 @@ public class AuthController {
 
     /**
      * Dispatch an OTP to the given phone number via WhatsApp or Twilio SMS.
-     * In demo mode, generates and stores a 4-digit mock OTP (universal: 1234).
      *
-     * @param request Contains phone number in E.164 format (+919876543210)
-     * @return Confirmation message with demo OTP hint
+     * @param request Contains phone number in E.164 format (+918910653499)
+     * @return Confirmation response with channel and OTP length
      */
     @PostMapping("/otp/send")
     public ResponseEntity<Map<String, Object>> sendOtp(@Valid @RequestBody AuthDto.SendOtpRequest request) {
-        String otp = authService.sendOtp(request.getPhoneE164());
+        String channel = (request.getChannel() != null && !request.getChannel().isBlank())
+                ? request.getChannel().toLowerCase().trim()
+                : "sms";
+        authService.sendOtp(request.getPhoneE164(), channel);
+        String channelName = "whatsapp".equalsIgnoreCase(channel) ? "WhatsApp" : "SMS";
+
         return ResponseEntity.ok(Map.of(
                 "status", "success",
-                "message", "OTP sent successfully. In demo mode, use OTP 1234 or " + otp,
-                "demoOtp", otp
+                "channel", channel,
+                "message", "OTP sent via " + channelName,
+                "otpLength", 6
         ));
     }
 

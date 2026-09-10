@@ -27,8 +27,8 @@ class SwipeAiProdProfileTests {
     @Test
     void testProdProfileProperties() {
         assertNotNull(properties);
-        // In prod profile, live integrations default to true unless overridden
-        assertTrue(properties.getFeatures().getDigilocker().isEnabled());
+        // DigiLocker disabled per version build feature flag
+        assertFalse(properties.getFeatures().getDigilocker().isEnabled());
         assertTrue(properties.getFeatures().getWhatsapp().isEnabled());
         assertTrue(properties.getFeatures().getRazorpay().isEnabled());
         assertTrue(properties.getFeatures().getLivekit().isEnabled());

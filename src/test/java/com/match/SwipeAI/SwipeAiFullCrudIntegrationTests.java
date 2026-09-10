@@ -5,6 +5,7 @@ import com.match.SwipeAI.dto.*;
 import com.match.SwipeAI.enums.*;
 import com.match.SwipeAI.model.*;
 import com.match.SwipeAI.repository.*;
+import com.match.SwipeAI.security.JwtAuthFilter;
 import com.match.SwipeAI.security.JwtUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -19,6 +20,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -35,7 +37,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "spring.datasource.username=sa",
         "spring.datasource.password=",
         "JWT_SECRET=super_secret_test_key_minimum_32_bytes_long_swipeai_2026!",
-        "SERVER_PEPPER=test_pepper_key_2026"
+        "SERVER_PEPPER=test_pepper_key_2026",
+        "app.features.digilocker.enabled=true",
+        "app.features.twilio.enabled=false"
 })
 class SwipeAiFullCrudIntegrationTests {
 
@@ -61,10 +65,15 @@ class SwipeAiFullCrudIntegrationTests {
     private UserContactShieldRepository shieldRepository;
 
     @Autowired
-    private JwtUtil jwtUtil;
+    private JwtAuthFilter jwtAuthFilter;
 
     @Autowired
-    private ObjectMapper objectMapper;
+    private JwtUtil jwtUtil;
+
+    @org.springframework.test.context.bean.override.mockito.MockitoBean
+    private com.match.SwipeAI.service.integration.OtpService otpService;
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     private MockMvc mockMvc;
 
@@ -74,13 +83,28 @@ class SwipeAiFullCrudIntegrationTests {
 
     @BeforeEach
     void setup() {
-        mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
+        mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext)
+                .addFilter(jwtAuthFilter)
+                .build();
 
-        // Create or find primary test user
+        org.mockito.Mockito.when(otpService.sendOtp(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyString()))
+                .thenReturn("VERIFY_CODE_SENT");
+        org.mockito.Mockito.when(otpService.verifyOtp(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyString()))
+                .thenReturn(true);
+
+        // Clean database state before test
+        chatMessageRepository.deleteAll();
+        matchRepository.deleteAll();
+        shieldRepository.deleteAll();
+        profileRepository.deleteAll();
+        userRepository.deleteAll();
+
+        // Create fresh unique test user
+        String testPhone = "+9198" + String.format("%08d", Math.abs(UUID.randomUUID().hashCode() % 100000000));
         testUser = userRepository.save(User.builder()
-                .phoneE164("+919876543210")
+                .phoneE164(testPhone)
                 .gender(Gender.MALE)
-                .intent(DatingIntent.SERIOUS_RELATIONSHIP)
+                .intent(DatingIntent.SERIOUS_DATING)
                 .birthDate(LocalDate.of(1998, 5, 15))
                 .digilockerVerified(true)
                 .whatsappVerified(true)
@@ -106,8 +130,8 @@ class SwipeAiFullCrudIntegrationTests {
                 .drinkingHabit("Social Drinker")
                 .vacationPreference("Mountains")
                 .hobbies("Trekking, Filter Coffee")
-                .dietaryPref("Pure Veg")
-                .livingStatus("Living with Flatmates")
+                .dietaryPref(DietaryPreference.PURE_VEG)
+                .livingStatus(LivingStatus.INDEPENDENT_FLAT)
                 .zodiacSign("Taurus")
                 .photosJson("[\"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500\"]")
                 .build());
@@ -121,43 +145,35 @@ class SwipeAiFullCrudIntegrationTests {
     @Test
     @DisplayName("Auth CRUD: OTP send, OTP verify, and WhatsApp 1-tap login")
     void testAuthCrud() throws Exception {
+        String uniquePhone = "+9197" + String.format("%08d", Math.abs(UUID.randomUUID().hashCode() % 100000000));
+
         // 1. Send OTP
         mockMvc.perform(post("/v1/auth/otp/send")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(Map.of("phoneE164", "+919811223344"))))
+                        .content(objectMapper.writeValueAsString(Map.of("phoneE164", uniquePhone))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("success"))
-                .andExpect(jsonPath("$.demoOtp").exists());
+                .andExpect(jsonPath("$.message").exists());
 
         // 2. Verify OTP (Creates user & returns JWT)
-        AuthDto.VerifyOtpRequest verifyReq = new AuthDto.VerifyOtpRequest();
-        verifyReq.setPhoneE164("+919811223344");
-        verifyReq.setOtp("1234");
-        verifyReq.setIntent(DatingIntent.SERIOUS_RELATIONSHIP);
-        verifyReq.setGender(Gender.FEMALE);
-        verifyReq.setBirthDate(LocalDate.of(2000, 1, 1));
+        String verifyJson = "{\"phoneE164\":\"" + uniquePhone + "\",\"otp\":\"1234\",\"gender\":\"FEMALE\",\"intent\":\"SERIOUS_DATING\",\"birthDate\":\"2000-01-01\"}";
 
         mockMvc.perform(post("/v1/auth/otp/verify")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(verifyReq)))
+                        .content(verifyJson))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.token").exists())
                 .andExpect(jsonPath("$.userId").exists());
 
         // 3. WhatsApp 1-tap instant login
-        AuthDto.WhatsAppLoginRequest waReq = new AuthDto.WhatsAppLoginRequest();
-        waReq.setPhoneE164("+919811223344");
-        waReq.setWhatsAppVerificationToken("mock_wa_token_valid");
-        waReq.setIntent(DatingIntent.SERIOUS_RELATIONSHIP);
-        waReq.setGender(Gender.FEMALE);
-        waReq.setBirthDate(LocalDate.of(2000, 1, 1));
+        String waJson = "{\"phoneE164\":\"" + uniquePhone + "\",\"authCode\":\"mock_wa_auth_code_123\",\"gender\":\"FEMALE\",\"intent\":\"SERIOUS_DATING\",\"birthDate\":\"2000-01-01\"}";
 
         mockMvc.perform(post("/v1/auth/whatsapp/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(waReq)))
+                        .content(waJson))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.token").exists())
-                .andExpect(jsonPath("$.isWhatsAppVerified").value(true));
+                .andExpect(jsonPath("$.whatsappVerified").value(true));
     }
 
     // ==========================================
@@ -183,7 +199,7 @@ class SwipeAiFullCrudIntegrationTests {
         updateReq.setVacationPreference("Beaches");
         updateReq.setHobbies("Surfing, Indie Music");
         updateReq.setJob("Lead Architect");
-        updateReq.setDietaryPref("Eggetarian");
+        updateReq.setDietaryPref(DietaryPreference.EGGETARIAN);
 
         mockMvc.perform(put("/v1/profiles/me")
                         .header("Authorization", "Bearer " + userToken)
@@ -195,7 +211,7 @@ class SwipeAiFullCrudIntegrationTests {
                 .andExpect(jsonPath("$.smokingHabit").value("Social Smoker"))
                 .andExpect(jsonPath("$.drinkingHabit").value("Non-Alcoholic"))
                 .andExpect(jsonPath("$.vacationPreference").value("Beaches"))
-                .andExpect(jsonPath("$.dietaryPref").value("Eggetarian"));
+                .andExpect(jsonPath("$.dietaryPref").value("EGGETARIAN"));
 
         // CREATE / UPDATE Voice Prompt
         ProfileDto.VoicePromptUploadRequest voiceReq = new ProfileDto.VoicePromptUploadRequest();
@@ -233,7 +249,7 @@ class SwipeAiFullCrudIntegrationTests {
         mockMvc.perform(get("/v1/profiles/cosmic-chemistry/" + testUser.getId())
                         .header("Authorization", "Bearer " + userToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.synergyScore").isNumber());
+                .andExpect(jsonPath("$.overallSynergyScore").isNumber());
 
         // DELETE Profile and Account
         mockMvc.perform(delete("/v1/profiles/me")
@@ -252,23 +268,42 @@ class SwipeAiFullCrudIntegrationTests {
     @Test
     @DisplayName("Discovery CRUD: GET feed, POST interact (Like, Pass, Super Chai), GET circles")
     void testDiscoveryCrud() throws Exception {
-        // Create candidate user
-        User candUser = userRepository.save(User.builder()
-                .phoneE164("+919876599999")
+        String candPhone1 = "+9196" + String.format("%08d", Math.abs(UUID.randomUUID().hashCode() % 100000000));
+        String candPhone2 = "+9195" + String.format("%08d", Math.abs(UUID.randomUUID().hashCode() % 100000000));
+
+        // Create candidate 1
+        User candUser1 = userRepository.save(User.builder()
+                .phoneE164(candPhone1)
                 .gender(Gender.FEMALE)
-                .intent(DatingIntent.SERIOUS_RELATIONSHIP)
+                .intent(DatingIntent.SERIOUS_DATING)
                 .birthDate(LocalDate.of(1999, 8, 20))
                 .build());
         profileRepository.save(Profile.builder()
-                .userId(candUser.getId())
+                .userId(candUser1.getId())
                 .displayName("Ananya Sharma")
                 .bio("Product Designer")
                 .city("Bengaluru")
                 .neighborhood("Indiranagar")
                 .vacationPreference("Mountains")
                 .smokingHabit("Non-Smoker")
-                .dietaryPref("Pure Veg")
+                .dietaryPref(DietaryPreference.PURE_VEG)
                 .photosJson("[\"https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=500\"]")
+                .build());
+
+        // Create candidate 2
+        User candUser2 = userRepository.save(User.builder()
+                .phoneE164(candPhone2)
+                .gender(Gender.FEMALE)
+                .intent(DatingIntent.SERIOUS_DATING)
+                .birthDate(LocalDate.of(2000, 4, 12))
+                .build());
+        profileRepository.save(Profile.builder()
+                .userId(candUser2.getId())
+                .displayName("Tara Sen")
+                .bio("Architect")
+                .city("Bengaluru")
+                .neighborhood("Koramangala")
+                .photosJson("[\"https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500\"]")
                 .build());
 
         // 1. GET discovery feed
@@ -277,28 +312,28 @@ class SwipeAiFullCrudIntegrationTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.candidates").isArray())
-                .andExpect(jsonPath("$.remainingDailySwipes").isNumber());
+                .andExpect(jsonPath("$.data.candidates").isArray())
+                .andExpect(jsonPath("$.data.remainingDailySwipes").isNumber());
 
-        // 2. CREATE interaction (LIKE)
+        // 2. CREATE interaction (LIKE on candidate 1)
         DiscoveryDto.InteractionRequest likeReq = new DiscoveryDto.InteractionRequest();
-        likeReq.setTargetUserId(candUser.getId());
-        likeReq.setAction(ActionType.LIKE);
-        likeReq.setContextType(ContextType.PROFILE_CARD);
+        likeReq.setTargetId(candUser1.getId());
+        likeReq.setActionType(ActionType.LIKE);
+        likeReq.setContextType(ContextType.PHOTO);
 
         mockMvc.perform(post("/v1/discovery/interact")
                         .header("Authorization", "Bearer " + userToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(likeReq)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").exists());
+                .andExpect(jsonPath("$.message").exists());
 
-        // 3. CREATE interaction (SUPER CHAI)
+        // 3. CREATE interaction (SUPER CHAI on candidate 2)
         DiscoveryDto.InteractionRequest chaiReq = new DiscoveryDto.InteractionRequest();
-        chaiReq.setTargetUserId(candUser.getId());
-        chaiReq.setAction(ActionType.SUPER_CHAI);
-        chaiReq.setContextType(ContextType.PHOTO_PROMPT);
-        chaiReq.setComment("Loved your travel pictures!");
+        chaiReq.setTargetId(candUser2.getId());
+        chaiReq.setActionType(ActionType.SUPER_CHAI);
+        chaiReq.setContextType(ContextType.PHOTO);
+        chaiReq.setCommentText("Loved your travel pictures!");
 
         mockMvc.perform(post("/v1/discovery/interact")
                         .header("Authorization", "Bearer " + userToken)
@@ -319,10 +354,14 @@ class SwipeAiFullCrudIntegrationTests {
     @Test
     @DisplayName("Match & Chat CRUD: Match creation, Quiz answer, Sparks, Send message, Read messages, Clear chat, and Unmatch")
     void testMatchAndChatCrud() throws Exception {
+        String userBPhone = "+9195" + String.format("%08d", Math.abs(UUID.randomUUID().hashCode() % 100000000));
+
         // Create candidate user
         User userB = userRepository.save(User.builder()
-                .phoneE164("+919876588888")
+                .phoneE164(userBPhone)
                 .gender(Gender.FEMALE)
+                .intent(DatingIntent.SERIOUS_DATING)
+                .birthDate(LocalDate.of(2001, 3, 10))
                 .build());
         profileRepository.save(Profile.builder()
                 .userId(userB.getId())
@@ -334,7 +373,7 @@ class SwipeAiFullCrudIntegrationTests {
                 .userAId(testUser.getId())
                 .userBId(userB.getId())
                 .status(MatchStatus.ACTIVE_CHAT)
-                .compatibilityScore(92)
+                .expiresAt(OffsetDateTime.now().plusDays(2))
                 .build());
 
         // 1. READ Matches
@@ -348,7 +387,7 @@ class SwipeAiFullCrudIntegrationTests {
                         .header("Authorization", "Bearer " + userToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(match.getId().toString()))
-                .andExpect(jsonPath("$.matchName").value("Pooja Nair"));
+                .andExpect(jsonPath("$.otherUserName").value("Pooja Nair"));
 
         // 3. UPDATE Icebreaker answer
         mockMvc.perform(post("/v1/matches/" + match.getId() + "/icebreaker/answer")
@@ -356,7 +395,7 @@ class SwipeAiFullCrudIntegrationTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of("selectedOptionIndex", 1))))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").exists());
+                .andExpect(jsonPath("$.message").exists());
 
         // 4. READ Wingman sparks
         mockMvc.perform(get("/v1/matches/" + match.getId() + "/wingman/sparks")
@@ -375,7 +414,7 @@ class SwipeAiFullCrudIntegrationTests {
                         .content(objectMapper.writeValueAsString(msgReq)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content").value("Hello Pooja, great to connect!"))
-                .andExpect(jsonPath("$.isFromMe").value(true));
+                .andExpect(jsonPath("$.fromMe").value(true));
 
         // 6. READ Chat Messages
         mockMvc.perform(get("/v1/chat/" + match.getId() + "/messages")
@@ -466,8 +505,9 @@ class SwipeAiFullCrudIntegrationTests {
 
         // 3. Verify Biometric Liveness
         KycDto.LivenessRequest liveReq = new KycDto.LivenessRequest();
-        liveReq.setHeadTurnDurationSeconds(3.5);
-        liveReq.setFramePayload("base64_encoded_frame_data");
+        liveReq.setHeadTurnDurationMs(3500);
+        liveReq.setSelfieFrameBase64("base64_encoded_frame_data");
+        liveReq.setSimulatePass(true);
 
         mockMvc.perform(post("/v1/kyc/liveness/verify")
                         .header("Authorization", "Bearer " + userToken)
@@ -492,7 +532,7 @@ class SwipeAiFullCrudIntegrationTests {
 
         // 2. CREATE UPI Order
         PaymentDto.CreateOrderRequest orderReq = new PaymentDto.CreateOrderRequest();
-        orderReq.setSku("sparks_5");
+        orderReq.setSku(SkuType.SUPER_SPARK_19);
         orderReq.setVpa("rohan@okaxis");
 
         String orderResponse = mockMvc.perform(post("/v1/payments/upi/create-order")
@@ -526,13 +566,15 @@ class SwipeAiFullCrudIntegrationTests {
     @Test
     @DisplayName("Safe Date CRUD: GET spots and POST start SOS")
     void testSafeDateCrud() throws Exception {
-        // Ensure at least one cafe spot in database
+        // Ensure at least one cafe spot in database with non-null coordinates
         SafeDateSpot spot = safeDateSpotRepository.save(SafeDateSpot.builder()
                 .name("Blue Tokai Coffee Roasters")
                 .brand("Blue Tokai")
                 .address("100 Feet Rd, Indiranagar")
                 .city("Bengaluru")
                 .neighborhood("Indiranagar")
+                .latitude(12.9716)
+                .longitude(77.5946)
                 .couponCode("SWIPEAI15")
                 .discountPercent(15)
                 .sosEnabled(true)
@@ -567,7 +609,10 @@ class SwipeAiFullCrudIntegrationTests {
     void testShadowShieldCrud() throws Exception {
         // 1. CREATE contact hashes
         ShieldDto.SyncContactsRequest syncReq = new ShieldDto.SyncContactsRequest();
-        syncReq.setContactPhoneHashes(List.of("hash_relative_1", "hash_boss_2"));
+        syncReq.setContactHashes(List.of(
+                "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "ca978112ca1bbdcafac231b39a23dc4da786eff8147c4e72b9807785afee48bb"
+        ));
 
         mockMvc.perform(post("/v1/privacy/shadow-shield/sync-contacts")
                         .header("Authorization", "Bearer " + userToken)
@@ -575,7 +620,7 @@ class SwipeAiFullCrudIntegrationTests {
                         .content(objectMapper.writeValueAsString(syncReq)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.shieldedContactsCount").isNumber())
-                .andExpect(jsonPath("$.isShieldActive").value(true));
+                .andExpect(jsonPath("$.shieldActive").value(true));
 
         // 2. CREATE corporate domain blocker
         ShieldDto.DomainShieldRequest domainReq = new ShieldDto.DomainShieldRequest();
@@ -592,7 +637,7 @@ class SwipeAiFullCrudIntegrationTests {
         mockMvc.perform(get("/v1/privacy/shadow-shield/status")
                         .header("Authorization", "Bearer " + userToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.isShieldActive").value(true));
+                .andExpect(jsonPath("$.shieldActive").value(true));
 
         // 4. DELETE / Clear contacts
         mockMvc.perform(delete("/v1/privacy/shadow-shield/contacts")
@@ -607,17 +652,15 @@ class SwipeAiFullCrudIntegrationTests {
     @Test
     @DisplayName("Virtual Chai Calling: Create masked WebRTC session")
     void testCallingCrud() throws Exception {
-        CallingDto.VirtualChaiSessionRequest callReq = new CallingDto.VirtualChaiSessionRequest();
-        callReq.setMatchId(UUID.randomUUID());
-        callReq.setVideoEnabled(true);
+        String callJson = "{\"matchId\":\"" + UUID.randomUUID() + "\",\"isVideo\":true}";
 
         mockMvc.perform(post("/v1/calling/virtual-chai/session")
                         .header("Authorization", "Bearer " + userToken)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(callReq)))
+                        .content(callJson))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.roomName").exists())
                 .andExpect(jsonPath("$.participantToken").exists())
-                .andExpect(jsonPath("$.maskedCallerName").exists());
+                .andExpect(jsonPath("$.callerMaskedName").exists());
     }
 }

@@ -28,20 +28,40 @@ public class AuthService {
     private final OtpService otpService;
     private final JwtUtil jwtUtil;
 
-    public String sendOtp(String phoneE164) {
-        return otpService.sendOtp(phoneE164);
+    public static String normalizePhone(String raw) {
+        if (raw == null) return "";
+        String cleaned = raw.replaceAll("[^0-9+]", "");
+        if (!cleaned.startsWith("+")) {
+            if (cleaned.length() == 10) {
+                cleaned = "+91" + cleaned;
+            } else if (cleaned.startsWith("91") && cleaned.length() == 12) {
+                cleaned = "+" + cleaned;
+            } else if (cleaned.startsWith("0") && cleaned.length() == 11) {
+                cleaned = "+91" + cleaned.substring(1);
+            } else {
+                cleaned = "+" + cleaned;
+            }
+        }
+        return cleaned;
+    }
+
+    public String sendOtp(String phoneE164, String channel) {
+        return otpService.sendOtp(normalizePhone(phoneE164), channel);
     }
 
     @Transactional
     public AuthDto.AuthResponse verifyOtpAndLogin(AuthDto.VerifyOtpRequest request) {
-        boolean valid = otpService.verifyOtp(request.getPhoneE164(), request.getOtp());
+        String normalizedPhone = normalizePhone(request.getPhoneE164());
+        boolean valid = otpService.verifyOtp(normalizedPhone, request.getOtp());
         if (!valid) {
-            throw new IllegalArgumentException("Invalid or expired OTP. Use 1234 in demo mode.");
+            throw new IllegalArgumentException("Invalid or expired OTP. Please try again.");
         }
 
+        boolean isWhatsApp = "whatsapp".equalsIgnoreCase(request.getChannel());
+
         return getOrCreateUser(
-                request.getPhoneE164(),
-                false,
+                normalizedPhone,
+                isWhatsApp,
                 request.getGender(),
                 request.getIntent(),
                 request.getBirthDate()
@@ -50,14 +70,19 @@ public class AuthService {
 
     @Transactional
     public AuthDto.AuthResponse loginWithWhatsApp(AuthDto.WhatsAppLoginRequest request) {
-        // WhatsApp 1-tap direct auth
-        return getOrCreateUser(
+        String code = request.getOtp() != null && !request.getOtp().isBlank() ? request.getOtp() : request.getAuthCode();
+        if (code == null || code.isBlank()) {
+            throw new IllegalArgumentException("WhatsApp verification code is required.");
+        }
+
+        return verifyOtpAndLogin(new AuthDto.VerifyOtpRequest(
                 request.getPhoneE164(),
-                true,
+                code.trim(),
+                "whatsapp",
                 request.getGender(),
                 request.getIntent(),
                 request.getBirthDate()
-        );
+        ));
     }
 
     private AuthDto.AuthResponse getOrCreateUser(String phone, boolean isWhatsApp, Gender gender, DatingIntent intent, LocalDate birthDate) {
@@ -74,9 +99,9 @@ public class AuthService {
                     .karmaScore(100)
                     .gender(gender != null ? gender : Gender.FEMALE)
                     .intent(intent != null ? intent : DatingIntent.SERIOUS_DATING)
-                    .birthDate(birthDate != null ? birthDate : LocalDate.of(2000, 5, 15))
-                    .latitude(12.9716) // Default Bengaluru coordinates
-                    .longitude(77.5946)
+                    .birthDate(birthDate != null ? birthDate : LocalDate.now().minusYears(21))
+                    .latitude(null)
+                    .longitude(null)
                     .sparksBalance(3)
                     .boostsBalance(0)
                     .directDmsBalance(0)
@@ -84,21 +109,14 @@ public class AuthService {
                     .build();
             user = userRepository.save(user);
 
-            // Create baseline initial profile
+            // Create clean baseline initial profile without hardcoded mock city/bio/microCircle
+            String defaultName = "User " + phone.substring(Math.max(0, phone.length() - 4));
             Profile profile = Profile.builder()
                     .userId(user.getId())
-                    .displayName("Single in Bangalore")
-                    .bio("Design, specialty coffee, and indie pop.")
-                    .dietaryPref(DietaryPreference.PURE_VEG)
-                    .livingStatus(LivingStatus.INDEPENDENT_FLAT)
-                    .languagesSpoken(List.of("English", "Hindi", "Kannada"))
-                    .zodiacSign("Leo")
-                    .sunSign("Leo")
-                    .moonSign("Scorpio")
-                    .city("Bengaluru")
-                    .neighborhood("Indiranagar")
-                    .microCircle("Koramangala Tech Founders")
-                    .photosJson("[\"https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500\"]")
+                    .displayName(defaultName)
+                    .bio("")
+                    .languagesSpoken(List.of())
+                    .photosJson("[]")
                     .build();
             profileRepository.save(profile);
         } else {

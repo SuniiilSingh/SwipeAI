@@ -28,7 +28,8 @@ import static org.junit.jupiter.api.Assertions.*;
         "spring.datasource.url=jdbc:h2:mem:swipe_testdb;DB_CLOSE_DELAY=-1",
         "spring.datasource.driver-class-name=org.h2.Driver",
         "spring.datasource.username=sa",
-        "spring.datasource.password="
+        "spring.datasource.password=",
+        "app.features.twilio.enabled=false"
 })
 class SwipeAiApplicationTests {
 
@@ -60,16 +61,14 @@ class SwipeAiApplicationTests {
     }
 
     @Test
-    void testOtpService_UniversalAndGeneratedOtp() {
+    void testOtpService_RequiresTwilioVerifyConfiguration() {
         String phone = "+919876543210";
-        String otp = otpService.sendOtp(phone);
-        assertNotNull(otp);
-        assertEquals(4, otp.length());
+        // With empty OTP, returns false
+        assertFalse(otpService.verifyOtp(phone, ""));
+        assertFalse(otpService.verifyOtp(phone, null));
 
-        // Verify with universal demo OTP
-        assertTrue(otpService.verifyOtp(phone, "1234"));
-
-        // Verify with invalid OTP
+        // Unapproved / invalid OTP returns false without silent fallback
+        assertFalse(otpService.verifyOtp(phone, "1234"));
         assertFalse(otpService.verifyOtp(phone, "9999"));
     }
 

@@ -51,7 +51,10 @@ public class FeatureFlagsProperties {
         private boolean enabled = false;
         private String accountSid;
         private String authToken;
+        private String apiKeySid;
+        private String apiKeySecret;
         private String phoneNumber;
+        private String verifyServiceSid;
     }
 
     @Data
