@@ -94,11 +94,24 @@ public class ProfileService {
         if (request.getNeighborhood() != null) profile.setNeighborhood(request.getNeighborhood());
         if (request.getMicroCircle() != null) profile.setMicroCircle(request.getMicroCircle());
 
-        if (request.getPhotos() != null) {
+        if (request.getPhotos() != null && !request.getPhotos().isEmpty()) {
             try {
                 profile.setPhotosJson(objectMapper.writeValueAsString(request.getPhotos()));
             } catch (Exception e) {
                 profile.setPhotosJson("[]");
+            }
+        } else {
+            List<String> syncPhotos = new ArrayList<>();
+            if (profile.getPhoto1() != null && !profile.getPhoto1().isBlank()) syncPhotos.add(profile.getPhoto1());
+            if (profile.getPhoto2() != null && !profile.getPhoto2().isBlank()) syncPhotos.add(profile.getPhoto2());
+            if (profile.getPhoto3() != null && !profile.getPhoto3().isBlank()) syncPhotos.add(profile.getPhoto3());
+            if (profile.getPhoto4() != null && !profile.getPhoto4().isBlank()) syncPhotos.add(profile.getPhoto4());
+            if (profile.getPhoto5() != null && !profile.getPhoto5().isBlank()) syncPhotos.add(profile.getPhoto5());
+            if (profile.getPhoto6() != null && !profile.getPhoto6().isBlank()) syncPhotos.add(profile.getPhoto6());
+            if (!syncPhotos.isEmpty()) {
+                try {
+                    profile.setPhotosJson(objectMapper.writeValueAsString(syncPhotos));
+                } catch (Exception ignored) {}
             }
         }
 
@@ -197,12 +210,18 @@ public class ProfileService {
         }
 
         List<String> photos = new ArrayList<>();
-        if (profile.getPhotosJson() != null) {
+        if (profile.getPhotosJson() != null && !profile.getPhotosJson().isBlank()) {
             try {
                 photos = objectMapper.readValue(profile.getPhotosJson(), new TypeReference<>() {});
-            } catch (Exception e) {
-                photos = List.of("https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500");
-            }
+            } catch (Exception ignored) {}
+        }
+        if (photos.isEmpty()) {
+            if (profile.getPhoto1() != null && !profile.getPhoto1().isBlank()) photos.add(profile.getPhoto1());
+            if (profile.getPhoto2() != null && !profile.getPhoto2().isBlank()) photos.add(profile.getPhoto2());
+            if (profile.getPhoto3() != null && !profile.getPhoto3().isBlank()) photos.add(profile.getPhoto3());
+            if (profile.getPhoto4() != null && !profile.getPhoto4().isBlank()) photos.add(profile.getPhoto4());
+            if (profile.getPhoto5() != null && !profile.getPhoto5().isBlank()) photos.add(profile.getPhoto5());
+            if (profile.getPhoto6() != null && !profile.getPhoto6().isBlank()) photos.add(profile.getPhoto6());
         }
 
         int completionPct = calculateCompletionPercentage(user, profile);

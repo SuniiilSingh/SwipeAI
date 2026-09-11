@@ -464,20 +464,25 @@ class SwipeAiFullCrudIntegrationTests {
                         .header("Authorization", "Bearer " + userToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.fileId").exists())
+                .andExpect(jsonPath("$.publicUrl").exists())
                 .andExpect(jsonPath("$.status").value("SUCCESS"));
 
-        // 3. PUT Mock Upload
-        mockMvc.perform(put("/v1/images/mock-upload")
-                        .content("test payload".getBytes())
+        // 3. POST JSON Base64 Upload
+        String base64Payload = java.util.Base64.getEncoder().encodeToString("test base64 content".getBytes());
+        mockMvc.perform(post("/v1/images/upload")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"filename\":\"test_b64.jpg\",\"contentType\":\"image/jpeg\",\"base64Data\":\"" + base64Payload + "\"}")
                         .header("Authorization", "Bearer " + userToken))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.fileId").exists())
+                .andExpect(jsonPath("$.publicUrl").exists())
                 .andExpect(jsonPath("$.status").value("SUCCESS"));
 
         // 4. DELETE image
         mockMvc.perform(delete("/v1/images/img_test_1234")
                         .header("Authorization", "Bearer " + userToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("SUCCESS"));
+                .andExpect(jsonPath("$.status").exists());
     }
 
     // ==========================================

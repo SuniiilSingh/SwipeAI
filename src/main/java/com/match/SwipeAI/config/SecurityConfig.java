@@ -34,6 +34,9 @@ public class SecurityConfig {
                         // Public endpoints
                         .requestMatchers(
                                 "/v1/auth/**",
+                                "/v1/images/**",
+                                "/api/images/**",
+                                "/uploads/**",
                                 "/v1/payments/upi/webhook",
                                 "/v1/payments/store/catalog",
                                 "/v1/safe-date/spots",

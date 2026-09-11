@@ -51,6 +51,9 @@ class SwipeAiApplicationTests {
     @Autowired
     private IcebreakerEngine icebreakerEngine;
 
+    @Autowired
+    private com.match.SwipeAI.service.integration.R2StorageService r2StorageService;
+
     @Test
     void contextLoads() {
         assertNotNull(otpService);
@@ -58,6 +61,26 @@ class SwipeAiApplicationTests {
         assertNotNull(shadowShieldService);
         assertNotNull(matchEngine);
         assertNotNull(upiPaymentService);
+        assertNotNull(r2StorageService);
+    }
+
+    @Test
+    void testR2StorageService_UploadAndPresign() {
+        // Direct upload test
+        byte[] sampleData = "sample image data bytes".getBytes();
+        Map<String, String> uploadResult = r2StorageService.uploadFile("avatar.jpg", "image/jpeg", sampleData);
+        assertNotNull(uploadResult.get("fileId"));
+        assertNotNull(uploadResult.get("publicUrl"));
+        assertTrue(uploadResult.get("publicUrl").contains(uploadResult.get("fileId")));
+
+        // Presigned URL test
+        Map<String, String> presignResult = r2StorageService.generatePresignedPutUrl("avatar.jpg", "image/jpeg");
+        assertNotNull(presignResult.get("fileId"));
+        assertNotNull(presignResult.get("uploadUrl"));
+        assertNotNull(presignResult.get("publicUrl"));
+
+        // Cleanup
+        r2StorageService.deleteFile(uploadResult.get("fileId"));
     }
 
     @Test

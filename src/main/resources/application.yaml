@@ -69,9 +69,9 @@ app:
       api-key: "mock_openai_key"
       model: "gpt-4o-mini"
     r2-storage:
-      enabled: false
-      account-id: "mock_r2_account"
-      access-key-id: "mock_r2_key"
-      secret-access-key: "mock_r2_secret"
-      bucket-name: "swipeai-media-dev"
-      public-domain: "https://cdn.swipeai.in"
+      enabled: ${FEATURE_R2_STORAGE_ENABLED:false}
+      account-id: ${R2_ACCOUNT_ID:}
+      access-key-id: ${R2_ACCESS_KEY_ID:}
+      secret-access-key: ${R2_SECRET_ACCESS_KEY:}
+      bucket-name: ${R2_BUCKET_NAME:blunderr-media}
+      public-domain: ${R2_PUBLIC_DOMAIN:https://pub-f218f1444ed840668824b64cd9e1f00d.r2.dev}
