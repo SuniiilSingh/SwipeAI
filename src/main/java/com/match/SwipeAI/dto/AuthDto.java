@@ -45,6 +45,8 @@ public class AuthDto {
         private Gender gender;
         private DatingIntent intent;
         private LocalDate birthDate;
+        private Double latitude;
+        private Double longitude;
     }
 
     /**
@@ -63,6 +65,8 @@ public class AuthDto {
         private Gender gender;
         private DatingIntent intent;
         private LocalDate birthDate;
+        private Double latitude;
+        private Double longitude;
     }
 
     /**

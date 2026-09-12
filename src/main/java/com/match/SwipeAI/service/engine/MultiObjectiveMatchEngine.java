@@ -66,7 +66,7 @@ public class MultiObjectiveMatchEngine {
     public double calculateCulturalOverlap(Profile a, Profile b) {
         if (a == null || b == null) return 0.70;
 
-        // Diet Match (0.40)
+        // Diet Match (0.30)
         double dietMatch = 0.50;
         if (a.getDietaryPref() != null && b.getDietaryPref() != null) {
             if (a.getDietaryPref() == b.getDietaryPref()) {
@@ -79,7 +79,10 @@ public class MultiObjectiveMatchEngine {
             }
         }
 
-        // Language Overlap (0.30)
+        // Shared Interests & Hobbies Overlap (0.30)
+        double interestOverlap = calculateInterestOverlap(a, b);
+
+        // Language Overlap (0.20)
         double langOverlap = 0.60;
         if (a.getLanguagesSpoken() != null && b.getLanguagesSpoken() != null) {
             Set<String> intersection = new HashSet<>(a.getLanguagesSpoken());
@@ -89,7 +92,7 @@ public class MultiObjectiveMatchEngine {
             }
         }
 
-        // Living Condition Fit (0.20)
+        // Living Condition Fit (0.10)
         double livingFit = 0.70;
         if (a.getLivingStatus() != null && b.getLivingStatus() != null) {
             if (a.getLivingStatus() == b.getLivingStatus()) {
@@ -102,7 +105,46 @@ public class MultiObjectiveMatchEngine {
         // Cosmic Vibe Score (0.10)
         double cosmicVibe = cosmicChemistryEngine.calculateSynergy(a.getZodiacSign(), b.getZodiacSign()) / 100.0;
 
-        return (0.40 * dietMatch) + (0.30 * langOverlap) + (0.20 * livingFit) + (0.10 * cosmicVibe);
+        return (0.30 * dietMatch) + (0.30 * interestOverlap) + (0.20 * langOverlap) + (0.10 * livingFit) + (0.10 * cosmicVibe);
+    }
+
+    private double calculateInterestOverlap(Profile a, Profile b) {
+        Set<String> tagsA = extractCleanTags(a);
+        Set<String> tagsB = extractCleanTags(b);
+        if (tagsA.isEmpty() || tagsB.isEmpty()) return 0.65;
+
+        int commonCount = 0;
+        for (String itemA : tagsA) {
+            for (String itemB : tagsB) {
+                if (itemA.equalsIgnoreCase(itemB) || itemA.contains(itemB) || itemB.contains(itemA)) {
+                    commonCount++;
+                    break;
+                }
+            }
+        }
+
+        if (commonCount >= 3) return 1.0;
+        if (commonCount == 2) return 0.90;
+        if (commonCount == 1) return 0.80;
+        return 0.50;
+    }
+
+    private Set<String> extractCleanTags(Profile p) {
+        Set<String> tags = new HashSet<>();
+        if (p == null) return tags;
+        if (p.getInterests() != null && !p.getInterests().isBlank()) {
+            for (String s : p.getInterests().split(",")) {
+                String c = s.replaceAll("[^a-zA-Z0-9 &]", "").trim().toLowerCase();
+                if (!c.isBlank()) tags.add(c);
+            }
+        }
+        if (p.getHobbies() != null && !p.getHobbies().isBlank()) {
+            for (String s : p.getHobbies().split(",")) {
+                String c = s.replaceAll("[^a-zA-Z0-9 &]", "").trim().toLowerCase();
+                if (!c.isBlank()) tags.add(c);
+            }
+        }
+        return tags;
     }
 
     public double calculateDistanceKm(Double lat1, Double lon1, Double lat2, Double lon2) {

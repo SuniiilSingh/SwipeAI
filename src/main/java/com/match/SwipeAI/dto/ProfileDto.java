@@ -68,6 +68,19 @@ public class ProfileDto {
         private DatingIntent intent;
         private Gender gender;
         private LocalDate birthDate;
+        private Double latitude;
+        private Double longitude;
+    }
+
+    /**
+     * Request payload to update only the user's GPS coordinates.
+     */
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class LocationUpdateRequest {
+        private Double latitude;
+        private Double longitude;
     }
 
     /**
@@ -107,6 +120,8 @@ public class ProfileDto {
         private Integer height;
         private String location;
         private Integer maxDistanceKm;
+        private Double latitude;
+        private Double longitude;
         private String sexualOrientation;
         private Boolean showOrientationOnProfile;
         private String genderDisplay;

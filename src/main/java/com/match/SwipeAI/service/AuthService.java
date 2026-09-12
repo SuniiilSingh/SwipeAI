@@ -64,7 +64,9 @@ public class AuthService {
                 isWhatsApp,
                 request.getGender(),
                 request.getIntent(),
-                request.getBirthDate()
+                request.getBirthDate(),
+                request.getLatitude(),
+                request.getLongitude()
         );
     }
 
@@ -81,11 +83,13 @@ public class AuthService {
                 "whatsapp",
                 request.getGender(),
                 request.getIntent(),
-                request.getBirthDate()
+                request.getBirthDate(),
+                request.getLatitude(),
+                request.getLongitude()
         ));
     }
 
-    private AuthDto.AuthResponse getOrCreateUser(String phone, boolean isWhatsApp, Gender gender, DatingIntent intent, LocalDate birthDate) {
+    private AuthDto.AuthResponse getOrCreateUser(String phone, boolean isWhatsApp, Gender gender, DatingIntent intent, LocalDate birthDate, Double latitude, Double longitude) {
         Optional<User> optionalUser = userRepository.findByPhoneE164(phone);
         boolean isNew = optionalUser.isEmpty();
 
@@ -100,8 +104,8 @@ public class AuthService {
                     .gender(gender)
                     .intent(intent)
                     .birthDate(birthDate)
-                    .latitude(null)
-                    .longitude(null)
+                    .latitude(latitude)
+                    .longitude(longitude)
                     .sparksBalance(3)
                     .boostsBalance(0)
                     .directDmsBalance(0)
@@ -120,8 +124,17 @@ public class AuthService {
             profileRepository.save(profile);
         } else {
             user = optionalUser.get();
+            boolean changed = false;
             if (isWhatsApp && !Boolean.TRUE.equals(user.getWhatsappVerified())) {
                 user.setWhatsappVerified(true);
+                changed = true;
+            }
+            if (latitude != null && longitude != null) {
+                user.setLatitude(latitude);
+                user.setLongitude(longitude);
+                changed = true;
+            }
+            if (changed) {
                 user = userRepository.save(user);
             }
         }

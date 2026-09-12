@@ -8,6 +8,7 @@ import com.match.SwipeAI.model.*;
 import com.match.SwipeAI.repository.*;
 import com.match.SwipeAI.service.engine.IcebreakerEngine;
 import com.match.SwipeAI.service.engine.MatchKarmaService;
+import com.match.SwipeAI.service.engine.MutualChemistrySparksEngine;
 import com.match.SwipeAI.service.integration.AiWingmanService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,6 +32,7 @@ public class MatchService {
     private final ChatMessageRepository chatMessageRepository;
     private final IcebreakerEngine icebreakerEngine;
     private final AiWingmanService aiWingmanService;
+    private final MutualChemistrySparksEngine mutualChemistrySparksEngine;
     private final MatchKarmaService karmaService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -92,7 +94,11 @@ public class MatchService {
         UUID otherUserId = isUserA ? match.getUserBId() : match.getUserAId();
         Profile myProfile = profileRepository.findById(userId).orElse(null);
         Profile otherProfile = profileRepository.findById(otherUserId).orElse(null);
-        List<String> sparks = aiWingmanService.generateConversationSparks(myProfile, otherProfile);
+        // === AI WINGMAN (COMMENTED OUT AS OF NOW) ===
+        // List<String> sparks = aiWingmanService.generateConversationSparks(myProfile, otherProfile);
+
+        // === ALTERNATIVE 1: MUTUAL CHEMISTRY SPARKS ENGINE ===
+        List<String> sparks = mutualChemistrySparksEngine.generateMutualSparks(myProfile, otherProfile, quiz);
 
         return MatchDto.IcebreakerAnswerResponse.builder()
                 .isQuizCompleted(quiz.isCompleted())
@@ -100,7 +106,7 @@ public class MatchService {
                 .newMatchStatus(match.getStatus())
                 .quizState(quiz)
                 .wingmanSparks(sparks)
-                .message(quiz.isCompleted() ? "Chat lounge unlocked! AI Wingman sparks generated below." : "Answer recorded! Waiting for match to respond.")
+                .message(quiz.isCompleted() ? "Chat lounge unlocked! Mutual Chemistry sparks generated below." : "Answer recorded! Waiting for match to respond.")
                 .build();
     }
 
@@ -111,13 +117,24 @@ public class MatchService {
         Profile myProfile = profileRepository.findById(userId).orElse(null);
         Profile otherProfile = profileRepository.findById(otherUserId).orElse(null);
 
-        List<String> sparks = aiWingmanService.generateConversationSparks(myProfile, otherProfile);
+        MatchDto.IcebreakerQuizDto quiz = icebreakerEngine.parseQuizData(match.getIcebreakerGameData());
+
+        // === AI WINGMAN (COMMENTED OUT AS OF NOW) ===
+        // List<String> sparks = aiWingmanService.generateConversationSparks(myProfile, otherProfile);
+
+        // === ALTERNATIVE 1: MUTUAL CHEMISTRY SPARKS ENGINE ===
+        List<String> sparks = mutualChemistrySparksEngine.generateMutualSparks(myProfile, otherProfile, quiz);
+
+        List<String> commonInterests = mutualChemistrySparksEngine.findCommonInterests(myProfile, otherProfile);
+        String commonGround = !commonInterests.isEmpty()
+                ? "Shared Interests: " + String.join(", ", commonInterests)
+                : "Mutual Match on Lifestyle & Intent Preferences";
 
         return MatchDto.WingmanSparksResponse.builder()
                 .matchId(matchId)
                 .candidateName(otherProfile != null ? otherProfile.getDisplayName() : "Match")
                 .sparks(sparks)
-                .commonGround("Both love Indiranagar specialty coffee & indie playlists")
+                .commonGround(commonGround)
                 .build();
     }
 

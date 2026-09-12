@@ -21,16 +21,19 @@ public class AiWingmanService {
 
     private final FeatureFlagsProperties properties;
 
-    /**
-     * Generate 3 contextual icebreaker suggestions based on match's bio, voice prompt, and company.
-     */
+    /*
+     * =========================================================================
+     * AI WINGMAN (OPENAI / HEURISTIC MOCK) - COMMENTED OUT AS OF NOW
+     * Replaced by Alternative 1: MutualChemistrySparksEngine (Data-Driven Matcher)
+     * =========================================================================
+     *
     public List<String> generateConversationSparks(Profile viewerProfile, Profile candidateProfile) {
         boolean live = properties.getFeatures().getAiWingman().isEnabled();
 
         if (live) {
             log.info("[FEATURE_FLAG: OpenAI Wingman LIVE] Invoking OpenAI API for {} and {}",
                     viewerProfile.getDisplayName(), candidateProfile.getDisplayName());
-            /*
+            / *
              * LIVE INTEGRATION SKELETON:
              * RestTemplate restTemplate = new RestTemplate();
              * HttpHeaders headers = new HttpHeaders();
@@ -44,7 +47,7 @@ public class AiWingmanService {
              *     )
              * );
              * ResponseEntity<OpenAiChatResponse> res = restTemplate.postForEntity("https://api.openai.com/v1/chat/completions", new HttpEntity<>(body, headers), OpenAiChatResponse.class);
-             */
+             * /
         } else {
             log.info("[MOCK TESTING ENVIRONMENT] OpenAI disabled. Using local Hinglish spark engine for {}", candidateProfile.getDisplayName());
         }
@@ -73,5 +76,19 @@ public class AiWingmanService {
         }
 
         return sparks;
+    }
+    */
+
+    /**
+     * Deprecated method stub preserved for binary compatibility; calls to this
+     * are redirected to MutualChemistrySparksEngine in MatchService.
+     */
+    public List<String> generateConversationSparks(Profile viewerProfile, Profile candidateProfile) {
+        log.info("[AI WINGMAN INACTIVE] Calls are redirected to MutualChemistrySparksEngine");
+        return List.of(
+                "Hey " + (candidateProfile != null ? candidateProfile.getDisplayName() : "there") + "! What's the soundtrack to your week?",
+                "Filter coffee or cutting chai on a rainy evening?",
+                "What's one thing that always makes you smile?"
+        );
     }
 }

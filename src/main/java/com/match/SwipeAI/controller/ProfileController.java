@@ -50,6 +50,21 @@ public class ProfileController {
     }
 
     /**
+     * Update user's device GPS coordinates for real-time proximity and distance calculation.
+     *
+     * @param userId Authenticated user UUID
+     * @param request Latitude and Longitude
+     * @return Updated profile with refreshed coordinates
+     */
+    @PutMapping("/location")
+    public ResponseEntity<ProfileDto.ProfileResponse> updateLocation(
+            @AuthenticationPrincipal UUID userId,
+            @RequestBody ProfileDto.LocationUpdateRequest request) {
+        ProfileDto.ProfileResponse response = profileService.updateLocation(userId, request.getLatitude(), request.getLongitude());
+        return ResponseEntity.ok(response);
+    }
+
+    /**
      * Upload or update a vernacular Hinglish/regional voice prompt snippet.
      *
      * @param userId Authenticated user UUID

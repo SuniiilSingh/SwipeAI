@@ -49,6 +49,8 @@ public class ProfileService {
         if (request.getIntent() != null) user.setIntent(request.getIntent());
         if (request.getGender() != null) user.setGender(request.getGender());
         if (request.getBirthDate() != null) user.setBirthDate(request.getBirthDate());
+        if (request.getLatitude() != null) user.setLatitude(request.getLatitude());
+        if (request.getLongitude() != null) user.setLongitude(request.getLongitude());
         userRepository.save(user);
 
         Profile profile = profileRepository.findById(userId)
@@ -79,13 +81,13 @@ public class ProfileService {
         if (request.getRelationshipIntent() != null) profile.setRelationshipIntent(request.getRelationshipIntent());
         if (request.getProfilePromptQuestion() != null) profile.setProfilePromptQuestion(request.getProfilePromptQuestion());
         if (request.getProfilePromptAnswer() != null) profile.setProfilePromptAnswer(request.getProfilePromptAnswer());
-        if (request.getPhoto1() != null) profile.setPhoto1(request.getPhoto1());
-        if (request.getPhoto2() != null) profile.setPhoto2(request.getPhoto2());
-        if (request.getPhoto3() != null) profile.setPhoto3(request.getPhoto3());
-        if (request.getPhoto4() != null) profile.setPhoto4(request.getPhoto4());
-        if (request.getPhoto5() != null) profile.setPhoto5(request.getPhoto5());
-        if (request.getPhoto6() != null) profile.setPhoto6(request.getPhoto6());
-        if (request.getSelfieUrl() != null) profile.setSelfieUrl(request.getSelfieUrl());
+        if (request.getPhoto1() != null) profile.setPhoto1(request.getPhoto1().trim().isEmpty() ? null : request.getPhoto1().trim());
+        if (request.getPhoto2() != null) profile.setPhoto2(request.getPhoto2().trim().isEmpty() ? null : request.getPhoto2().trim());
+        if (request.getPhoto3() != null) profile.setPhoto3(request.getPhoto3().trim().isEmpty() ? null : request.getPhoto3().trim());
+        if (request.getPhoto4() != null) profile.setPhoto4(request.getPhoto4().trim().isEmpty() ? null : request.getPhoto4().trim());
+        if (request.getPhoto5() != null) profile.setPhoto5(request.getPhoto5().trim().isEmpty() ? null : request.getPhoto5().trim());
+        if (request.getPhoto6() != null) profile.setPhoto6(request.getPhoto6().trim().isEmpty() ? null : request.getPhoto6().trim());
+        if (request.getSelfieUrl() != null) profile.setSelfieUrl(request.getSelfieUrl().trim().isEmpty() ? null : request.getSelfieUrl().trim());
         if (request.getSmokingHabit() != null) profile.setSmokingHabit(request.getSmokingHabit());
         if (request.getDrinkingHabit() != null) profile.setDrinkingHabit(request.getDrinkingHabit());
         if (request.getHobbies() != null) profile.setHobbies(request.getHobbies());
@@ -94,9 +96,12 @@ public class ProfileService {
         if (request.getNeighborhood() != null) profile.setNeighborhood(request.getNeighborhood());
         if (request.getMicroCircle() != null) profile.setMicroCircle(request.getMicroCircle());
 
-        if (request.getPhotos() != null && !request.getPhotos().isEmpty()) {
+        if (request.getPhotos() != null) {
             try {
-                profile.setPhotosJson(objectMapper.writeValueAsString(request.getPhotos()));
+                List<String> cleanPhotos = request.getPhotos().stream()
+                        .filter(p -> p != null && !p.trim().isEmpty())
+                        .toList();
+                profile.setPhotosJson(objectMapper.writeValueAsString(cleanPhotos));
             } catch (Exception e) {
                 profile.setPhotosJson("[]");
             }
@@ -108,14 +113,29 @@ public class ProfileService {
             if (profile.getPhoto4() != null && !profile.getPhoto4().isBlank()) syncPhotos.add(profile.getPhoto4());
             if (profile.getPhoto5() != null && !profile.getPhoto5().isBlank()) syncPhotos.add(profile.getPhoto5());
             if (profile.getPhoto6() != null && !profile.getPhoto6().isBlank()) syncPhotos.add(profile.getPhoto6());
-            if (!syncPhotos.isEmpty()) {
-                try {
-                    profile.setPhotosJson(objectMapper.writeValueAsString(syncPhotos));
-                } catch (Exception ignored) {}
-            }
+            try {
+                profile.setPhotosJson(objectMapper.writeValueAsString(syncPhotos));
+            } catch (Exception ignored) {}
         }
 
         profile = profileRepository.save(profile);
+        return mapToResponse(user, profile);
+    }
+
+    @Transactional
+    public ProfileDto.ProfileResponse updateLocation(UUID userId, Double latitude, Double longitude) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
+
+        if (latitude != null && longitude != null) {
+            user.setLatitude(latitude);
+            user.setLongitude(longitude);
+            userRepository.save(user);
+        }
+
+        Profile profile = profileRepository.findById(userId)
+                .orElseGet(() -> Profile.builder().userId(user.getId()).build());
+
         return mapToResponse(user, profile);
     }
 
@@ -172,33 +192,53 @@ public class ProfileService {
     }
 
     public int calculateCompletionPercentage(User user, Profile profile) {
+        if (profile == null) return 0;
         int pct = 0;
-        if (profile.getDisplayName() != null && !profile.getDisplayName().trim().isEmpty()) pct += 10;
-        if (user.getBirthDate() != null) pct += 10;
-        if (user.getGender() != null) pct += 10;
-        if (user.getIntent() != null || profile.getRelationshipIntent() != null) pct += 10;
-        if (profile.getBio() != null && !profile.getBio().trim().isEmpty()) pct += 10;
+
+        // 1. Essential Basic Info (30% - Baseline required to unlock Discovery)
+        boolean hasName = (profile.getDisplayName() != null && !profile.getDisplayName().trim().isEmpty());
+        boolean hasGender = (user != null && user.getGender() != null) ||
+                (profile.getGenderDisplay() != null && !profile.getGenderDisplay().trim().isEmpty());
+        boolean hasOrientation = (profile.getSexualOrientation() != null && !profile.getSexualOrientation().trim().isEmpty());
+
+        if (hasName) pct += 10;
+        if (hasGender) pct += 10;
+        if (hasOrientation) pct += 10;
+
+        // 2. Dating Intent & Age / DOB (15%)
+        if (user != null && user.getBirthDate() != null) pct += 8;
+        if ((user != null && user.getIntent() != null) || (profile.getRelationshipIntent() != null && !profile.getRelationshipIntent().isBlank())) pct += 7;
+
+        // 3. Bio & Prompt (15%)
+        if (profile.getBio() != null && !profile.getBio().trim().isEmpty()) pct += 8;
+        if (profile.getProfilePromptAnswer() != null && !profile.getProfilePromptAnswer().trim().isEmpty()) pct += 7;
+
+        // 4. Photos & Verified Selfie (20%)
+        if (profile.getPhoto1() != null && !profile.getPhoto1().trim().isEmpty()) pct += 8;
+        if (profile.getPhoto2() != null && !profile.getPhoto2().trim().isEmpty()) pct += 2;
+        if (profile.getPhoto3() != null && !profile.getPhoto3().trim().isEmpty()) pct += 2;
+        if (profile.getPhoto4() != null && !profile.getPhoto4().trim().isEmpty()) pct += 2;
+        if (profile.getPhoto5() != null && !profile.getPhoto5().trim().isEmpty()) pct += 2;
+        if (profile.getSelfieUrl() != null && !profile.getSelfieUrl().trim().isEmpty()) pct += 4;
+
+        // 5. Career, Education & Height (10%)
         if ((profile.getJob() != null && !profile.getJob().trim().isEmpty()) ||
-            (profile.getOccupation() != null && !profile.getOccupation().trim().isEmpty())) pct += 10;
-        if (profile.getEducation() != null && !profile.getEducation().trim().isEmpty()) pct += 10;
+            (profile.getOccupation() != null && !profile.getOccupation().trim().isEmpty())) pct += 4;
+        if (profile.getEducation() != null && !profile.getEducation().trim().isEmpty()) pct += 3;
+        if (profile.getHeight() != null && profile.getHeight() > 0) pct += 3;
 
-        if (profile.getInterests() != null && !profile.getInterests().trim().isEmpty()) {
-            String[] split = profile.getInterests().split(",");
-            int count = (int) Arrays.stream(split).map(String::trim).filter(s -> !s.isEmpty()).count();
-            if (count >= 3) {
-                pct += 10;
-            } else if (count > 0) {
-                pct += count * 3;
-            }
-        }
+        // 6. Lifestyle & Indian Context (10%)
+        if (profile.getDietaryPref() != null) pct += 2;
+        if (profile.getLivingStatus() != null) pct += 2;
+        if ((profile.getLocation() != null && !profile.getLocation().isBlank()) ||
+            (profile.getCity() != null && !profile.getCity().isBlank())) pct += 2;
+        if ((profile.getSmokingHabit() != null && !profile.getSmokingHabit().isBlank()) ||
+            (profile.getDrinkingHabit() != null && !profile.getDrinkingHabit().isBlank())) pct += 2;
+        if (profile.getVacationPreference() != null && !profile.getVacationPreference().isBlank()) pct += 2;
 
-        if (profile.getPhoto1() != null && !profile.getPhoto1().trim().isEmpty()) pct += 5;
-        if (profile.getPhoto2() != null && !profile.getPhoto2().trim().isEmpty()) pct += 5;
-        if (profile.getPhoto3() != null && !profile.getPhoto3().trim().isEmpty()) pct += 5;
-        if (profile.getPhoto4() != null && !profile.getPhoto4().trim().isEmpty()) pct += 5;
-        if (profile.getPhoto5() != null && !profile.getPhoto5().trim().isEmpty()) pct += 5;
-        if (profile.getPhoto6() != null && !profile.getPhoto6().trim().isEmpty()) pct += 5;
-        if (profile.getSelfieUrl() != null && !profile.getSelfieUrl().trim().isEmpty()) pct += 5;
+        // 7. Passions / Interests (Bonus overlap up to 5%)
+        if (profile.getInterests() != null && !profile.getInterests().isBlank()) pct += 3;
+        if (profile.getHobbies() != null && !profile.getHobbies().isBlank()) pct += 2;
 
         return Math.min(100, pct);
     }
@@ -256,6 +296,8 @@ public class ProfileService {
                 .height(profile.getHeight())
                 .location(profile.getLocation())
                 .maxDistanceKm(profile.getMaxDistanceKm())
+                .latitude(user.getLatitude())
+                .longitude(user.getLongitude())
                 .sexualOrientation(profile.getSexualOrientation())
                 .showOrientationOnProfile(profile.getShowOrientationOnProfile())
                 .genderDisplay(profile.getGenderDisplay())

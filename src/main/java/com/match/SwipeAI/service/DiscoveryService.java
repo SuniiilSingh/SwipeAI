@@ -29,6 +29,7 @@ public class DiscoveryService {
     private final MatchRepository matchRepository;
     private final ShadowShieldService shadowShieldService;
     private final MultiObjectiveMatchEngine matchEngine;
+    private final ProfileService profileService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private static final int DAILY_HARD_CAP = 25;
@@ -43,6 +44,25 @@ public class DiscoveryService {
         long swipesToday = interactionRepository.countByActorIdAndCreatedAtAfter(viewerId, startOfDay);
         int remainingSwipes = Boolean.TRUE.equals(viewer.getHasActivePass()) ?
                 999 : Math.max(0, DAILY_HARD_CAP - (int) swipesToday);
+
+        // 2. Discovery Gating Check: Name, Gender, Sexual Orientation and >= 30% completion required
+        boolean hasName = viewerProfile != null && viewerProfile.getDisplayName() != null && !viewerProfile.getDisplayName().trim().isEmpty();
+        boolean hasGender = (viewer.getGender() != null) || (viewerProfile != null && viewerProfile.getGenderDisplay() != null && !viewerProfile.getGenderDisplay().trim().isEmpty());
+        boolean hasOrientation = viewerProfile != null && viewerProfile.getSexualOrientation() != null && !viewerProfile.getSexualOrientation().trim().isEmpty();
+        int completionPct = profileService.calculateCompletionPercentage(viewer, viewerProfile);
+
+        if (!hasName || !hasGender || !hasOrientation || completionPct < 30) {
+            log.info("Discovery feed gated for viewer {}: hasName={}, hasGender={}, hasOrientation={}, completionPct={}%",
+                    viewerId, hasName, hasGender, hasOrientation, completionPct);
+            return DiscoveryDto.DiscoveryFeedResponse.builder()
+                    .status("INCOMPLETE_PROFILE")
+                    .data(DiscoveryDto.FeedData.builder()
+                            .remainingDailySwipes(remainingSwipes)
+                            .dailyHardCap(DAILY_HARD_CAP)
+                            .candidates(List.of())
+                            .build())
+                    .build();
+        }
 
         // 2. Fetch candidates excluding already interacted users
         List<Interaction> pastInteractions = interactionRepository.findByActorId(viewerId);
@@ -59,12 +79,12 @@ public class DiscoveryService {
             if (interactedUserIds.contains(candidate.getId())) continue;
             if (Boolean.TRUE.equals(candidate.getIsIncognito())) continue;
 
-            // Opposite gender / non-binary matching
-            if (viewer.getGender() != null && candidate.getGender() != null && viewer.getGender() == candidate.getGender()) {
+            Profile candidateProfile = profileRepository.findById(candidate.getId()).orElse(null);
+
+            // 2. Strict Gender & Interest Matching (e.g. Male looking for Women -> only Women shown)
+            if (!isGenderAndInterestMatch(viewer, viewerProfile, candidate, candidateProfile)) {
                 continue;
             }
-
-            Profile candidateProfile = profileRepository.findById(candidate.getId()).orElse(null);
 
             // 3. Shadow Shield Check (Family, Relatives, Boss, Corporate Domain)
             if (shadowShieldService.isShielded(viewer, viewerProfile, candidate, candidateProfile)) {
@@ -294,5 +314,71 @@ public class DiscoveryService {
                 .photo2(photo2)
                 .photo3(photo3)
                 .build();
+    }
+
+    private boolean isGenderAndInterestMatch(User viewer, Profile viewerProfile, User candidate, Profile candidateProfile) {
+        boolean isCandidateFemale = candidate.getGender() == Gender.FEMALE ||
+                (candidateProfile != null && candidateProfile.getGenderDisplay() != null &&
+                        (candidateProfile.getGenderDisplay().equalsIgnoreCase("Woman") ||
+                         candidateProfile.getGenderDisplay().equalsIgnoreCase("Women") ||
+                         candidateProfile.getGenderDisplay().equalsIgnoreCase("Female")));
+
+        boolean isCandidateMale = candidate.getGender() == Gender.MALE ||
+                (candidateProfile != null && candidateProfile.getGenderDisplay() != null &&
+                        (candidateProfile.getGenderDisplay().equalsIgnoreCase("Man") ||
+                         candidateProfile.getGenderDisplay().equalsIgnoreCase("Men") ||
+                         candidateProfile.getGenderDisplay().equalsIgnoreCase("Male")));
+
+        boolean isViewerFemale = viewer.getGender() == Gender.FEMALE ||
+                (viewerProfile != null && viewerProfile.getGenderDisplay() != null &&
+                        (viewerProfile.getGenderDisplay().equalsIgnoreCase("Woman") ||
+                         viewerProfile.getGenderDisplay().equalsIgnoreCase("Women") ||
+                         viewerProfile.getGenderDisplay().equalsIgnoreCase("Female")));
+
+        boolean isViewerMale = viewer.getGender() == Gender.MALE ||
+                (viewerProfile != null && viewerProfile.getGenderDisplay() != null &&
+                        (viewerProfile.getGenderDisplay().equalsIgnoreCase("Man") ||
+                         viewerProfile.getGenderDisplay().equalsIgnoreCase("Men") ||
+                         viewerProfile.getGenderDisplay().equalsIgnoreCase("Male")));
+
+        String viewerPref = (viewerProfile != null && viewerProfile.getGenderPreferenceDisplay() != null)
+                ? viewerProfile.getGenderPreferenceDisplay().trim().toLowerCase()
+                : null;
+
+        // 1. Enforce viewer's explicit gender preference if set
+        if ("women".equals(viewerPref) || "woman".equals(viewerPref) || "female".equals(viewerPref)) {
+            if (!isCandidateFemale) return false;
+        } else if ("men".equals(viewerPref) || "man".equals(viewerPref) || "male".equals(viewerPref)) {
+            if (!isCandidateMale) return false;
+        } else if ("everyone".equals(viewerPref)) {
+            // Allows all genders
+        } else {
+            // Unset preference: default to opposite gender matching
+            if (isViewerMale && !isCandidateFemale) {
+                return false;
+            }
+            if (isViewerFemale && !isCandidateMale) {
+                return false;
+            }
+            if (viewer.getGender() != null && candidate.getGender() != null && viewer.getGender() == candidate.getGender()) {
+                return false;
+            }
+        }
+
+        // 2. Enforce candidate's reciprocal preference (if specified)
+        String candidatePref = (candidateProfile != null && candidateProfile.getGenderPreferenceDisplay() != null)
+                ? candidateProfile.getGenderPreferenceDisplay().trim().toLowerCase()
+                : null;
+
+        if (candidatePref != null) {
+            if (("men".equals(candidatePref) || "man".equals(candidatePref) || "male".equals(candidatePref)) && !isViewerMale) {
+                return false;
+            }
+            if (("women".equals(candidatePref) || "woman".equals(candidatePref) || "female".equals(candidatePref)) && !isViewerFemale) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }
