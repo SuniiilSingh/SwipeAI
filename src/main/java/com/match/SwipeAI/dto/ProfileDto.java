@@ -70,6 +70,11 @@ public class ProfileDto {
         private LocalDate birthDate;
         private Double latitude;
         private Double longitude;
+        private String voicePromptUrl;
+        private Integer voicePromptDuration;
+        private String voicePromptText;
+        private String selectedMemeUrl;
+        private String selectedMemeTitle;
     }
 
     /**
@@ -97,6 +102,7 @@ public class ProfileDto {
         private String fullName;
         private String bio;
         private int age;
+        private LocalDate birthDate;
         private Gender gender;
         private DatingIntent intent;
         private boolean digilockerVerified;
@@ -151,6 +157,8 @@ public class ProfileDto {
         private int boostsBalance;
         private int directDmsBalance;
         private boolean hasActivePass;
+        private String selectedMemeUrl;
+        private String selectedMemeTitle;
     }
 
     /**

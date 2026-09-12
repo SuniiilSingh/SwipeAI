@@ -95,6 +95,11 @@ public class ProfileService {
         if (request.getCity() != null) profile.setCity(request.getCity());
         if (request.getNeighborhood() != null) profile.setNeighborhood(request.getNeighborhood());
         if (request.getMicroCircle() != null) profile.setMicroCircle(request.getMicroCircle());
+        if (request.getVoicePromptUrl() != null) profile.setVoicePromptUrl(request.getVoicePromptUrl().trim().isEmpty() ? null : request.getVoicePromptUrl().trim());
+        if (request.getVoicePromptDuration() != null) profile.setVoicePromptDuration(request.getVoicePromptDuration());
+        if (request.getVoicePromptText() != null) profile.setVoicePromptText(request.getVoicePromptText());
+        if (request.getSelectedMemeUrl() != null) profile.setSelectedMemeUrl(request.getSelectedMemeUrl().trim().isEmpty() ? null : request.getSelectedMemeUrl().trim());
+        if (request.getSelectedMemeTitle() != null) profile.setSelectedMemeTitle(request.getSelectedMemeTitle());
 
         if (request.getPhotos() != null) {
             try {
@@ -244,9 +249,10 @@ public class ProfileService {
     }
 
     private ProfileDto.ProfileResponse mapToResponse(User user, Profile profile) {
-        int age = 24;
-        if (user.getBirthDate() != null) {
-            age = Period.between(user.getBirthDate(), LocalDate.now()).getYears();
+        int age = 0;
+        LocalDate birthDate = user.getBirthDate();
+        if (birthDate != null) {
+            age = Period.between(birthDate, LocalDate.now()).getYears();
         }
 
         List<String> photos = new ArrayList<>();
@@ -273,6 +279,7 @@ public class ProfileService {
                 .fullName(profile.getDisplayName() != null ? profile.getDisplayName() : "")
                 .bio(profile.getBio())
                 .age(age)
+                .birthDate(birthDate)
                 .gender(user.getGender())
                 .intent(user.getIntent())
                 .digilockerVerified(Boolean.TRUE.equals(user.getDigilockerVerified()))
@@ -326,6 +333,8 @@ public class ProfileService {
                 .boostsBalance(user.getBoostsBalance() != null ? user.getBoostsBalance() : 0)
                 .directDmsBalance(user.getDirectDmsBalance() != null ? user.getDirectDmsBalance() : 0)
                 .hasActivePass(Boolean.TRUE.equals(user.getHasActivePass()))
+                .selectedMemeUrl(profile.getSelectedMemeUrl())
+                .selectedMemeTitle(profile.getSelectedMemeTitle())
                 .build();
     }
 }

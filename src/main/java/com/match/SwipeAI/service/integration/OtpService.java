@@ -38,6 +38,12 @@ public class OtpService {
      */
     public String sendOtp(String phoneE164, String channel) {
         String targetChannel = "whatsapp".equalsIgnoreCase(channel) ? "whatsapp" : "sms";
+
+        if (properties.getFeatures().getTwilio().isMockOtp()) {
+            log.info("[MOCK OTP ACTIVE] Bypassing Twilio dispatch for {}. Test OTP 123456 enabled.", phoneE164);
+            return "MOCK_OTP_SENT";
+        }
+
         log.info("[TWILIO VERIFY] Dispatching OTP via {} to {}", targetChannel, phoneE164);
 
         FeatureFlagsProperties.Twilio twilio = getTwilio();
@@ -76,6 +82,12 @@ public class OtpService {
     public boolean verifyOtp(String phoneE164, String userEnteredOtp) {
         if (userEnteredOtp == null || userEnteredOtp.isBlank()) {
             return false;
+        }
+
+        if (properties.getFeatures().getTwilio().isMockOtp()) {
+            boolean valid = "123456".equals(userEnteredOtp.trim());
+            log.info("[MOCK OTP CHECK] Phone: {}, Code: {}, Result: {}", phoneE164, userEnteredOtp, valid ? "APPROVED" : "REJECTED");
+            return valid;
         }
 
         try {

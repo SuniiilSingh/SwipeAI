@@ -48,6 +48,7 @@ app:
       access-token: ${WHATSAPP_ACCESS_TOKEN:}
     twilio:
       enabled: ${FEATURE_TWILIO_ENABLED:true}
+      mock-otp: ${FEATURE_MOCK_OTP:true}
       account-sid: ${TWILIO_ACCOUNT_SID:}
       auth-token: ${TWILIO_AUTH_TOKEN:}
       verify-service-sid: ${TWILIO_VERIFY_SERVICE_SID:}

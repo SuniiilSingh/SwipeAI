@@ -19,6 +19,7 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthService authService;
+    private final com.match.SwipeAI.config.FeatureFlagsProperties properties;
 
     /**
      * Dispatch an OTP to the given phone number via WhatsApp or Twilio SMS.
@@ -34,10 +35,17 @@ public class AuthController {
         authService.sendOtp(request.getPhoneE164(), channel);
         String channelName = "whatsapp".equalsIgnoreCase(channel) ? "WhatsApp" : "SMS";
 
+        boolean isMock = properties.getFeatures().getTwilio().isMockOtp();
+        String message = isMock
+                ? "⚡ Test Mode Active: Use verification code 123456"
+                : "OTP sent via " + channelName;
+
         return ResponseEntity.ok(Map.of(
                 "status", "success",
                 "channel", channel,
-                "message", "OTP sent via " + channelName,
+                "message", message,
+                "isMockOtp", isMock,
+                "mockOtp", isMock ? "123456" : "",
                 "otpLength", 6
         ));
     }

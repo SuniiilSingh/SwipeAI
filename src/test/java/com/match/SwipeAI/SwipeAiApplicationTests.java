@@ -111,6 +111,10 @@ class SwipeAiApplicationTests {
         // Unapproved / invalid OTP returns false without silent fallback
         assertFalse(otpService.verifyOtp(phone, "1234"));
         assertFalse(otpService.verifyOtp(phone, "9999"));
+
+        // When mock OTP is enabled, 123456 is approved and sendOtp bypasses Twilio
+        assertEquals("MOCK_OTP_SENT", otpService.sendOtp(phone, "sms"));
+        assertTrue(otpService.verifyOtp(phone, "123456"));
     }
 
     @Test

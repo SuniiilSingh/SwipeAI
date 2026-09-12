@@ -49,6 +49,7 @@ public class FeatureFlagsProperties {
     @Data
     public static class Twilio {
         private boolean enabled = false;
+        private boolean mockOtp = true;
         private String accountSid;
         private String authToken;
         private String apiKeySid;

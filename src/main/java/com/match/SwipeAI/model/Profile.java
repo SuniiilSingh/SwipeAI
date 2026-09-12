@@ -164,6 +164,12 @@ public class Profile {
     @Column(name = "meme_swipes", columnDefinition = "TEXT")
     private String memeSwipesJson;
 
+    @Column(name = "selected_meme_url", length = 512)
+    private String selectedMemeUrl;
+
+    @Column(name = "selected_meme_title", length = 150)
+    private String selectedMemeTitle;
+
     @Column(name = "photos_json", columnDefinition = "TEXT")
     private String photosJson;
 
