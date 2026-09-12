@@ -97,9 +97,9 @@ public class AuthService {
                     .digilockerVerified(false)
                     .livenessScore(0.0)
                     .karmaScore(100)
-                    .gender(gender != null ? gender : Gender.FEMALE)
-                    .intent(intent != null ? intent : DatingIntent.SERIOUS_DATING)
-                    .birthDate(birthDate != null ? birthDate : LocalDate.now().minusYears(21))
+                    .gender(gender)
+                    .intent(intent)
+                    .birthDate(birthDate)
                     .latitude(null)
                     .longitude(null)
                     .sparksBalance(3)
@@ -109,11 +109,10 @@ public class AuthService {
                     .build();
             user = userRepository.save(user);
 
-            // Create clean baseline initial profile without hardcoded mock city/bio/microCircle
-            String defaultName = "User " + phone.substring(Math.max(0, phone.length() - 4));
+            // Create clean baseline initial profile without any hardcoded mock data
             Profile profile = Profile.builder()
                     .userId(user.getId())
-                    .displayName(defaultName)
+                    .displayName("")
                     .bio("")
                     .languagesSpoken(List.of())
                     .photosJson("[]")

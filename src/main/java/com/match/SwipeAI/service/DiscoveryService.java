@@ -267,7 +267,7 @@ public class DiscoveryService {
                         .score(89)
                         .build())
                 .compatibilityScore(compScore)
-                .bio(profile != null ? profile.getBio() : "Product Designer @ Fintech. Filter coffee & indie playlists.")
+                .bio(profile != null && profile.getBio() != null ? profile.getBio() : "")
                 .company(profile != null ? profile.getCompany() : null)
                 .occupation(profile != null ? profile.getOccupation() : null)
                 .job(profile != null ? (profile.getJob() != null ? profile.getJob() : profile.getOccupation()) : null)
