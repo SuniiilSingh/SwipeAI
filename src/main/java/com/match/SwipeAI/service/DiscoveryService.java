@@ -211,12 +211,27 @@ public class DiscoveryService {
             age = Period.between(user.getBirthDate(), LocalDate.now()).getYears();
         }
 
-        List<String> photos = List.of("https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500");
-        if (profile != null && profile.getPhotosJson() != null) {
+        List<String> photos = new java.util.ArrayList<>();
+        if (profile != null && profile.getPhotosJson() != null && !profile.getPhotosJson().isBlank()) {
             try {
                 photos = objectMapper.readValue(profile.getPhotosJson(), new TypeReference<>() {});
             } catch (Exception ignored) {}
         }
+        if (photos.isEmpty() && profile != null) {
+            if (profile.getPhoto1() != null && !profile.getPhoto1().isBlank()) photos.add(profile.getPhoto1());
+            if (profile.getPhoto2() != null && !profile.getPhoto2().isBlank()) photos.add(profile.getPhoto2());
+            if (profile.getPhoto3() != null && !profile.getPhoto3().isBlank()) photos.add(profile.getPhoto3());
+            if (profile.getPhoto4() != null && !profile.getPhoto4().isBlank()) photos.add(profile.getPhoto4());
+            if (profile.getPhoto5() != null && !profile.getPhoto5().isBlank()) photos.add(profile.getPhoto5());
+            if (profile.getPhoto6() != null && !profile.getPhoto6().isBlank()) photos.add(profile.getPhoto6());
+        }
+        if (photos.isEmpty()) {
+            photos = List.of("https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500");
+        }
+
+        String photo1 = !photos.isEmpty() ? photos.get(0) : (profile != null ? profile.getPhoto1() : null);
+        String photo2 = photos.size() > 1 ? photos.get(1) : (profile != null ? profile.getPhoto2() : null);
+        String photo3 = photos.size() > 2 ? photos.get(2) : (profile != null ? profile.getPhoto3() : null);
 
         String voiceUrl = profile != null ? profile.getVoicePromptUrl() : null;
         String promptText = profile != null ? profile.getVoicePromptText() : "My controversial chai opinion";
@@ -225,16 +240,17 @@ public class DiscoveryService {
         return DiscoveryDto.CandidateCardDto.builder()
                 .userId(user.getId())
                 .displayName(profile != null && profile.getDisplayName() != null ? profile.getDisplayName() : "Single in City")
+                .fullName(profile != null && profile.getDisplayName() != null ? profile.getDisplayName() : "Single in City")
                 .age(age)
                 .isDigilockerVerified(Boolean.TRUE.equals(user.getDigilockerVerified()))
                 .isWhatsappVerified(Boolean.TRUE.equals(user.getWhatsappVerified()))
                 .livenessScore(user.getLivenessScore() != null ? user.getLivenessScore() : 0.98)
                 .distanceKm(distanceKm)
                 .culturalBadges(DiscoveryDto.CulturalBadges.builder()
-                        .diet(profile != null ? profile.getDietaryPref() : DietaryPreference.PURE_VEG)
-                        .living(profile != null ? profile.getLivingStatus() : LivingStatus.INDEPENDENT_FLAT)
+                        .diet(profile != null && profile.getDietaryPref() != null ? profile.getDietaryPref() : DietaryPreference.PURE_VEG)
+                        .living(profile != null && profile.getLivingStatus() != null ? profile.getLivingStatus() : LivingStatus.INDEPENDENT_FLAT)
                         .languages(profile != null && profile.getLanguagesSpoken() != null ? profile.getLanguagesSpoken() : List.of("English", "Hindi"))
-                        .zodiac(profile != null ? profile.getZodiacSign() : "Leo")
+                        .zodiac(profile != null && profile.getZodiacSign() != null ? profile.getZodiacSign() : "Leo")
                         .build())
                 .voicePrompt(DiscoveryDto.VoicePromptDto.builder()
                         .audioUrl(voiceUrl != null ? voiceUrl : "https://cdn.swipeai.in/audio/chai_opinion.m4a")
@@ -252,12 +268,31 @@ public class DiscoveryService {
                         .build())
                 .compatibilityScore(compScore)
                 .bio(profile != null ? profile.getBio() : "Product Designer @ Fintech. Filter coffee & indie playlists.")
-                .company(profile != null ? profile.getCompany() : "Fintech")
-                .occupation(profile != null ? profile.getOccupation() : "Product Designer")
+                .company(profile != null ? profile.getCompany() : null)
+                .occupation(profile != null ? profile.getOccupation() : null)
+                .job(profile != null ? (profile.getJob() != null ? profile.getJob() : profile.getOccupation()) : null)
+                .education(profile != null ? profile.getEducation() : null)
+                .height(profile != null ? profile.getHeight() : null)
+                .interests(profile != null ? profile.getInterests() : null)
+                .sexualOrientation(profile != null ? profile.getSexualOrientation() : null)
+                .genderDisplay(profile != null ? profile.getGenderDisplay() : null)
+                .relationshipIntent(profile != null ? profile.getRelationshipIntent() : (user.getIntent() != null ? user.getIntent().name() : null))
+                .profilePromptQuestion(profile != null ? profile.getProfilePromptQuestion() : null)
+                .profilePromptAnswer(profile != null ? profile.getProfilePromptAnswer() : null)
+                .sunSign(profile != null ? profile.getSunSign() : null)
+                .moonSign(profile != null ? profile.getMoonSign() : null)
+                .karmaScore(user.getKarmaScore() != null ? user.getKarmaScore() : 180)
+                .smokingHabit(profile != null ? profile.getSmokingHabit() : null)
+                .drinkingHabit(profile != null ? profile.getDrinkingHabit() : null)
+                .hobbies(profile != null ? profile.getHobbies() : null)
+                .vacationPreference(profile != null ? profile.getVacationPreference() : null)
                 .city(profile != null ? profile.getCity() : "Bengaluru")
                 .neighborhood(profile != null ? profile.getNeighborhood() : "Indiranagar")
                 .microCircle(profile != null ? profile.getMicroCircle() : "Koramangala Tech Founders")
                 .photos(photos)
+                .photo1(photo1)
+                .photo2(photo2)
+                .photo3(photo3)
                 .build();
     }
 }

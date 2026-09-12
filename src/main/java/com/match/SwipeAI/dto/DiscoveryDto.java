@@ -82,6 +82,26 @@ public class DiscoveryDto {
         private String neighborhood;
         private String microCircle;
         private List<String> photos;
+        private String fullName;
+        private String job;
+        private String education;
+        private Integer height;
+        private String interests;
+        private String sexualOrientation;
+        private String genderDisplay;
+        private String relationshipIntent;
+        private String profilePromptQuestion;
+        private String profilePromptAnswer;
+        private String sunSign;
+        private String moonSign;
+        private Integer karmaScore;
+        private String smokingHabit;
+        private String drinkingHabit;
+        private String hobbies;
+        private String vacationPreference;
+        private String photo1;
+        private String photo2;
+        private String photo3;
     }
 
     @Data
