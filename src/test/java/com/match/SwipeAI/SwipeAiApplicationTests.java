@@ -1,6 +1,6 @@
 package com.match.SwipeAI;
 
-import com.match.SwipeAI.dto.AuthDto;
+import com.match.SwipeAI.dto.DiscoveryDto;
 import com.match.SwipeAI.dto.KycDto;
 import com.match.SwipeAI.dto.MatchDto;
 import com.match.SwipeAI.dto.PaymentDto;
@@ -8,6 +8,7 @@ import com.match.SwipeAI.dto.ProfileDto;
 import com.match.SwipeAI.dto.ShieldDto;
 import com.match.SwipeAI.enums.*;
 import com.match.SwipeAI.model.*;
+import com.match.SwipeAI.service.DiscoveryService;
 import com.match.SwipeAI.service.engine.IcebreakerEngine;
 import com.match.SwipeAI.service.engine.MultiObjectiveMatchEngine;
 import com.match.SwipeAI.service.engine.ShadowShieldService;
@@ -71,6 +72,9 @@ class SwipeAiApplicationTests {
 
     @Autowired
     private com.match.SwipeAI.service.integration.R2StorageService r2StorageService;
+
+    @Autowired
+    private DiscoveryService discoveryService;
 
     @Test
     void contextLoads() {
@@ -356,16 +360,135 @@ class SwipeAiApplicationTests {
         assertEquals(19.0760, updatedUser.getLatitude());
         assertEquals(72.8777, updatedUser.getLongitude());
 
-        // 3. Test updating location via updateProfile
+        // 3. Test updating location, company, and institute via updateProfile
         ProfileDto.ProfileRequest updateReq = new ProfileDto.ProfileRequest();
         updateReq.setLatitude(28.6139);
         updateReq.setLongitude(77.2090);
+        updateReq.setCompany("Google");
+        updateReq.setInstitute("IIT Bombay");
         ProfileDto.ProfileResponse updatedProfRes = profileService.updateProfile(user.getId(), updateReq);
         assertEquals(28.6139, updatedProfRes.getLatitude());
         assertEquals(77.2090, updatedProfRes.getLongitude());
+        assertEquals("Google", updatedProfRes.getCompany());
+        assertEquals("IIT Bombay", updatedProfRes.getInstitute());
 
         User finalUser = userRepository.findById(user.getId()).orElseThrow();
         assertEquals(28.6139, finalUser.getLatitude());
         assertEquals(77.2090, finalUser.getLongitude());
+    }
+
+    @Test
+    void testDistanceCalculation_AccurateAndCityResolution() {
+        // 1. Direct GPS coordinates: Koramangala to Indiranagar (~5.1 km)
+        double koramangalaLat = 12.9352, koramangalaLon = 77.6245;
+        double indiranagarLat = 12.9784, indiranagarLon = 77.6408;
+        double distKm = matchEngine.calculateDistanceKm(koramangalaLat, koramangalaLon, indiranagarLat, indiranagarLon);
+        assertTrue(distKm >= 4.5 && distKm <= 5.5, "Expected Koramangala to Indiranagar distance ~5.1 km, got: " + distKm);
+
+        // 2. City resolution when coordinates are missing: Mumbai to Bengaluru (~845 km)
+        Profile mumbaiProf = Profile.builder().city("Mumbai").build();
+        Profile blrProf = Profile.builder().city("Bengaluru").build();
+        double interCityDist = matchEngine.calculateDistanceWithContext(null, null, mumbaiProf, null, null, blrProf);
+        assertTrue(interCityDist >= 800.0 && interCityDist <= 900.0, "Expected Mumbai to Bengaluru ~845 km, got: " + interCityDist);
+
+        // 3. Same city neighborhood resolution: Indiranagar to Koramangala via profiles
+        Profile hoodA = Profile.builder().city("Bengaluru").neighborhood("Indiranagar").build();
+        Profile hoodB = Profile.builder().city("Bengaluru").neighborhood("Koramangala").build();
+        double resolvedHoodDist = matchEngine.calculateDistanceWithContext(null, null, hoodA, null, null, hoodB);
+        assertTrue(resolvedHoodDist >= 4.5 && resolvedHoodDist <= 5.5, "Expected resolved neighborhood distance ~5.1 km, got: " + resolvedHoodDist);
+    }
+
+    @Test
+    void testDiscoveryFeed_RadiusFiltering() {
+        // Setup viewer in Bengaluru Central
+        User viewer = userRepository.save(User.builder()
+                .phoneE164("+9197" + String.format("%08d", Math.abs(UUID.randomUUID().hashCode() % 100000000)))
+                .gender(Gender.MALE)
+                .intent(DatingIntent.SERIOUS_DATING)
+                .birthDate(LocalDate.of(1996, 5, 10))
+                .latitude(12.9752) // Church Street / Central
+                .longitude(77.6053)
+                .build());
+
+        Profile viewerProfile = profileRepository.save(Profile.builder()
+                .userId(viewer.getId())
+                .displayName("Viewer User")
+                .genderDisplay("Man")
+                .sexualOrientation("Heterosexual")
+                .dietaryPref(DietaryPreference.PURE_VEG)
+                .livingStatus(LivingStatus.INDEPENDENT_FLAT)
+                .photosJson("[\"https://images.unsplash.com/photo-1?w=500\"]")
+                .city("Bengaluru")
+                .neighborhood("Central")
+                .maxDistanceKm(10) // 1. Profile radius filled as 10 km
+                .build());
+
+        // Setup candidate 1: Close by in Central (~1 km)
+        User closeCandidate = userRepository.save(User.builder()
+                .phoneE164("+9197" + String.format("%08d", Math.abs(UUID.randomUUID().hashCode() % 100000000)))
+                .gender(Gender.FEMALE)
+                .intent(DatingIntent.SERIOUS_DATING)
+                .birthDate(LocalDate.of(1998, 3, 14))
+                .latitude(12.9716)
+                .longitude(77.5946)
+                .build());
+        profileRepository.save(Profile.builder()
+                .userId(closeCandidate.getId())
+                .displayName("Close Candidate")
+                .genderDisplay("Woman")
+                .sexualOrientation("Heterosexual")
+                .city("Bengaluru")
+                .photosJson("[\"https://images.unsplash.com/photo-2?w=500\"]")
+                .build());
+
+        // Setup candidate 2: Far away in Mumbai (~845 km)
+        User farCandidate = userRepository.save(User.builder()
+                .phoneE164("+9197" + String.format("%08d", Math.abs(UUID.randomUUID().hashCode() % 100000000)))
+                .gender(Gender.FEMALE)
+                .intent(DatingIntent.SERIOUS_DATING)
+                .birthDate(LocalDate.of(1997, 8, 22))
+                .latitude(19.0760)
+                .longitude(72.8777)
+                .build());
+        profileRepository.save(Profile.builder()
+                .userId(farCandidate.getId())
+                .displayName("Far Candidate")
+                .genderDisplay("Woman")
+                .sexualOrientation("Heterosexual")
+                .city("Mumbai")
+                .photosJson("[\"https://images.unsplash.com/photo-3?w=500\"]")
+                .build());
+
+        // 1. Fetch feed when profile radius is 10 km
+        DiscoveryDto.DiscoveryFeedResponse feed10km = discoveryService.getDiscoveryFeed(viewer.getId(), new DiscoveryDto.DiscoveryFeedRequest());
+
+        List<UUID> returnedIds10km = feed10km.getData().getCandidates().stream()
+                .map(DiscoveryDto.CandidateCardDto::getUserId).toList();
+
+        // Close candidate must be present, far candidate MUST be excluded
+        assertTrue(returnedIds10km.contains(closeCandidate.getId()));
+        assertFalse(returnedIds10km.contains(farCandidate.getId()), "Far candidate in Mumbai must be excluded when profile radius is 10 km");
+
+        // 2. When profile radius is null, verify default 50 km is applied
+        viewerProfile.setMaxDistanceKm(null);
+        profileRepository.save(viewerProfile);
+
+        DiscoveryDto.DiscoveryFeedResponse feedNull = discoveryService.getDiscoveryFeed(viewer.getId(), new DiscoveryDto.DiscoveryFeedRequest());
+        List<UUID> returnedIdsNull = feedNull.getData().getCandidates().stream()
+                .map(DiscoveryDto.CandidateCardDto::getUserId).toList();
+
+        assertTrue(returnedIdsNull.contains(closeCandidate.getId()), "Close candidate within 50 km default must be included");
+        assertFalse(returnedIdsNull.contains(farCandidate.getId()), "Candidate in Mumbai (845 km) must be excluded under 50 km default");
+
+        // 3. When profile radius is 1000 km
+        viewerProfile.setMaxDistanceKm(1000);
+        profileRepository.save(viewerProfile);
+
+        DiscoveryDto.DiscoveryFeedResponse feed1000km = discoveryService.getDiscoveryFeed(viewer.getId(), new DiscoveryDto.DiscoveryFeedRequest());
+        List<UUID> returnedIds1000km = feed1000km.getData().getCandidates().stream()
+                .map(DiscoveryDto.CandidateCardDto::getUserId).toList();
+
+        assertTrue(returnedIds1000km.contains(closeCandidate.getId()));
+        assertTrue(returnedIds1000km.contains(farCandidate.getId()), "Far candidate in Mumbai should be included when profile radius is 1000 km");
     }
 }

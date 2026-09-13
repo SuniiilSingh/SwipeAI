@@ -28,6 +28,7 @@ public class CallingDto {
         private String callerMaskedName;
         private String recipientMaskedName;
         private boolean phoneMasked;
+        private boolean isVideo;
         private boolean isSimulated;
     }
 }

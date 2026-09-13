@@ -85,6 +85,7 @@ public class DiscoveryDto {
         private String fullName;
         private String job;
         private String education;
+        private String institute;
         private Integer height;
         private String interests;
         private String sexualOrientation;

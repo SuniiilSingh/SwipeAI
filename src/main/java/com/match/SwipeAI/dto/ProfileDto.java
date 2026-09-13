@@ -38,6 +38,7 @@ public class ProfileDto {
         private String occupation;
         private String job;
         private String education;
+        private String institute;
         private String interests;
         private Integer height;
         private String location;
@@ -122,6 +123,7 @@ public class ProfileDto {
         private String occupation;
         private String job;
         private String education;
+        private String institute;
         private String interests;
         private Integer height;
         private String location;

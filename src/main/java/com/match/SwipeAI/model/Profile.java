@@ -81,6 +81,9 @@ public class Profile {
     @Column(name = "education", length = 100)
     private String education;
 
+    @Column(name = "institute", length = 100)
+    private String institute;
+
     @Column(name = "interests", length = 512)
     private String interests;
 

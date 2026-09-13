@@ -61,10 +61,10 @@ app:
       key-secret: "mock_razorpay_secret"
       webhook-secret: "mock_webhook_secret"
     livekit:
-      enabled: false
-      host: "wss://livekit.example.com"
-      api-key: "mock_livekit_key"
-      api-secret: "mock_livekit_secret"
+      enabled: ${FEATURE_LIVEKIT_ENABLED:true}
+      host: ${LIVEKIT_HOST:ws://localhost:7880}
+      api-key: ${LIVEKIT_API_KEY:blunderr_dev_key}
+      api-secret: ${LIVEKIT_API_SECRET:blunderr_super_secret_998877}
     ai-wingman:
       enabled: false
       api-key: "mock_openai_key"

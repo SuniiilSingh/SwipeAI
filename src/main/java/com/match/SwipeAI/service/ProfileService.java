@@ -69,6 +69,7 @@ public class ProfileService {
         if (request.getOccupation() != null) profile.setOccupation(request.getOccupation());
         if (request.getJob() != null) profile.setJob(request.getJob());
         if (request.getEducation() != null) profile.setEducation(request.getEducation());
+        if (request.getInstitute() != null) profile.setInstitute(request.getInstitute());
         if (request.getInterests() != null) profile.setInterests(request.getInterests());
         if (request.getHeight() != null) profile.setHeight(request.getHeight());
         if (request.getLocation() != null) profile.setLocation(request.getLocation());
@@ -299,6 +300,7 @@ public class ProfileService {
                 .occupation(profile.getOccupation())
                 .job(profile.getJob() != null ? profile.getJob() : profile.getOccupation())
                 .education(profile.getEducation())
+                .institute(profile.getInstitute())
                 .interests(profile.getInterests())
                 .height(profile.getHeight())
                 .location(profile.getLocation())

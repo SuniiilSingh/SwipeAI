@@ -72,6 +72,26 @@ public class DiscoveryService {
             interactedUserIds.add(i.getTargetId());
         }
 
+        // 3. Determine viewer's effective search radius limit in km:
+        // Take the radius that user filled in his profile and calculate the profile within that limit; if null show within 50 km.
+        double maxRadiusKm = 50.0; // Default to 50 km if null
+        if (viewerProfile != null && viewerProfile.getMaxDistanceKm() != null && viewerProfile.getMaxDistanceKm() > 0) {
+            maxRadiusKm = viewerProfile.getMaxDistanceKm().doubleValue();
+        } else if (request.getMaxDistanceKm() != null && request.getMaxDistanceKm() > 0) {
+            maxRadiusKm = request.getMaxDistanceKm();
+        }
+
+        // Sync fresh GPS coordinates from request if provided
+        Double viewerLat = request.getLatitude() != null ? request.getLatitude() : viewer.getLatitude();
+        Double viewerLon = request.getLongitude() != null ? request.getLongitude() : viewer.getLongitude();
+        if (request.getLatitude() != null && request.getLongitude() != null) {
+            if (!request.getLatitude().equals(viewer.getLatitude()) || !request.getLongitude().equals(viewer.getLongitude())) {
+                viewer.setLatitude(request.getLatitude());
+                viewer.setLongitude(request.getLongitude());
+                userRepository.save(viewer);
+            }
+        }
+
         List<User> allUsers = userRepository.findAll();
         List<DiscoveryDto.CandidateCardDto> candidateCards = new ArrayList<>();
 
@@ -99,12 +119,20 @@ public class DiscoveryService {
                 }
             }
 
-            // 5. Distance and Multi-Objective Compatibility Score
-            double distanceKm = matchEngine.calculateDistanceKm(
-                    viewer.getLatitude(), viewer.getLongitude(),
-                    candidate.getLatitude(), candidate.getLongitude()
+            // 5. Accurate Distance Calculation with City/Neighborhood Context
+            double distanceKm = matchEngine.calculateDistanceWithContext(
+                    viewerLat, viewerLon, viewerProfile,
+                    candidate.getLatitude(), candidate.getLongitude(), candidateProfile
             );
 
+            // 6. Strict Search Radius Limit: Only match profiles within user's radius limit
+            if (distanceKm > maxRadiusKm) {
+                log.debug("Candidate {} excluded: distance {} km exceeds user max radius {} km",
+                        candidate.getId(), distanceKm, maxRadiusKm);
+                continue;
+            }
+
+            // 7. Multi-Objective Compatibility Score
             int compScore = matchEngine.calculateCompatibilityScore(
                     viewer, viewerProfile,
                     candidate, candidateProfile,
@@ -292,6 +320,7 @@ public class DiscoveryService {
                 .occupation(profile != null ? profile.getOccupation() : null)
                 .job(profile != null ? (profile.getJob() != null ? profile.getJob() : profile.getOccupation()) : null)
                 .education(profile != null ? profile.getEducation() : null)
+                .institute(profile != null ? profile.getInstitute() : null)
                 .height(profile != null ? profile.getHeight() : null)
                 .interests(profile != null ? profile.getInterests() : null)
                 .sexualOrientation(profile != null ? profile.getSexualOrientation() : null)

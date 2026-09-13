@@ -41,7 +41,8 @@ public class CallingController {
                 request.getMatchId(),
                 userId,
                 myName,
-                "Match Partner"
+                "Match Partner",
+                request.isVideo()
         );
         return ResponseEntity.ok(response);
     }
