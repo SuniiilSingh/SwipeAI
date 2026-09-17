@@ -1,5 +1,8 @@
 package com.match.SwipeAI.dto;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -45,9 +48,13 @@ public class KycDto {
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class LivenessRequest {
         private String selfieFrameBase64;
         private int headTurnDurationMs;
+
+        @JsonProperty("simulatePass")
+        @JsonAlias({"simulatePass", "isSimulatePass"})
         private boolean simulatePass = true;
     }
 
@@ -55,8 +62,12 @@ public class KycDto {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class LivenessResponse {
+        @JsonProperty("isLiveHuman")
+        @JsonAlias({"isLiveHuman", "liveHuman"})
         private boolean isLiveHuman;
+
         private double livenessScore;
         private String message;
     }

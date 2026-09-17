@@ -55,6 +55,17 @@ public class ChatController {
     }
 
     /**
+     * Mark all incoming messages in this match as read by the authenticated user.
+     */
+    @PostMapping("/{matchId}/read")
+    public ResponseEntity<java.util.Map<String, String>> markMessagesAsRead(
+            @AuthenticationPrincipal UUID userId,
+            @PathVariable UUID matchId) {
+        chatService.markMessagesAsRead(matchId, userId);
+        return ResponseEntity.ok(java.util.Map.of("status", "success", "message", "Messages marked as read."));
+    }
+
+    /**
      * Clear all messages in a chat match.
      */
     @DeleteMapping("/{matchId}/messages")

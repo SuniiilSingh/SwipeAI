@@ -70,6 +70,9 @@ class SwipeAiFullCrudIntegrationTests {
     @Autowired
     private JwtUtil jwtUtil;
 
+    @Autowired
+    private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+
     @org.springframework.test.context.bean.override.mockito.MockitoBean
     private com.match.SwipeAI.service.integration.OtpService otpService;
 
@@ -416,12 +419,40 @@ class SwipeAiFullCrudIntegrationTests {
                 .andExpect(jsonPath("$.content").value("Hello Pooja, great to connect!"))
                 .andExpect(jsonPath("$.fromMe").value(true));
 
-        // 6. READ Chat Messages
+        // 5b. VERIFY DATABASE STORAGE: Content must be stored as AES-256-GCM ciphertext
+        String rawDbContent = jdbcTemplate.queryForObject(
+                "SELECT content FROM chat_messages WHERE match_id = ?",
+                String.class,
+                match.getId()
+        );
+        assertNotNull(rawDbContent);
+        assertTrue(rawDbContent.startsWith("ENC_GCM:v1:"), "Database table content must be encrypted with AES-256-GCM!");
+        assertNotEquals("Hello Pooja, great to connect!", rawDbContent, "Database table must NEVER store plaintext!");
+
+        // 6. READ Chat Messages (Authorized User A)
         mockMvc.perform(get("/v1/chat/" + match.getId() + "/messages")
                         .header("Authorization", "Bearer " + userToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(greaterThanOrEqualTo(1))))
-                .andExpect(jsonPath("$[0].content").value("Hello Pooja, great to connect!"));
+                .andExpect(jsonPath("$[0].content").value("Hello Pooja, great to connect!"))
+                .andExpect(jsonPath("$[0].encrypted").value(true))
+                .andExpect(jsonPath("$[0].encryptionAlgo").value("AES-256-GCM"));
+
+        // 6b. REJECT UNAUTHORIZED USER: An unassociated user cannot decrypt or read this match
+        String thirdPartyPhone = "+919988776655";
+        User thirdPartyUser = userRepository.save(User.builder().phoneE164(thirdPartyPhone).build());
+        String thirdPartyToken = jwtUtil.generateToken(thirdPartyUser.getId(), thirdPartyPhone);
+
+        mockMvc.perform(get("/v1/chat/" + match.getId() + "/messages")
+                        .header("Authorization", "Bearer " + thirdPartyToken))
+                .andExpect(status().isForbidden());
+
+        // 6c. MARK AS READ: Recipient marks messages as read
+        String userBToken = jwtUtil.generateToken(userB.getId(), userBPhone);
+        mockMvc.perform(post("/v1/chat/" + match.getId() + "/read")
+                        .header("Authorization", "Bearer " + userBToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("success"));
 
         // 7. DELETE / Clear Chat Messages
         mockMvc.perform(delete("/v1/chat/" + match.getId() + "/messages")

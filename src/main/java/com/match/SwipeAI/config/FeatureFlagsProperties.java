@@ -17,6 +17,7 @@ public class FeatureFlagsProperties {
         private String jwtSecret = "swipeai_super_secret_jwt_key_2026_32bytes_minimum_length!";
         private long jwtExpirationMs = 2592000000L; // 30 days
         private String serverPepper = "swipeai_shadow_shield_server_pepper_salt_key_2026";
+        private String chatEncryptionKey = "swipeai_chat_lounge_aes256_secret_key_2026_super_secure!";
     }
 
     @Data

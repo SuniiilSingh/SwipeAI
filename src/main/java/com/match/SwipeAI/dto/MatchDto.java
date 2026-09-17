@@ -37,6 +37,7 @@ public class MatchDto {
         private IcebreakerQuizDto icebreakerQuiz;
         private String lastMessage;
         private OffsetDateTime lastMessageTime;
+        private DiscoveryDto.CandidateCardDto otherProfile;
     }
 
     /**
@@ -46,6 +47,7 @@ public class MatchDto {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
     public static class IcebreakerQuizDto {
         private String quizId;
         private String title;
@@ -53,8 +55,15 @@ public class MatchDto {
         private List<String> options;
         private Integer userAAnswer;
         private Integer userBAnswer;
+
+        @com.fasterxml.jackson.annotation.JsonProperty("isCompleted")
+        @com.fasterxml.jackson.annotation.JsonAlias({"completed", "isCompleted"})
         private boolean isCompleted;
+
+        @com.fasterxml.jackson.annotation.JsonProperty("isMutualAgreement")
+        @com.fasterxml.jackson.annotation.JsonAlias({"mutualAgreement", "isMutualAgreement"})
         private boolean isMutualAgreement;
+
         private String wingmanRecommendation;
     }
 

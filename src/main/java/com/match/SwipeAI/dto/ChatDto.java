@@ -1,5 +1,6 @@
 package com.match.SwipeAI.dto;
 
+import com.match.SwipeAI.enums.MessageStatus;
 import com.match.SwipeAI.enums.MessageType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -41,8 +42,12 @@ public class ChatDto {
         private String content;
         private String mediaUrl;
         private MessageType mediaType;
+        private MessageStatus status;
+        private boolean isEncrypted;
+        private String encryptionAlgo;
         private boolean isBlurred;
         private String blurReason;
+        private OffsetDateTime readAt;
         private OffsetDateTime createdAt;
         private boolean isFromMe;
     }

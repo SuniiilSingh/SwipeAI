@@ -1,21 +1,30 @@
 package com.match.SwipeAI.service.engine;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.match.SwipeAI.dto.MatchDto;
-import com.match.SwipeAI.enums.MatchStatus;
-import com.match.SwipeAI.model.Match;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class IcebreakerEngine {
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper;
+
+    public IcebreakerEngine() {
+        this(new ObjectMapper());
+    }
+
+    @Autowired(required = false)
+    public IcebreakerEngine(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper != null
+                ? objectMapper.copy().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                : new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    }
 
     public MatchDto.IcebreakerQuizDto createInitialQuiz() {
         return MatchDto.IcebreakerQuizDto.builder()

@@ -2,6 +2,7 @@ package com.match.SwipeAI.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.match.SwipeAI.dto.DiscoveryDto;
 import com.match.SwipeAI.dto.MatchDto;
 import com.match.SwipeAI.enums.*;
 import com.match.SwipeAI.model.*;
@@ -34,6 +35,7 @@ public class MatchService {
     private final AiWingmanService aiWingmanService;
     private final MutualChemistrySparksEngine mutualChemistrySparksEngine;
     private final MatchKarmaService karmaService;
+    private final DiscoveryService discoveryService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public List<MatchDto.MatchResponseDto> getMatchesForUser(UUID userId) {
@@ -56,6 +58,10 @@ public class MatchService {
     public MatchDto.MatchResponseDto getMatchDetails(UUID matchId, UUID userId) {
         Match match = matchRepository.findById(matchId)
                 .orElseThrow(() -> new IllegalArgumentException("Match not found: " + matchId));
+
+        if (!match.getUserAId().equals(userId) && !match.getUserBId().equals(userId)) {
+            throw new org.springframework.security.access.AccessDeniedException("Access denied: You are not an authorized participant in this match.");
+        }
 
         UUID otherUserId = match.getUserAId().equals(userId) ? match.getUserBId() : match.getUserAId();
         User otherUser = userRepository.findById(otherUserId).orElseThrow();
@@ -149,17 +155,25 @@ public class MatchService {
     private MatchDto.MatchResponseDto mapToMatchDto(Match match, UUID currentUserId, User otherUser, Profile otherProfile) {
         long remainingHours = Math.max(0, Duration.between(OffsetDateTime.now(), match.getExpiresAt()).toHours());
 
-        int age = 24;
+        if (otherProfile == null) {
+            otherProfile = Profile.builder()
+                    .userId(otherUser.getId())
+                    .displayName(otherUser.getPhoneE164() != null ? "User" : "Single in City")
+                    .languagesSpoken(List.of("English", "Hindi"))
+                    .photosJson("[]")
+                    .build();
+        }
+
+        DiscoveryDto.CandidateCardDto candidateCard = discoveryService.buildCandidateCard(otherUser, otherProfile, 3.5, 92);
+
+        int age = candidateCard.getAge() > 0 ? candidateCard.getAge() : 24;
         if (otherUser.getBirthDate() != null) {
             age = Period.between(otherUser.getBirthDate(), LocalDate.now()).getYears();
         }
 
         String photo = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500";
-        if (otherProfile != null && otherProfile.getPhotosJson() != null) {
-            try {
-                List<String> photos = objectMapper.readValue(otherProfile.getPhotosJson(), new TypeReference<>() {});
-                if (!photos.isEmpty()) photo = photos.get(0);
-            } catch (Exception ignored) {}
+        if (candidateCard.getPhotos() != null && !candidateCard.getPhotos().isEmpty()) {
+            photo = candidateCard.getPhotos().get(0);
         }
 
         List<ChatMessage> messages = chatMessageRepository.findByMatchIdOrderByCreatedAtAsc(match.getId());
@@ -167,17 +181,17 @@ public class MatchService {
         OffsetDateTime lastTime = null;
         if (!messages.isEmpty()) {
             ChatMessage latest = messages.get(messages.size() - 1);
-            lastMsg = latest.getContent();
+            lastMsg = com.match.SwipeAI.service.engine.ChatCryptoService.getInstance().decrypt(latest.getContent());
             lastTime = latest.getCreatedAt();
         }
 
         return MatchDto.MatchResponseDto.builder()
                 .id(match.getId())
                 .otherUserId(otherUser.getId())
-                .otherUserName(otherProfile != null ? otherProfile.getDisplayName() : "Single")
+                .otherUserName(candidateCard.getDisplayName() != null ? candidateCard.getDisplayName() : "Single")
                 .otherUserPhoto(photo)
                 .otherUserAge(age)
-                .isDigilockerVerified(Boolean.TRUE.equals(otherUser.getDigilockerVerified()))
+                .isDigilockerVerified(candidateCard.isDigilockerVerified())
                 .status(match.getStatus())
                 .messagesCount(match.getMessagesCount())
                 .remainingHours(remainingHours)
@@ -186,6 +200,7 @@ public class MatchService {
                 .icebreakerQuiz(icebreakerEngine.parseQuizData(match.getIcebreakerGameData()))
                 .lastMessage(lastMsg)
                 .lastMessageTime(lastTime)
+                .otherProfile(candidateCard)
                 .build();
     }
 }

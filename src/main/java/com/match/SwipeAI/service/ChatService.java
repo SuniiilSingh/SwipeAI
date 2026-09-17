@@ -9,9 +9,11 @@ import com.match.SwipeAI.service.integration.NudityDetectorService;
 import com.match.SwipeAI.websocket.ChatWebSocketHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -27,11 +29,29 @@ public class ChatService {
     private final MatchKarmaService karmaService;
     private final ChatWebSocketHandler webSocketHandler;
 
+    @Transactional
     public List<ChatDto.ChatMessageResponse> getMessages(UUID matchId, UUID currentUserId) {
+        Match match = matchRepository.findById(matchId)
+                .orElseThrow(() -> new IllegalArgumentException("Match not found: " + matchId));
+
+        // Strict Match Lounge Authorization: Only authenticated participants may decrypt & view messages
+        if (!match.getUserAId().equals(currentUserId) && !match.getUserBId().equals(currentUserId)) {
+            throw new AccessDeniedException("Access denied: You are not an authorized participant in this encrypted chat lounge.");
+        }
+
         List<ChatMessage> messages = chatMessageRepository.findByMatchIdOrderByCreatedAtAsc(matchId);
         List<ChatDto.ChatMessageResponse> responses = new ArrayList<>();
+        List<ChatMessage> toMarkRead = new ArrayList<>();
+        OffsetDateTime now = OffsetDateTime.now();
 
         for (ChatMessage m : messages) {
+            // Update unread messages for recipient
+            if (m.getRecipientId().equals(currentUserId) && m.getStatus() != MessageStatus.READ) {
+                m.setStatus(MessageStatus.READ);
+                m.setReadAt(now);
+                toMarkRead.add(m);
+            }
+
             responses.add(ChatDto.ChatMessageResponse.builder()
                     .id(m.getId())
                     .matchId(m.getMatchId())
@@ -40,11 +60,19 @@ public class ChatService {
                     .content(m.getContent())
                     .mediaUrl(m.getMediaUrl())
                     .mediaType(m.getMediaType())
+                    .status(m.getStatus())
+                    .isEncrypted(Boolean.TRUE.equals(m.getIsEncrypted()))
+                    .encryptionAlgo(m.getEncryptionAlgo() != null ? m.getEncryptionAlgo() : "AES-256-GCM")
                     .isBlurred(Boolean.TRUE.equals(m.getIsBlurred()))
                     .blurReason(m.getBlurReason())
+                    .readAt(m.getReadAt())
                     .createdAt(m.getCreatedAt())
                     .isFromMe(m.getSenderId().equals(currentUserId))
                     .build());
+        }
+
+        if (!toMarkRead.isEmpty()) {
+            chatMessageRepository.saveAll(toMarkRead);
         }
 
         return responses;
@@ -57,6 +85,11 @@ public class ChatService {
 
         if (match.getStatus() == MatchStatus.UNMATCHED || match.getStatus() == MatchStatus.EXPIRED) {
             throw new IllegalStateException("Cannot send message in inactive match.");
+        }
+
+        // Strict Match Lounge Authorization
+        if (!match.getUserAId().equals(senderId) && !match.getUserBId().equals(senderId)) {
+            throw new AccessDeniedException("Access denied: You are not authorized to send messages in this lounge.");
         }
 
         UUID recipientId = match.getUserAId().equals(senderId) ? match.getUserBId() : match.getUserAId();
@@ -80,8 +113,12 @@ public class ChatService {
                 .content(request.getContent())
                 .mediaUrl(request.getMediaUrl())
                 .mediaType(request.getMediaType() != null ? request.getMediaType() : MessageType.TEXT)
+                .status(MessageStatus.SENT)
+                .isEncrypted(true)
+                .encryptionAlgo("AES-256-GCM")
                 .isBlurred(isBlurred)
                 .blurReason(blurReason)
+                .expiresAt(match.getExpiresAt())
                 .build();
 
         message = chatMessageRepository.save(message);
@@ -104,16 +141,54 @@ public class ChatService {
                 .content(message.getContent())
                 .mediaUrl(message.getMediaUrl())
                 .mediaType(message.getMediaType())
+                .status(message.getStatus())
+                .isEncrypted(true)
+                .encryptionAlgo("AES-256-GCM")
                 .isBlurred(isBlurred)
                 .blurReason(blurReason)
+                .readAt(message.getReadAt())
                 .createdAt(message.getCreatedAt())
                 .isFromMe(true)
                 .build();
 
-        // Dispatch real-time WebSocket update to recipient
-        webSocketHandler.sendMessageToUser(recipientId.toString(), response);
+        // Dispatch real-time WebSocket update to recipient (with isFromMe = false for the recipient)
+        ChatDto.ChatMessageResponse recipientResponse = ChatDto.ChatMessageResponse.builder()
+                .id(message.getId())
+                .matchId(matchId)
+                .senderId(senderId)
+                .recipientId(recipientId)
+                .content(message.getContent())
+                .mediaUrl(message.getMediaUrl())
+                .mediaType(message.getMediaType())
+                .status(message.getStatus())
+                .isEncrypted(true)
+                .encryptionAlgo("AES-256-GCM")
+                .isBlurred(isBlurred)
+                .blurReason(blurReason)
+                .readAt(message.getReadAt())
+                .createdAt(message.getCreatedAt())
+                .isFromMe(false)
+                .build();
+        webSocketHandler.sendMessageToUser(recipientId.toString(), recipientResponse);
 
         return response;
+    }
+
+    @Transactional
+    public void markMessagesAsRead(UUID matchId, UUID currentUserId) {
+        List<ChatMessage> messages = chatMessageRepository.findByMatchIdOrderByCreatedAtAsc(matchId);
+        List<ChatMessage> toMark = new ArrayList<>();
+        OffsetDateTime now = OffsetDateTime.now();
+        for (ChatMessage m : messages) {
+            if (m.getRecipientId().equals(currentUserId) && m.getStatus() != MessageStatus.READ) {
+                m.setStatus(MessageStatus.READ);
+                m.setReadAt(now);
+                toMark.add(m);
+            }
+        }
+        if (!toMark.isEmpty()) {
+            chatMessageRepository.saveAll(toMark);
+        }
     }
 
     @Transactional

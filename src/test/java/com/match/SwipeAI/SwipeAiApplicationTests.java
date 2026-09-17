@@ -491,4 +491,45 @@ class SwipeAiApplicationTests {
         assertTrue(returnedIds1000km.contains(closeCandidate.getId()));
         assertTrue(returnedIds1000km.contains(farCandidate.getId()), "Far candidate in Mumbai should be included when profile radius is 1000 km");
     }
+
+    @Autowired
+    private com.match.SwipeAI.service.integration.LiveKitCallingService liveKitCallingService;
+
+    @Test
+    void testVirtualChaiCallingSessionGeneration() {
+        UUID matchId = UUID.randomUUID();
+        UUID callerId = UUID.randomUUID();
+
+        com.match.SwipeAI.dto.CallingDto.VirtualChaiSessionResponse response =
+                liveKitCallingService.createCallingSession(matchId, callerId, "Aarav Sharma", "Ananya Verma", true);
+
+        assertNotNull(response);
+        assertNotNull(response.getRoomName());
+        assertTrue(response.getRoomName().startsWith("chai_room_"));
+        assertNotNull(response.getParticipantToken());
+        assertTrue(response.isPhoneMasked());
+        assertTrue(response.isVideo());
+        assertEquals("Aarav Sharma", response.getCallerMaskedName());
+        assertEquals("Ananya Verma", response.getRecipientMaskedName());
+    }
+
+    @Test
+    void testIcebreakerQuizDeserializationWithIsCompleted() {
+        String jsonWithIsCompleted = "{\"quizId\":\"quiz_sunday_vibe\",\"title\":\"10s Rapid-Fire Quiz\",\"question\":\"Your Ultimate Sunday Vibe:\",\"options\":[\"Filter Coffee & Dosa crawl in Indiranagar\",\"Sleep until 2 PM & binge true-crime podcasts\"],\"userAAnswer\":0,\"userBAnswer\":1,\"isCompleted\":true,\"isMutualAgreement\":false}";
+
+        MatchDto.IcebreakerQuizDto parsed = icebreakerEngine.parseQuizData(jsonWithIsCompleted);
+        assertNotNull(parsed);
+        assertEquals("quiz_sunday_vibe", parsed.getQuizId());
+        assertTrue(parsed.isCompleted(), "isCompleted should be parsed as true");
+        assertFalse(parsed.isMutualAgreement(), "isMutualAgreement should be parsed as false");
+        assertEquals(0, parsed.getUserAAnswer());
+        assertEquals(1, parsed.getUserBAnswer());
+
+        // Also test with 'completed' standard JavaBean format
+        String jsonWithCompleted = "{\"quizId\":\"quiz_sunday_vibe\",\"title\":\"10s Rapid-Fire Quiz\",\"question\":\"Your Ultimate Sunday Vibe:\",\"options\":[\"Filter Coffee\"],\"completed\":true,\"mutualAgreement\":true}";
+        MatchDto.IcebreakerQuizDto parsed2 = icebreakerEngine.parseQuizData(jsonWithCompleted);
+        assertNotNull(parsed2);
+        assertTrue(parsed2.isCompleted(), "completed should be parsed as true");
+        assertTrue(parsed2.isMutualAgreement(), "mutualAgreement should be parsed as true");
+    }
 }

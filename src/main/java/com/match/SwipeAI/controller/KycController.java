@@ -99,7 +99,10 @@ public class KycController {
     @PostMapping("/liveness/verify")
     public ResponseEntity<KycDto.LivenessResponse> verifyLiveness(
             @AuthenticationPrincipal UUID userId,
-            @RequestBody KycDto.LivenessRequest request) {
+            @RequestBody(required = false) KycDto.LivenessRequest request) {
+        if (request == null) {
+            request = new KycDto.LivenessRequest();
+        }
         KycDto.LivenessResponse response = livenessService.verifyLiveness(userId, request);
 
         if (response.isLiveHuman()) {

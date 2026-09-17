@@ -13,8 +13,8 @@ import java.time.OffsetDateTime;
 import java.util.List;
 
 @Slf4j
-@Component
-@org.springframework.context.annotation.Profile("!prod")
+// @Component
+// @org.springframework.context.annotation.Profile("!prod")
 @RequiredArgsConstructor
 public class DataInitializer implements CommandLineRunner {
 
@@ -26,6 +26,8 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
+        log.info("DataInitializer is disabled / commented out.");
+        /*
         if (userRepository.count() > 0) {
             return;
         }
@@ -605,5 +607,6 @@ public class DataInitializer implements CommandLineRunner {
         chatMessageRepository.saveAll(List.of(msg1, msg2, msg3));
 
         log.info("SwipeAI seed data successfully loaded: 3 users, 3 safe date cafes, 1 active match, 3 chat messages.");
+        */
     }
 }
