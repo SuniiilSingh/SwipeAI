@@ -92,7 +92,9 @@ public class DesireProfile {
 
     // Preferred Partner Professions (Multi-Select)
     @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(name = "desire_preferred_professions", joinColumns = @JoinColumn(name = "user_id"))
+    @CollectionTable(name = "desire_preferred_professions",
+        joinColumns = @JoinColumn(name = "user_id"),
+        indexes = @Index(name = "idx_desire_professions", columnList = "user_id, profession"))
     @Column(name = "profession")
     @Builder.Default
     private List<String> preferredProfessions = new ArrayList<>();

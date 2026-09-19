@@ -20,7 +20,10 @@ import java.util.UUID;
 @Entity
 @Table(name = "interactions",
     uniqueConstraints = @UniqueConstraint(name = "unique_actor_target", columnNames = {"actor_id", "target_id"}),
-    indexes = @Index(name = "idx_interactions_target", columnList = "target_id, action_type")
+    indexes = {
+        @Index(name = "idx_interactions_target", columnList = "target_id, action_type"),
+        @Index(name = "idx_interactions_actor_target_action", columnList = "actor_id, target_id, action_type")
+    }
 )
 @Data
 @Builder

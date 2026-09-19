@@ -20,7 +20,10 @@ import java.util.UUID;
  * dynamic anti-ghosting Karma rating (0-200), and spatial coordinates for Uber H3 clustering.
  */
 @Entity
-@Table(name = "users")
+@Table(name = "users", indexes = {
+    @Index(name = "idx_users_discovery", columnList = "gender, intent, birth_date"),
+    @Index(name = "idx_users_lat_lng", columnList = "latitude, longitude")
+})
 @Data
 @Builder
 @NoArgsConstructor
