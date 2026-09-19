@@ -35,6 +35,7 @@ public class DiscoveryService {
     private final DesireProfileRepository desireProfileRepository;
     private final DesireProfileService desireProfileService;
     private final PushNotificationService pushNotificationService;
+    private final CandidateSearchRepository candidateSearchRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private static final int DAILY_HARD_CAP = 25;
@@ -70,14 +71,6 @@ public class DiscoveryService {
                     .build();
         }
 
-        // 2. Fetch candidates excluding already interacted users
-        List<Interaction> pastInteractions = interactionRepository.findByActorId(viewerId);
-        Set<UUID> interactedUserIds = new HashSet<>();
-        interactedUserIds.add(viewerId); // exclude self
-        for (Interaction i : pastInteractions) {
-            interactedUserIds.add(i.getTargetId());
-        }
-
         boolean hasConfiguredDesire = viewerDesire != null && Boolean.TRUE.equals(viewerDesire.getIsConfigured());
 
         // 3. Determine viewer's effective search radius limit in km:
@@ -102,22 +95,124 @@ public class DiscoveryService {
             }
         }
 
-        List<User> allUsers = userRepository.findAll();
+        // 4. Resolve Target Gender pushdown criteria
+        boolean isViewerFemale = viewer.getGender() == Gender.FEMALE ||
+                (viewerProfile != null && viewerProfile.getGenderDisplay() != null &&
+                        (viewerProfile.getGenderDisplay().equalsIgnoreCase("Woman") ||
+                         viewerProfile.getGenderDisplay().equalsIgnoreCase("Women") ||
+                         viewerProfile.getGenderDisplay().equalsIgnoreCase("Female")));
+
+        boolean isViewerMale = viewer.getGender() == Gender.MALE ||
+                (viewerProfile != null && viewerProfile.getGenderDisplay() != null &&
+                        (viewerProfile.getGenderDisplay().equalsIgnoreCase("Man") ||
+                         viewerProfile.getGenderDisplay().equalsIgnoreCase("Men") ||
+                         viewerProfile.getGenderDisplay().equalsIgnoreCase("Male")));
+
+        String viewerPref = (viewerProfile != null && viewerProfile.getGenderPreferenceDisplay() != null)
+                ? viewerProfile.getGenderPreferenceDisplay().trim().toLowerCase()
+                : null;
+
+        Gender targetGender = null;
+        List<String> targetGenderDisplays = null;
+        if ("women".equals(viewerPref) || "woman".equals(viewerPref) || "female".equals(viewerPref)) {
+            targetGender = Gender.FEMALE;
+            targetGenderDisplays = List.of("woman", "women", "female");
+        } else if ("men".equals(viewerPref) || "man".equals(viewerPref) || "male".equals(viewerPref)) {
+            targetGender = Gender.MALE;
+            targetGenderDisplays = List.of("man", "men", "male");
+        } else if ("everyone".equals(viewerPref)) {
+            // Allows all genders
+        } else {
+            // Unset preference: default to opposite gender matching
+            if (isViewerMale) {
+                targetGender = Gender.FEMALE;
+                targetGenderDisplays = List.of("woman", "women", "female");
+            } else if (isViewerFemale) {
+                targetGender = Gender.MALE;
+                targetGenderDisplays = List.of("man", "men", "male");
+            }
+        }
+
+        // 5. Compute Spatial Bounding Box coordinates
+        Double minLat = null, maxLat = null, minLon = null, maxLon = null;
+        if (viewerLat != null && viewerLon != null && maxRadiusKm > 0) {
+            double latDelta = maxRadiusKm / 111.0;
+            minLat = viewerLat - latDelta;
+            maxLat = viewerLat + latDelta;
+
+            double cosLat = Math.cos(Math.toRadians(viewerLat));
+            double lonDelta = (cosLat > 0.0001) ? (maxRadiusKm / (111.0 * cosLat)) : 180.0;
+            minLon = viewerLon - lonDelta;
+            maxLon = viewerLon + lonDelta;
+        }
+
+        // 6. Compute Age range pushdown criteria from Desire Profile
+        LocalDate minBirthDate = null, maxBirthDate = null;
+        if (hasConfiguredDesire && (viewerDesire.getMinAge() != null || viewerDesire.getMaxAge() != null)) {
+            int minAge = viewerDesire.getMinAge() != null ? viewerDesire.getMinAge() : 18;
+            int maxAge = viewerDesire.getMaxAge() != null ? viewerDesire.getMaxAge() : 99;
+            boolean isFlexible = Boolean.TRUE.equals(viewerDesire.getAgeFlexible());
+            int lowerBound = isFlexible ? Math.max(18, minAge - 2) : minAge;
+            int upperBound = isFlexible ? maxAge + 2 : maxAge;
+
+            LocalDate today = LocalDate.now();
+            minBirthDate = today.minusYears(upperBound + 1).plusDays(1);
+            maxBirthDate = today.minusYears(lowerBound);
+        }
+
+        // 7. Resolve Dietary pushdown criteria
+        List<DietaryPreference> dietaryPreferences = null;
+        if (request.getDietaryFilters() != null && !request.getDietaryFilters().isEmpty()) {
+            Set<DietaryPreference> expanded = new HashSet<>();
+            for (DietaryPreference filter : request.getDietaryFilters()) {
+                if (filter == DietaryPreference.PURE_VEG) {
+                    expanded.add(DietaryPreference.PURE_VEG);
+                    expanded.add(DietaryPreference.STRICT_JAIN);
+                    expanded.add(DietaryPreference.VEGAN);
+                } else {
+                    expanded.add(filter);
+                }
+            }
+            dietaryPreferences = new ArrayList<>(expanded);
+        } else if (hasConfiguredDesire && viewerDesire.getDietaryHarmony() != null) {
+            String desireDiet = viewerDesire.getDietaryHarmony();
+            if ("STRICT_JAIN_ONLY".equalsIgnoreCase(desireDiet)) {
+                dietaryPreferences = List.of(DietaryPreference.STRICT_JAIN);
+            } else if ("VEG_SPECTRUM".equalsIgnoreCase(desireDiet) || "EGGETARIAN_OR_VEG".equalsIgnoreCase(desireDiet)) {
+                dietaryPreferences = List.of(
+                        DietaryPreference.PURE_VEG,
+                        DietaryPreference.STRICT_JAIN,
+                        DietaryPreference.VEGAN,
+                        DietaryPreference.EGGETARIAN
+                );
+            }
+        }
+
+        // 8. Execute Database Candidate Query with Bounded Limit
+        int requestedLimit = request.getLimit() != null ? request.getLimit() : 10;
+        int fetchLimit = Math.max(50, requestedLimit * 5);
+
+        CandidateSearchRepository.Criteria candidateCriteria = CandidateSearchRepository.Criteria.builder()
+                .viewerId(viewerId)
+                .targetGender(targetGender)
+                .targetGenderDisplays(targetGenderDisplays)
+                .minLat(minLat)
+                .maxLat(maxLat)
+                .minLon(minLon)
+                .maxLon(maxLon)
+                .minBirthDate(minBirthDate)
+                .maxBirthDate(maxBirthDate)
+                .microCircle(request.getMicroCircle())
+                .dietaryPreferences(dietaryPreferences)
+                .limit(fetchLimit)
+                .build();
+
+        List<CandidateSearchRepository.CandidateUserRecord> eligibleCandidates = candidateSearchRepository.searchCandidates(candidateCriteria);
         List<DiscoveryDto.CandidateCardDto> candidateCards = new ArrayList<>();
 
-        // Pre-filter eligible candidates to avoid loading profiles for self, already-interacted, or incognito users
-        List<User> eligibleCandidates = allUsers.stream()
-                .filter(c -> !c.getId().equals(viewerId))
-                .filter(c -> !interactedUserIds.contains(c.getId()))
-                .filter(c -> !Boolean.TRUE.equals(c.getIsIncognito()))
-                .toList();
-
-        List<UUID> candidateIds = eligibleCandidates.stream().map(User::getId).toList();
-        Map<UUID, Profile> profileMap = profileRepository.findAllById(candidateIds).stream()
-                .collect(Collectors.toMap(Profile::getUserId, p -> p));
-
-        for (User candidate : eligibleCandidates) {
-            Profile candidateProfile = profileMap.get(candidate.getId());
+        for (CandidateSearchRepository.CandidateUserRecord candidateRecord : eligibleCandidates) {
+            User candidate = candidateRecord.user();
+            Profile candidateProfile = candidateRecord.profile();
 
             // 2. Strict Gender & Interest Matching (e.g. Male looking for Women -> only Women shown)
             if (!isGenderAndInterestMatch(viewer, viewerProfile, candidate, candidateProfile)) {
