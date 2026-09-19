@@ -321,6 +321,7 @@ public class DiscoveryService {
                         .status(MatchStatus.PENDING_ICEBREAKER)
                         .expiresAt(OffsetDateTime.now().plusHours(48))
                         .messagesCount(0)
+                        .e2eeSecret(UUID.randomUUID().toString())
                         .icebreakerGameData("{\"quizId\":\"quiz_sunday_vibe\",\"title\":\"10s Rapid-Fire Quiz\",\"question\":\"Your Ultimate Sunday Vibe:\",\"options\":[\"Filter Coffee & Dosa crawl in Indiranagar\",\"Sleep until 2 PM & binge true-crime podcasts\",\"Spontaneous drive to Nandi Hills\"],\"userAAnswer\":null,\"userBAnswer\":null,\"isCompleted\":false,\"isMutualAgreement\":false}")
                         .build();
 

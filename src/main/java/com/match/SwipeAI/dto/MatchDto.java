@@ -34,6 +34,7 @@ public class MatchDto {
         private long remainingHours;
         private OffsetDateTime expiresAt;
         private OffsetDateTime matchedAt;
+        private String e2eeSecret;
         private IcebreakerQuizDto icebreakerQuiz;
         private String lastMessage;
         private OffsetDateTime lastMessageTime;

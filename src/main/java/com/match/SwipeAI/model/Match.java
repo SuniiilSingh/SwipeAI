@@ -62,6 +62,13 @@ public class Match {
     @Column(name = "messages_count")
     private Integer messagesCount = 0;
 
+    /**
+     * Unique End-to-End Encryption (E2EE) seed for the match lounge.
+     * Used by client devices to derive the AES-256-GCM symmetric session key.
+     */
+    @Column(name = "e2ee_secret", length = 64)
+    private String e2eeSecret;
+
     @Column(name = "expires_at", nullable = false)
     private OffsetDateTime expiresAt;
 

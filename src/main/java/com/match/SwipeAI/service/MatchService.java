@@ -197,12 +197,21 @@ public class MatchService {
             photo = candidateCard.getPhotos().get(0);
         }
 
+        if (match.getE2eeSecret() == null) {
+            match.setE2eeSecret(UUID.randomUUID().toString());
+            matchRepository.save(match);
+        }
+
         List<ChatMessage> messages = chatMessageRepository.findByMatchIdOrderByCreatedAtAsc(match.getId());
         String lastMsg = null;
         OffsetDateTime lastTime = null;
         if (!messages.isEmpty()) {
             ChatMessage latest = messages.get(messages.size() - 1);
-            lastMsg = com.match.SwipeAI.service.engine.ChatCryptoService.getInstance().decrypt(latest.getContent());
+            if (latest.getContent() != null && latest.getContent().startsWith("E2EE:v1:")) {
+                lastMsg = "🔒 Encrypted message";
+            } else {
+                lastMsg = com.match.SwipeAI.service.engine.ChatCryptoService.getInstance().decrypt(latest.getContent());
+            }
             lastTime = latest.getCreatedAt();
         }
 
@@ -218,6 +227,7 @@ public class MatchService {
                 .remainingHours(remainingHours)
                 .expiresAt(match.getExpiresAt())
                 .matchedAt(match.getMatchedAt())
+                .e2eeSecret(match.getE2eeSecret())
                 .icebreakerQuiz(icebreakerEngine.parseQuizData(match.getIcebreakerGameData()))
                 .lastMessage(lastMsg)
                 .lastMessageTime(lastTime)

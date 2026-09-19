@@ -15,6 +15,10 @@ public class AesGcmCryptoConverter implements AttributeConverter<String, String>
         if (attribute == null) {
             return null;
         }
+        // If client already encrypted the message via E2EE (starts with E2EE:), store verbatim
+        if (attribute.startsWith("E2EE:")) {
+            return attribute;
+        }
         return ChatCryptoService.getInstance().encrypt(attribute);
     }
 
@@ -22,6 +26,10 @@ public class AesGcmCryptoConverter implements AttributeConverter<String, String>
     public String convertToEntityAttribute(String dbData) {
         if (dbData == null) {
             return null;
+        }
+        // If message is E2EE encrypted, return verbatim to client for client-side decryption
+        if (dbData.startsWith("E2EE:")) {
+            return dbData;
         }
         return ChatCryptoService.getInstance().decrypt(dbData);
     }

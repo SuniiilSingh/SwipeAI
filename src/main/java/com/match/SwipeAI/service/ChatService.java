@@ -109,6 +109,9 @@ public class ChatService {
             }
         }
 
+        boolean isE2ee = request.getContent() != null && request.getContent().startsWith("E2EE:");
+        String algo = isE2ee ? "AES-256-GCM-E2EE" : "AES-256-GCM";
+
         ChatMessage message = ChatMessage.builder()
                 .matchId(matchId)
                 .senderId(senderId)
@@ -118,7 +121,7 @@ public class ChatService {
                 .mediaType(request.getMediaType() != null ? request.getMediaType() : MessageType.TEXT)
                 .status(MessageStatus.SENT)
                 .isEncrypted(true)
-                .encryptionAlgo("AES-256-GCM")
+                .encryptionAlgo(algo)
                 .isBlurred(isBlurred)
                 .blurReason(blurReason)
                 .expiresAt(match.getExpiresAt())
@@ -146,7 +149,7 @@ public class ChatService {
                 .mediaType(message.getMediaType())
                 .status(message.getStatus())
                 .isEncrypted(true)
-                .encryptionAlgo("AES-256-GCM")
+                .encryptionAlgo(algo)
                 .isBlurred(isBlurred)
                 .blurReason(blurReason)
                 .readAt(message.getReadAt())
@@ -165,7 +168,7 @@ public class ChatService {
                 .mediaType(message.getMediaType())
                 .status(message.getStatus())
                 .isEncrypted(true)
-                .encryptionAlgo("AES-256-GCM")
+                .encryptionAlgo(algo)
                 .isBlurred(isBlurred)
                 .blurReason(blurReason)
                 .readAt(message.getReadAt())
@@ -177,6 +180,9 @@ public class ChatService {
         // Dispatch background push notification to recipient
         String senderName = profileRepository.findById(senderId).map(Profile::getDisplayName).orElse("Your match");
         String snippet = request.getContent() != null && !request.getContent().isBlank() ? request.getContent() : "Sent an attachment";
+        if (isE2ee) {
+            snippet = "Sent you an end-to-end encrypted message 🔒";
+        }
         pushNotificationService.sendChatMessageNotification(recipientId, matchId, senderName, snippet);
 
         return response;
