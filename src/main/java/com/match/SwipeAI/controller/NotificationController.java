@@ -63,6 +63,7 @@ public class NotificationController {
         Map<String, Object> data = (request != null && request.getData() != null) ? request.getData() : Map.of("type", "TEST");
 
         log.info("Dispatching test push to user {}: {} - {}", userId, title, body);
+        pushNotificationService.saveNotification(userId, "SYSTEM", title, body, data);
         int dispatched = pushNotificationService.sendPushToUser(userId, title, body, data).join();
 
         return ResponseEntity.ok(NotificationDto.PushResponse.builder()
@@ -70,5 +71,59 @@ public class NotificationController {
                 .message("Test notification dispatched.")
                 .dispatchedCount(dispatched)
                 .build());
+    }
+
+    /**
+     * Get paginated in-app notifications for authenticated user.
+     */
+    @GetMapping
+    public ResponseEntity<java.util.List<NotificationDto.UserNotificationResponse>> getNotifications(
+            @AuthenticationPrincipal UUID userId,
+            @RequestParam(required = false) Boolean unreadOnly,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.ok(pushNotificationService.getUserNotifications(userId, unreadOnly, page, size));
+    }
+
+    /**
+     * Get unread notification badge count.
+     */
+    @GetMapping("/unread-count")
+    public ResponseEntity<NotificationDto.UnreadCountResponse> getUnreadCount(
+            @AuthenticationPrincipal UUID userId) {
+        long count = pushNotificationService.getUnreadCount(userId);
+        return ResponseEntity.ok(NotificationDto.UnreadCountResponse.builder().unreadCount(count).build());
+    }
+
+    /**
+     * Mark a single notification as read.
+     */
+    @PutMapping("/{id}/read")
+    public ResponseEntity<Map<String, Object>> markAsRead(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal UUID userId) {
+        boolean updated = pushNotificationService.markAsRead(id, userId);
+        return ResponseEntity.ok(Map.of("status", updated ? "success" : "not_found"));
+    }
+
+    /**
+     * Mark all notifications as read for the authenticated user.
+     */
+    @PutMapping("/read-all")
+    public ResponseEntity<Map<String, Object>> markAllAsRead(
+            @AuthenticationPrincipal UUID userId) {
+        int count = pushNotificationService.markAllAsRead(userId);
+        return ResponseEntity.ok(Map.of("status", "success", "markedCount", count));
+    }
+
+    /**
+     * Delete a notification.
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Map<String, Object>> deleteNotification(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal UUID userId) {
+        pushNotificationService.deleteNotification(id, userId);
+        return ResponseEntity.ok(Map.of("status", "success"));
     }
 }

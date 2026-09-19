@@ -1,10 +1,16 @@
 package com.match.SwipeAI.service.integration;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.match.SwipeAI.dto.NotificationDto;
 import com.match.SwipeAI.model.PushToken;
+import com.match.SwipeAI.model.UserNotification;
 import com.match.SwipeAI.repository.PushTokenRepository;
+import com.match.SwipeAI.repository.UserNotificationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,6 +21,7 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -23,11 +30,33 @@ public class PushNotificationService {
 
     private static final String EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
     private final PushTokenRepository pushTokenRepository;
+    private final UserNotificationRepository userNotificationRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(5))
             .build();
+
+    @Transactional
+    public UserNotification saveNotification(UUID userId, String type, String title, String body, Map<String, Object> data) {
+        String dataJson = null;
+        if (data != null && !data.isEmpty()) {
+            try {
+                dataJson = objectMapper.writeValueAsString(data);
+            } catch (Exception e) {
+                log.warn("Failed to serialize notification data: {}", e.getMessage());
+            }
+        }
+        UserNotification notif = UserNotification.builder()
+                .userId(userId)
+                .type(type != null ? type : "SYSTEM")
+                .title(title)
+                .body(body)
+                .dataJson(dataJson)
+                .isRead(false)
+                .build();
+        return userNotificationRepository.save(notif);
+    }
 
     @Transactional
     public void registerToken(UUID userId, String token, String platform) {
@@ -95,21 +124,19 @@ public class PushNotificationService {
                 "url", "/(tabs)/matches"
         );
 
-        // Notify actor
-        sendPushToUser(
-                actorId,
-                "It's a Match! ✨",
-                "You and " + targetName + " liked each other! Answer the 10s quiz to unlock chat.",
-                data
-        );
+        String title = "It's a Match! ✨";
+        String actorBody = "You and " + targetName + " liked each other! Answer the 10s quiz to unlock chat.";
+        String targetBody = "You and " + actorName + " liked each other! Answer the 10s quiz to unlock chat.";
 
-        // Notify target
-        sendPushToUser(
-                targetId,
-                "It's a Match! ✨",
-                "You and " + actorName + " liked each other! Answer the 10s quiz to unlock chat.",
-                data
-        );
+        // Persist in-app notifications
+        saveNotification(actorId, "MATCH", title, actorBody, data);
+        saveNotification(targetId, "MATCH", title, targetBody, data);
+
+        // Notify actor via push
+        sendPushToUser(actorId, title, actorBody, data);
+
+        // Notify target via push
+        sendPushToUser(targetId, title, targetBody, data);
     }
 
     /**
@@ -125,6 +152,9 @@ public class PushNotificationService {
         String title = senderName != null && !senderName.isBlank() ? senderName : "New Message";
         String body = messageSnippet != null && !messageSnippet.isBlank() ? messageSnippet : "Sent you a message";
 
+        // Persist in-app notification
+        saveNotification(recipientId, "CHAT", title, body, data);
+
         sendPushToUser(recipientId, title, body, data);
     }
 
@@ -138,12 +168,65 @@ public class PushNotificationService {
                 "url", "/chat/" + matchId
         );
 
-        sendPushToUser(
-                recipientId,
-                "Chat Lounge Unlocked! 💬",
-                partnerName + " completed the 10s icebreaker. Say hello!",
-                data
-        );
+        String title = "Chat Lounge Unlocked! 💬";
+        String body = partnerName + " completed the 10s icebreaker. Say hello!";
+
+        // Persist in-app notification
+        saveNotification(recipientId, "CHAT_UNLOCKED", title, body, data);
+
+        sendPushToUser(recipientId, title, body, data);
+    }
+
+    /**
+     * In-app Notification Inbox Queries and Actions
+     */
+    public List<NotificationDto.UserNotificationResponse> getUserNotifications(UUID userId, Boolean unreadOnly, int page, int size) {
+        Pageable pageable = PageRequest.of(Math.max(0, page), Math.min(100, Math.max(1, size)));
+        List<UserNotification> list;
+        if (Boolean.TRUE.equals(unreadOnly)) {
+            list = userNotificationRepository.findByUserIdAndIsReadOrderByCreatedAtDesc(userId, false, pageable);
+        } else {
+            list = userNotificationRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable);
+        }
+        return list.stream().map(this::mapToDto).collect(Collectors.toList());
+    }
+
+    public long getUnreadCount(UUID userId) {
+        return userNotificationRepository.countByUserIdAndIsReadFalse(userId);
+    }
+
+    @Transactional
+    public boolean markAsRead(UUID id, UUID userId) {
+        return userNotificationRepository.markAsRead(id, userId) > 0;
+    }
+
+    @Transactional
+    public int markAllAsRead(UUID userId) {
+        return userNotificationRepository.markAllAsRead(userId);
+    }
+
+    @Transactional
+    public void deleteNotification(UUID id, UUID userId) {
+        userNotificationRepository.deleteByIdAndUserId(id, userId);
+    }
+
+    private NotificationDto.UserNotificationResponse mapToDto(UserNotification n) {
+        Map<String, Object> dataMap = Collections.emptyMap();
+        if (n.getDataJson() != null && !n.getDataJson().isBlank()) {
+            try {
+                dataMap = objectMapper.readValue(n.getDataJson(), new TypeReference<Map<String, Object>>() {});
+            } catch (Exception ignored) {}
+        }
+        return NotificationDto.UserNotificationResponse.builder()
+                .id(n.getId())
+                .userId(n.getUserId())
+                .type(n.getType())
+                .title(n.getTitle())
+                .body(n.getBody())
+                .data(dataMap)
+                .isRead(n.isRead())
+                .createdAt(n.getCreatedAt())
+                .build();
     }
 
     private int dispatchToExpo(List<Map<String, Object>> messages) {

@@ -54,4 +54,27 @@ public class NotificationDto {
         private String message;
         private Integer dispatchedCount;
     }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class UserNotificationResponse {
+        private java.util.UUID id;
+        private java.util.UUID userId;
+        private String type;
+        private String title;
+        private String body;
+        private Map<String, Object> data;
+        private boolean isRead;
+        private java.time.OffsetDateTime createdAt;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class UnreadCountResponse {
+        private long unreadCount;
+    }
 }
