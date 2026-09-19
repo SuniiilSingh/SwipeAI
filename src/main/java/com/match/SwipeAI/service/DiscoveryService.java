@@ -8,6 +8,7 @@ import com.match.SwipeAI.model.*;
 import com.match.SwipeAI.repository.*;
 import com.match.SwipeAI.service.engine.MultiObjectiveMatchEngine;
 import com.match.SwipeAI.service.engine.ShadowShieldService;
+import com.match.SwipeAI.service.integration.PushNotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -33,6 +34,7 @@ public class DiscoveryService {
     private final ProfileService profileService;
     private final DesireProfileRepository desireProfileRepository;
     private final DesireProfileService desireProfileService;
+    private final PushNotificationService pushNotificationService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private static final int DAILY_HARD_CAP = 25;
@@ -325,6 +327,11 @@ public class DiscoveryService {
                 match = matchRepository.save(match);
                 matchId = match.getId();
                 log.info("Mutual Like! Created Match {} between {} and {}", matchId, actorId, request.getTargetId());
+
+                // Dispatch push notification to both users
+                String actorName = profileRepository.findById(actorId).map(Profile::getDisplayName).orElse("Your match");
+                String targetName = profileRepository.findById(request.getTargetId()).map(Profile::getDisplayName).orElse("Your match");
+                pushNotificationService.sendMatchNotification(actorId, request.getTargetId(), matchId, actorName, targetName);
             }
         }
 

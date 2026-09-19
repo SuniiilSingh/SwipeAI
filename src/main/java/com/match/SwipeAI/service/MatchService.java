@@ -11,6 +11,7 @@ import com.match.SwipeAI.service.engine.IcebreakerEngine;
 import com.match.SwipeAI.service.engine.MatchKarmaService;
 import com.match.SwipeAI.service.engine.MutualChemistrySparksEngine;
 import com.match.SwipeAI.service.integration.AiWingmanService;
+import com.match.SwipeAI.service.integration.PushNotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -37,6 +38,7 @@ public class MatchService {
     private final MutualChemistrySparksEngine mutualChemistrySparksEngine;
     private final MatchKarmaService karmaService;
     private final DiscoveryService discoveryService;
+    private final PushNotificationService pushNotificationService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public List<MatchDto.MatchResponseDto> getMatchesForUser(UUID userId) {
@@ -119,6 +121,11 @@ public class MatchService {
 
         // === ALTERNATIVE 1: MUTUAL CHEMISTRY SPARKS ENGINE ===
         List<String> sparks = mutualChemistrySparksEngine.generateMutualSparks(myProfile, otherProfile, quiz);
+
+        if (quiz.isCompleted()) {
+            String partnerName = (myProfile != null && myProfile.getDisplayName() != null) ? myProfile.getDisplayName() : "Your match";
+            pushNotificationService.sendChatUnlockedNotification(otherUserId, matchId, partnerName);
+        }
 
         return MatchDto.IcebreakerAnswerResponse.builder()
                 .isQuizCompleted(quiz.isCompleted())

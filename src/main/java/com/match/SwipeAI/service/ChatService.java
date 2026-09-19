@@ -6,6 +6,7 @@ import com.match.SwipeAI.model.*;
 import com.match.SwipeAI.repository.*;
 import com.match.SwipeAI.service.engine.MatchKarmaService;
 import com.match.SwipeAI.service.integration.NudityDetectorService;
+import com.match.SwipeAI.service.integration.PushNotificationService;
 import com.match.SwipeAI.websocket.ChatWebSocketHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,9 +26,11 @@ public class ChatService {
 
     private final ChatMessageRepository chatMessageRepository;
     private final MatchRepository matchRepository;
+    private final ProfileRepository profileRepository;
     private final NudityDetectorService nudityDetectorService;
     private final MatchKarmaService karmaService;
     private final ChatWebSocketHandler webSocketHandler;
+    private final PushNotificationService pushNotificationService;
 
     @Transactional
     public List<ChatDto.ChatMessageResponse> getMessages(UUID matchId, UUID currentUserId) {
@@ -170,6 +173,11 @@ public class ChatService {
                 .isFromMe(false)
                 .build();
         webSocketHandler.sendMessageToUser(recipientId.toString(), recipientResponse);
+
+        // Dispatch background push notification to recipient
+        String senderName = profileRepository.findById(senderId).map(Profile::getDisplayName).orElse("Your match");
+        String snippet = request.getContent() != null && !request.getContent().isBlank() ? request.getContent() : "Sent an attachment";
+        pushNotificationService.sendChatMessageNotification(recipientId, matchId, senderName, snippet);
 
         return response;
     }
