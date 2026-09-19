@@ -47,6 +47,8 @@ public class AuthDto {
         private LocalDate birthDate;
         private Double latitude;
         private Double longitude;
+        private String city;
+        private String location;
     }
 
     /**
@@ -67,6 +69,8 @@ public class AuthDto {
         private LocalDate birthDate;
         private Double latitude;
         private Double longitude;
+        private String city;
+        private String location;
     }
 
     /**

@@ -23,6 +23,7 @@ import org.springframework.test.context.TestPropertySource;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -75,6 +76,12 @@ class SwipeAiApplicationTests {
 
     @Autowired
     private DiscoveryService discoveryService;
+
+    @Autowired
+    private com.match.SwipeAI.service.DesireProfileService desireProfileService;
+
+    @Autowired
+    private com.match.SwipeAI.repository.DesireProfileRepository desireProfileRepository;
 
     @Test
     void contextLoads() {
@@ -531,5 +538,208 @@ class SwipeAiApplicationTests {
         assertNotNull(parsed2);
         assertTrue(parsed2.isCompleted(), "completed should be parsed as true");
         assertTrue(parsed2.isMutualAgreement(), "mutualAgreement should be parsed as true");
+    }
+
+    @Test
+    void testDesireProfile_DefaultTemplateIsNotConfigured() {
+        UUID newUserId = UUID.randomUUID();
+        com.match.SwipeAI.dto.DesireDto.DesireProfileResponse defaultDesire = desireProfileService.getDesireProfile(newUserId);
+        assertNotNull(defaultDesire);
+        assertFalse(Boolean.TRUE.equals(defaultDesire.getIsConfigured()), "Fresh user must have isConfigured = false");
+
+        // Now save desire profile
+        com.match.SwipeAI.dto.DesireDto.DesireProfileRequest req = com.match.SwipeAI.dto.DesireDto.DesireProfileRequest.builder()
+                .minAge(23)
+                .maxAge(28)
+                .dietaryHarmony("VEG_SPECTRUM")
+                .weekendVibe("COFFEE_AND_BOOKS")
+                .build();
+        com.match.SwipeAI.dto.DesireDto.DesireProfileResponse saved = desireProfileService.saveDesireProfile(newUserId, req);
+        assertNotNull(saved);
+        assertTrue(Boolean.TRUE.equals(saved.getIsConfigured()), "Saved desire profile must have isConfigured = true");
+    }
+
+    @Test
+    void testMatchEngine_WithoutDesireProfile_UsesEarlierApproach() {
+        User viewer = userRepository.save(User.builder()
+                .phoneE164("+9197" + String.format("%08d", Math.abs(UUID.randomUUID().hashCode() % 100000000)))
+                .gender(Gender.MALE)
+                .intent(DatingIntent.SERIOUS_DATING)
+                .birthDate(LocalDate.of(1998, 5, 20)) // 26 yrs
+                .latitude(12.9716)
+                .longitude(77.5946)
+                .build());
+
+        profileRepository.save(Profile.builder()
+                .userId(viewer.getId())
+                .displayName("Rohit Kumar")
+                .genderDisplay("Man")
+                .sexualOrientation("Heterosexual")
+                .genderPreferenceDisplay("Women")
+                .city("Bengaluru")
+                .maxDistanceKm(50)
+                .dietaryPref(DietaryPreference.PURE_VEG)
+                .photosJson("[\"https://images.unsplash.com/photo-1?w=500\"]")
+                .build());
+
+        // Candidate 1: Female, 35 yrs old (outside typical 20-30 range, but within 50km)
+        User cand = userRepository.save(User.builder()
+                .phoneE164("+9197" + String.format("%08d", Math.abs(UUID.randomUUID().hashCode() % 100000000)))
+                .gender(Gender.FEMALE)
+                .intent(DatingIntent.SERIOUS_DATING)
+                .birthDate(LocalDate.of(1989, 3, 10)) // 35 yrs
+                .latitude(12.9750)
+                .longitude(77.6000)
+                .build());
+
+        profileRepository.save(Profile.builder()
+                .userId(cand.getId())
+                .displayName("Pooja Sharma")
+                .genderDisplay("Woman")
+                .sexualOrientation("Heterosexual")
+                .genderPreferenceDisplay("Men")
+                .city("Bengaluru")
+                .dietaryPref(DietaryPreference.NON_VEG)
+                .photosJson("[\"https://images.unsplash.com/photo-2?w=500\"]")
+                .build());
+
+        // Because viewer has NOT configured desire profile, earlier approach applies:
+        // Candidate is included, and desireMatchPercent on card is null!
+        DiscoveryDto.DiscoveryFeedRequest feedReq = new DiscoveryDto.DiscoveryFeedRequest();
+        feedReq.setLimit(100);
+        DiscoveryDto.DiscoveryFeedResponse feed = discoveryService.getDiscoveryFeed(viewer.getId(), feedReq);
+        assertNotNull(feed);
+        assertNotNull(feed.getData());
+
+        Optional<DiscoveryDto.CandidateCardDto> candCard = feed.getData().getCandidates().stream()
+                .filter(c -> c.getUserId().equals(cand.getId()))
+                .findFirst();
+
+        assertTrue(candCard.isPresent(), "Without desire profile, earlier approach should include candidate within radius");
+        assertNull(candCard.get().getDesireMatchPercent(), "Candidate card should not display desireMatchPercent when desire profile is not configured");
+    }
+
+    @Test
+    void testMatchEngine_WithDesireProfile_FiltersAndBlendsScore() {
+        User viewer = userRepository.save(User.builder()
+                .phoneE164("+9197" + String.format("%08d", Math.abs(UUID.randomUUID().hashCode() % 100000000)))
+                .gender(Gender.MALE)
+                .intent(DatingIntent.SERIOUS_DATING)
+                .birthDate(LocalDate.of(1998, 5, 20))
+                .latitude(12.9716)
+                .longitude(77.5946)
+                .build());
+
+        profileRepository.save(Profile.builder()
+                .userId(viewer.getId())
+                .displayName("Vikram Malhotra")
+                .genderDisplay("Man")
+                .sexualOrientation("Heterosexual")
+                .genderPreferenceDisplay("Women")
+                .city("Bengaluru")
+                .dietaryPref(DietaryPreference.PURE_VEG)
+                .photosJson("[\"https://images.unsplash.com/photo-1?w=500\"]")
+                .build());
+
+        // Viewer configures desire profile: Strict Jain only, Age 22-26, strict (ageFlexible = false)
+        com.match.SwipeAI.dto.DesireDto.DesireProfileRequest desireReq = com.match.SwipeAI.dto.DesireDto.DesireProfileRequest.builder()
+                .minAge(22)
+                .maxAge(26)
+                .ageFlexible(false)
+                .dietaryHarmony("STRICT_JAIN_ONLY")
+                .maxDistanceKm(30)
+                .weekendVibe("COFFEE_AND_BOOKS")
+                .greenFlags(List.of("Reads books"))
+                .build();
+        desireProfileService.saveDesireProfile(viewer.getId(), desireReq);
+
+        // Candidate 1: 24 yrs old, Strict Jain, close -> SHOULD BE INCLUDED with desireMatchPercent
+        User cand1 = userRepository.save(User.builder()
+                .phoneE164("+9197" + String.format("%08d", Math.abs(UUID.randomUUID().hashCode() % 100000000)))
+                .gender(Gender.FEMALE)
+                .intent(DatingIntent.SERIOUS_DATING)
+                .birthDate(LocalDate.of(2000, 1, 15)) // 24 yrs
+                .latitude(12.9730)
+                .longitude(77.5980)
+                .build());
+
+        profileRepository.save(Profile.builder()
+                .userId(cand1.getId())
+                .displayName("Aanya Jain")
+                .genderDisplay("Woman")
+                .sexualOrientation("Heterosexual")
+                .genderPreferenceDisplay("Men")
+                .city("Bengaluru")
+                .dietaryPref(DietaryPreference.STRICT_JAIN)
+                .bio("Lover of literature and filter coffee. Reads books every morning.")
+                .photosJson("[\"https://images.unsplash.com/photo-3?w=500\"]")
+                .build());
+
+        // Candidate 2: 32 yrs old (outside 22-26 strict range) -> MUST BE EXCLUDED by desire age dealbreaker
+        User cand2 = userRepository.save(User.builder()
+                .phoneE164("+9197" + String.format("%08d", Math.abs(UUID.randomUUID().hashCode() % 100000000)))
+                .gender(Gender.FEMALE)
+                .intent(DatingIntent.SERIOUS_DATING)
+                .birthDate(LocalDate.of(1992, 1, 15)) // 32 yrs
+                .latitude(12.9730)
+                .longitude(77.5980)
+                .build());
+
+        profileRepository.save(Profile.builder()
+                .userId(cand2.getId())
+                .displayName("Simran Kaur")
+                .genderDisplay("Woman")
+                .sexualOrientation("Heterosexual")
+                .genderPreferenceDisplay("Men")
+                .city("Bengaluru")
+                .dietaryPref(DietaryPreference.STRICT_JAIN)
+                .photosJson("[\"https://images.unsplash.com/photo-4?w=500\"]")
+                .build());
+
+        DiscoveryDto.DiscoveryFeedResponse feed = discoveryService.getDiscoveryFeed(viewer.getId(), new DiscoveryDto.DiscoveryFeedRequest());
+        assertNotNull(feed);
+        assertNotNull(feed.getData());
+
+        List<DiscoveryDto.CandidateCardDto> cards = feed.getData().getCandidates();
+
+        boolean cand1Found = cards.stream().anyMatch(c -> c.getUserId().equals(cand1.getId()));
+        boolean cand2Found = cards.stream().anyMatch(c -> c.getUserId().equals(cand2.getId()));
+
+        assertTrue(cand1Found, "Matching candidate within desire criteria must be included");
+        assertFalse(cand2Found, "Candidate outside non-flexible desire age range must be excluded");
+
+        DiscoveryDto.CandidateCardDto card1 = cards.stream().filter(c -> c.getUserId().equals(cand1.getId())).findFirst().orElseThrow();
+        assertNotNull(card1.getDesireMatchPercent(), "Desire match percent must be populated when desire profile is configured");
+        assertTrue(card1.getDesireMatchPercent() >= 70, "High desire synergy should yield >= 70% score");
+        assertNotNull(card1.getDesireMatchHighlights());
+        assertFalse(card1.getDesireMatchHighlights().isEmpty(), "Desire highlights should provide reasons");
+    }
+
+    @Test
+    void testDesireProfile_PreferredProfessions_SavesAndMatchesCareer() {
+        UUID userId = UUID.randomUUID();
+        com.match.SwipeAI.dto.DesireDto.DesireProfileRequest req = com.match.SwipeAI.dto.DesireDto.DesireProfileRequest.builder()
+                .minAge(22)
+                .maxAge(30)
+                .preferredProfessions(List.of("Software Engineer", "Doctor / Healthcare"))
+                .build();
+
+        com.match.SwipeAI.dto.DesireDto.DesireProfileResponse saved = desireProfileService.saveDesireProfile(userId, req);
+        assertNotNull(saved);
+        assertNotNull(saved.getPreferredProfessions());
+        assertEquals(2, saved.getPreferredProfessions().size());
+        assertTrue(saved.getPreferredProfessions().contains("Software Engineer"));
+
+        // Test matching calculation with candidate profile having matching profession
+        Profile candProfile = Profile.builder()
+                .occupation("Senior Software Engineer")
+                .job("Software Engineer")
+                .build();
+
+        DesireProfile entity = desireProfileRepository.findById(userId).orElseThrow();
+        com.match.SwipeAI.service.DesireProfileService.DesireMatchResult matchResult = desireProfileService.calculateDesireMatch(entity, candProfile, 25, 5.0);
+        assertNotNull(matchResult);
+        assertTrue(matchResult.highlights().stream().anyMatch(h -> h.contains("Software Engineer") || h.contains("Career alignment")),
+                "Highlights should mention career alignment for Software Engineer");
     }
 }

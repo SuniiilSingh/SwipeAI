@@ -130,6 +130,11 @@ public class ProfileService {
 
     @Transactional
     public ProfileDto.ProfileResponse updateLocation(UUID userId, Double latitude, Double longitude) {
+        return updateLocation(userId, latitude, longitude, null, null);
+    }
+
+    @Transactional
+    public ProfileDto.ProfileResponse updateLocation(UUID userId, Double latitude, Double longitude, String city, String location) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
 
@@ -141,6 +146,24 @@ public class ProfileService {
 
         Profile profile = profileRepository.findById(userId)
                 .orElseGet(() -> Profile.builder().userId(user.getId()).build());
+
+        boolean profileChanged = false;
+        if (city != null && !city.isBlank()) {
+            profile.setCity(city);
+            profileChanged = true;
+        }
+        if (location != null && !location.isBlank()) {
+            profile.setLocation(location);
+            profileChanged = true;
+        } else if (city != null && !city.isBlank() && (profile.getLocation() == null || profile.getLocation().isBlank())) {
+            profile.setLocation(city);
+            profileChanged = true;
+        }
+
+        if (profileChanged || profile.getUserId() == null) {
+            profile.setUserId(user.getId());
+            profile = profileRepository.save(profile);
+        }
 
         return mapToResponse(user, profile);
     }

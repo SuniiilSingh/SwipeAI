@@ -87,6 +87,8 @@ public class ProfileDto {
     public static class LocationUpdateRequest {
         private Double latitude;
         private Double longitude;
+        private String city;
+        private String location;
     }
 
     /**

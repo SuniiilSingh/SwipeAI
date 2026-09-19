@@ -30,6 +30,8 @@ public class DiscoveryService {
     private final ShadowShieldService shadowShieldService;
     private final MultiObjectiveMatchEngine matchEngine;
     private final ProfileService profileService;
+    private final DesireProfileRepository desireProfileRepository;
+    private final DesireProfileService desireProfileService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private static final int DAILY_HARD_CAP = 25;
@@ -38,6 +40,7 @@ public class DiscoveryService {
         User viewer = userRepository.findById(viewerId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         Profile viewerProfile = profileRepository.findById(viewerId).orElse(null);
+        DesireProfile viewerDesire = desireProfileRepository.findById(viewerId).orElse(null);
 
         // 1. Calculate daily swipe count
         OffsetDateTime startOfDay = OffsetDateTime.now().withHour(0).withMinute(0).withSecond(0);
@@ -72,10 +75,14 @@ public class DiscoveryService {
             interactedUserIds.add(i.getTargetId());
         }
 
+        boolean hasConfiguredDesire = viewerDesire != null && Boolean.TRUE.equals(viewerDesire.getIsConfigured());
+
         // 3. Determine viewer's effective search radius limit in km:
-        // Take the radius that user filled in his profile and calculate the profile within that limit; if null show within 50 km.
-        double maxRadiusKm = 50.0; // Default to 50 km if null
-        if (viewerProfile != null && viewerProfile.getMaxDistanceKm() != null && viewerProfile.getMaxDistanceKm() > 0) {
+        // When desire profile is configured, prefer viewerDesire.maxDistanceKm; otherwise use profile radius or 50 km default.
+        double maxRadiusKm = 50.0;
+        if (hasConfiguredDesire && viewerDesire.getMaxDistanceKm() != null && viewerDesire.getMaxDistanceKm() > 0) {
+            maxRadiusKm = viewerDesire.getMaxDistanceKm().doubleValue();
+        } else if (viewerProfile != null && viewerProfile.getMaxDistanceKm() != null && viewerProfile.getMaxDistanceKm() > 0) {
             maxRadiusKm = viewerProfile.getMaxDistanceKm().doubleValue();
         } else if (request.getMaxDistanceKm() != null && request.getMaxDistanceKm() > 0) {
             maxRadiusKm = request.getMaxDistanceKm();
@@ -119,27 +126,130 @@ public class DiscoveryService {
                 }
             }
 
-            // 5. Accurate Distance Calculation with City/Neighborhood Context
+            // 4a. Filter by Dietary Preferences if requested in feed request
+            if (request.getDietaryFilters() != null && !request.getDietaryFilters().isEmpty()) {
+                DietaryPreference candidateDiet = (candidateProfile != null && candidateProfile.getDietaryPref() != null)
+                        ? candidateProfile.getDietaryPref()
+                        : DietaryPreference.PURE_VEG;
+
+                boolean dietMatches = false;
+                for (DietaryPreference filter : request.getDietaryFilters()) {
+                    if (filter == DietaryPreference.PURE_VEG) {
+                        // Strict Jain and Vegan are purely vegetarian as well
+                        if (candidateDiet == DietaryPreference.PURE_VEG ||
+                            candidateDiet == DietaryPreference.STRICT_JAIN ||
+                            candidateDiet == DietaryPreference.VEGAN) {
+                            dietMatches = true;
+                            break;
+                        }
+                    } else if (filter == DietaryPreference.STRICT_JAIN) {
+                        if (candidateDiet == DietaryPreference.STRICT_JAIN) {
+                            dietMatches = true;
+                            break;
+                        }
+                    } else if (filter == DietaryPreference.VEGAN) {
+                        if (candidateDiet == DietaryPreference.VEGAN) {
+                            dietMatches = true;
+                            break;
+                        }
+                    } else if (filter == DietaryPreference.EGGETARIAN) {
+                        if (candidateDiet == DietaryPreference.EGGETARIAN) {
+                            dietMatches = true;
+                            break;
+                        }
+                    } else if (filter == DietaryPreference.NON_VEG) {
+                        if (candidateDiet == DietaryPreference.NON_VEG) {
+                            dietMatches = true;
+                            break;
+                        }
+                    } else if (candidateDiet == filter) {
+                        dietMatches = true;
+                        break;
+                    }
+                }
+                if (!dietMatches) {
+                    continue;
+                }
+            } else if (hasConfiguredDesire && viewerDesire.getDietaryHarmony() != null) {
+                // When Desire Profile is configured and no explicit tags requested, enforce Desire Dietary Harmony
+                String desireDiet = viewerDesire.getDietaryHarmony();
+                DietaryPreference candidateDiet = candidateProfile != null ? candidateProfile.getDietaryPref() : DietaryPreference.PURE_VEG;
+                if ("STRICT_JAIN_ONLY".equalsIgnoreCase(desireDiet)) {
+                    if (candidateDiet != DietaryPreference.STRICT_JAIN) {
+                        continue;
+                    }
+                } else if ("VEG_SPECTRUM".equalsIgnoreCase(desireDiet)) {
+                    if (candidateDiet == DietaryPreference.NON_VEG) {
+                        continue;
+                    }
+                } else if ("EGGETARIAN_OR_VEG".equalsIgnoreCase(desireDiet)) {
+                    if (candidateDiet == DietaryPreference.NON_VEG) {
+                        continue;
+                    }
+                }
+            }
+
+            // 5. Candidate Age & Desire Age Boundaries
+            int candidateAge = 24;
+            if (candidate.getBirthDate() != null) {
+                candidateAge = Period.between(candidate.getBirthDate(), LocalDate.now()).getYears();
+            }
+
+            if (hasConfiguredDesire) {
+                int minAge = viewerDesire.getMinAge() != null ? viewerDesire.getMinAge() : 18;
+                int maxAge = viewerDesire.getMaxAge() != null ? viewerDesire.getMaxAge() : 99;
+                boolean isFlexible = Boolean.TRUE.equals(viewerDesire.getAgeFlexible());
+                int lowerBound = isFlexible ? Math.max(18, minAge - 2) : minAge;
+                int upperBound = isFlexible ? maxAge + 2 : maxAge;
+                if (candidateAge < lowerBound || candidateAge > upperBound) {
+                    log.debug("Candidate {} excluded: age {} outside desire range [{}, {}]", candidate.getId(), candidateAge, lowerBound, upperBound);
+                    continue;
+                }
+            }
+
+            // 6. Accurate Distance Calculation with City/Neighborhood Context
             double distanceKm = matchEngine.calculateDistanceWithContext(
                     viewerLat, viewerLon, viewerProfile,
                     candidate.getLatitude(), candidate.getLongitude(), candidateProfile
             );
 
-            // 6. Strict Search Radius Limit: Only match profiles within user's radius limit
+            // Strict Search Radius Limit: Only match profiles within effective radius limit
             if (distanceKm > maxRadiusKm) {
-                log.debug("Candidate {} excluded: distance {} km exceeds user max radius {} km",
+                log.debug("Candidate {} excluded: distance {} km exceeds max radius {} km",
                         candidate.getId(), distanceKm, maxRadiusKm);
                 continue;
             }
 
-            // 7. Multi-Objective Compatibility Score
-            int compScore = matchEngine.calculateCompatibilityScore(
-                    viewer, viewerProfile,
-                    candidate, candidateProfile,
-                    distanceKm
-            );
+            // 7. Multi-Objective Compatibility Score Calculation
+            int compScore;
+            Integer desireScorePercent = null;
+            List<String> desireHighlights = List.of();
 
-            candidateCards.add(buildCandidateCard(candidate, candidateProfile, distanceKm, compScore));
+            if (hasConfiguredDesire) {
+                DesireProfileService.DesireMatchResult desireResult = desireProfileService.calculateDesireMatch(
+                        viewerDesire, candidateProfile, candidateAge, distanceKm
+                );
+                desireScorePercent = desireResult.scorePercent();
+                desireHighlights = desireResult.highlights();
+
+                // Multi-objective blended score factoring in desire blueprint
+                compScore = matchEngine.calculateCompatibilityScoreWithDesire(
+                        viewer, viewerProfile,
+                        candidate, candidateProfile,
+                        distanceKm,
+                        desireScorePercent
+                );
+            } else {
+                // Earlier approach: pure baseline compatibility without desire consideration
+                compScore = matchEngine.calculateCompatibilityScore(
+                        viewer, viewerProfile,
+                        candidate, candidateProfile,
+                        distanceKm
+                );
+            }
+
+            candidateCards.add(buildCandidateCard(candidate, candidateProfile, distanceKm, compScore,
+                    desireScorePercent, desireHighlights));
         }
 
         // Sort descending by multi-objective compatibility score
@@ -254,6 +364,11 @@ public class DiscoveryService {
     }
 
     public DiscoveryDto.CandidateCardDto buildCandidateCard(User user, Profile profile, double distanceKm, int compScore) {
+        return buildCandidateCard(user, profile, distanceKm, compScore, 88, List.of("High vibe alignment ✨"));
+    }
+
+    public DiscoveryDto.CandidateCardDto buildCandidateCard(User user, Profile profile, double distanceKm, int compScore,
+                                                             Integer desireMatchPercent, List<String> desireMatchHighlights) {
         int age = 24;
         if (user.getBirthDate() != null) {
             age = Period.between(user.getBirthDate(), LocalDate.now()).getYears();
@@ -341,7 +456,8 @@ public class DiscoveryService {
                 .photos(photos)
                 .photo1(photo1)
                 .photo2(photo2)
-                .photo3(photo3)
+                .desireMatchPercent(desireMatchPercent)
+                .desireMatchHighlights(desireMatchHighlights != null ? desireMatchHighlights : List.of())
                 .build();
     }
 

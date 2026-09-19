@@ -54,6 +54,19 @@ public class MultiObjectiveMatchEngine {
         return finalScore;
     }
 
+    /**
+     * Enhanced Compatibility Score incorporating the user's active Desire Profile blueprint.
+     * Blends baseline multi-objective mutual synergy (50%) with specific partner desire alignment (50%).
+     */
+    public int calculateCompatibilityScoreWithDesire(User viewer, Profile viewerProfile,
+                                                    User candidate, Profile candidateProfile,
+                                                    double distanceKm,
+                                                    int desireScorePercent) {
+        int baselineScore = calculateCompatibilityScore(viewer, viewerProfile, candidate, candidateProfile, distanceKm);
+        double blended = (0.50 * baselineScore) + (0.50 * desireScorePercent);
+        return (int) Math.round(Math.max(50.0, Math.min(99.0, blended)));
+    }
+
     private double calculateVectorSimilarity(Profile a, Profile b) {
         if (a == null || b == null) return 0.75;
         // High humor/meme match if both have similar food or city or circle
@@ -74,7 +87,8 @@ public class MultiObjectiveMatchEngine {
             } else if ((a.getDietaryPref() == DietaryPreference.PURE_VEG || a.getDietaryPref() == DietaryPreference.STRICT_JAIN || a.getDietaryPref() == DietaryPreference.VEGAN) &&
                     (b.getDietaryPref() == DietaryPreference.PURE_VEG || b.getDietaryPref() == DietaryPreference.STRICT_JAIN || b.getDietaryPref() == DietaryPreference.VEGAN)) {
                 dietMatch = 0.90;
-            } else if (a.getDietaryPref() == DietaryPreference.EGGETARIAN && b.getDietaryPref() == DietaryPreference.PURE_VEG) {
+            } else if ((a.getDietaryPref() == DietaryPreference.EGGETARIAN && (b.getDietaryPref() == DietaryPreference.PURE_VEG || b.getDietaryPref() == DietaryPreference.STRICT_JAIN || b.getDietaryPref() == DietaryPreference.VEGAN)) ||
+                    (b.getDietaryPref() == DietaryPreference.EGGETARIAN && (a.getDietaryPref() == DietaryPreference.PURE_VEG || a.getDietaryPref() == DietaryPreference.STRICT_JAIN || a.getDietaryPref() == DietaryPreference.VEGAN))) {
                 dietMatch = 0.80;
             }
         }

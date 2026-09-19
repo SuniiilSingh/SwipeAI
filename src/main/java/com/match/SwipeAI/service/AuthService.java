@@ -66,7 +66,9 @@ public class AuthService {
                 request.getIntent(),
                 request.getBirthDate(),
                 request.getLatitude(),
-                request.getLongitude()
+                request.getLongitude(),
+                request.getCity(),
+                request.getLocation()
         );
     }
 
@@ -85,11 +87,13 @@ public class AuthService {
                 request.getIntent(),
                 request.getBirthDate(),
                 request.getLatitude(),
-                request.getLongitude()
+                request.getLongitude(),
+                request.getCity(),
+                request.getLocation()
         ));
     }
 
-    private AuthDto.AuthResponse getOrCreateUser(String phone, boolean isWhatsApp, Gender gender, DatingIntent intent, LocalDate birthDate, Double latitude, Double longitude) {
+    private AuthDto.AuthResponse getOrCreateUser(String phone, boolean isWhatsApp, Gender gender, DatingIntent intent, LocalDate birthDate, Double latitude, Double longitude, String city, String location) {
         Optional<User> optionalUser = userRepository.findByPhoneE164(phone);
         boolean isNew = optionalUser.isEmpty();
 
@@ -118,6 +122,8 @@ public class AuthService {
                     .userId(user.getId())
                     .displayName("")
                     .bio("")
+                    .city(city)
+                    .location(location != null ? location : city)
                     .languagesSpoken(List.of())
                     .photosJson("[]")
                     .build();
@@ -136,6 +142,16 @@ public class AuthService {
             }
             if (changed) {
                 user = userRepository.save(user);
+            }
+            if (city != null || location != null) {
+                profileRepository.findById(user.getId()).ifPresent(p -> {
+                    if (city != null && !city.isBlank()) p.setCity(city);
+                    if (location != null && !location.isBlank()) p.setLocation(location);
+                    else if (city != null && !city.isBlank() && (p.getLocation() == null || p.getLocation().isBlank())) {
+                        p.setLocation(city);
+                    }
+                    profileRepository.save(p);
+                });
             }
         }
 

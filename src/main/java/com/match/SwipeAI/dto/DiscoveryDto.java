@@ -103,6 +103,8 @@ public class DiscoveryDto {
         private String photo1;
         private String photo2;
         private String photo3;
+        private Integer desireMatchPercent;
+        private List<String> desireMatchHighlights;
     }
 
     @Data

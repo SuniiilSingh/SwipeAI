@@ -214,8 +214,8 @@ public class MutualChemistrySparksEngine {
     private String generateLifestyleSpark(Profile a, Profile b, String candidateName) {
         // Dietary match
         if (a.getDietaryPref() != null && b.getDietaryPref() != null) {
-            if ((a.getDietaryPref() == DietaryPreference.PURE_VEG || a.getDietaryPref() == DietaryPreference.STRICT_JAIN) &&
-                (b.getDietaryPref() == DietaryPreference.PURE_VEG || b.getDietaryPref() == DietaryPreference.STRICT_JAIN)) {
+            if ((a.getDietaryPref() == DietaryPreference.PURE_VEG || a.getDietaryPref() == DietaryPreference.STRICT_JAIN || a.getDietaryPref() == DietaryPreference.VEGAN) &&
+                (b.getDietaryPref() == DietaryPreference.PURE_VEG || b.getDietaryPref() == DietaryPreference.STRICT_JAIN || b.getDietaryPref() == DietaryPreference.VEGAN)) {
                 return "🥗 100% Veggie match! Up for finding the best butter masala dosa & chaat spots in town?";
             }
             if (a.getDietaryPref() == DietaryPreference.NON_VEG && b.getDietaryPref() == DietaryPreference.NON_VEG) {

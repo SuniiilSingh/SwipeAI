@@ -60,7 +60,13 @@ public class ProfileController {
     public ResponseEntity<ProfileDto.ProfileResponse> updateLocation(
             @AuthenticationPrincipal UUID userId,
             @RequestBody ProfileDto.LocationUpdateRequest request) {
-        ProfileDto.ProfileResponse response = profileService.updateLocation(userId, request.getLatitude(), request.getLongitude());
+        ProfileDto.ProfileResponse response = profileService.updateLocation(
+                userId,
+                request.getLatitude(),
+                request.getLongitude(),
+                request.getCity(),
+                request.getLocation()
+        );
         return ResponseEntity.ok(response);
     }
 
