@@ -17,6 +17,7 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.Period;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -102,11 +103,19 @@ public class DiscoveryService {
         List<User> allUsers = userRepository.findAll();
         List<DiscoveryDto.CandidateCardDto> candidateCards = new ArrayList<>();
 
-        for (User candidate : allUsers) {
-            if (interactedUserIds.contains(candidate.getId())) continue;
-            if (Boolean.TRUE.equals(candidate.getIsIncognito())) continue;
+        // Pre-filter eligible candidates to avoid loading profiles for self, already-interacted, or incognito users
+        List<User> eligibleCandidates = allUsers.stream()
+                .filter(c -> !c.getId().equals(viewerId))
+                .filter(c -> !interactedUserIds.contains(c.getId()))
+                .filter(c -> !Boolean.TRUE.equals(c.getIsIncognito()))
+                .toList();
 
-            Profile candidateProfile = profileRepository.findById(candidate.getId()).orElse(null);
+        List<UUID> candidateIds = eligibleCandidates.stream().map(User::getId).toList();
+        Map<UUID, Profile> profileMap = profileRepository.findAllById(candidateIds).stream()
+                .collect(Collectors.toMap(Profile::getUserId, p -> p));
+
+        for (User candidate : eligibleCandidates) {
+            Profile candidateProfile = profileMap.get(candidate.getId());
 
             // 2. Strict Gender & Interest Matching (e.g. Male looking for Women -> only Women shown)
             if (!isGenderAndInterestMatch(viewer, viewerProfile, candidate, candidateProfile)) {

@@ -114,22 +114,16 @@ public class ShadowShieldService {
 
         // 2. Query Contact Hash: Is candidate's phone in viewer's shield?
         String candidatePhoneHash = hashPhoneNumber(candidate.getPhoneE164());
-        List<UserContactShield> viewerShields = shieldRepository.findByUserId(viewer.getId());
-        for (UserContactShield s : viewerShields) {
-            if (candidatePhoneHash.equals(s.getContactPhoneHash())) {
-                log.debug("Candidate {} found in viewer {}'s contact shield", candidate.getId(), viewer.getId());
-                return true;
-            }
+        if (shieldRepository.existsByUserIdAndContactPhoneHash(viewer.getId(), candidatePhoneHash)) {
+            log.debug("Candidate {} found in viewer {}'s contact shield", candidate.getId(), viewer.getId());
+            return true;
         }
 
         // 3. Symmetric Check: Is viewer in candidate's shield?
         String viewerPhoneHash = hashPhoneNumber(viewer.getPhoneE164());
-        List<UserContactShield> candidateShields = shieldRepository.findByUserId(candidate.getId());
-        for (UserContactShield s : candidateShields) {
-            if (viewerPhoneHash.equals(s.getContactPhoneHash())) {
-                log.debug("Viewer {} found in candidate {}'s contact shield", viewer.getId(), candidate.getId());
-                return true;
-            }
+        if (shieldRepository.existsByUserIdAndContactPhoneHash(candidate.getId(), viewerPhoneHash)) {
+            log.debug("Viewer {} found in candidate {}'s contact shield", viewer.getId(), candidate.getId());
+            return true;
         }
 
         return false;

@@ -19,7 +19,13 @@ import java.util.UUID;
 @Entity
 @Table(name = "matches",
     uniqueConstraints = @UniqueConstraint(name = "unique_match_pair", columnNames = {"user_a_id", "user_b_id"}),
-    indexes = @Index(name = "idx_matches_users", columnList = "user_a_id, user_b_id, status")
+    indexes = {
+        @Index(name = "idx_matches_users", columnList = "user_a_id, user_b_id, status"),
+        @Index(name = "idx_matches_user_a_active", columnList = "user_a_id, status, matched_at DESC"),
+        @Index(name = "idx_matches_user_b_active", columnList = "user_b_id, status, matched_at DESC"),
+        @Index(name = "idx_matches_status_expires", columnList = "status, expires_at"),
+        @Index(name = "idx_matches_reverse_pair", columnList = "user_b_id, user_a_id")
+    }
 )
 @Data
 @Builder

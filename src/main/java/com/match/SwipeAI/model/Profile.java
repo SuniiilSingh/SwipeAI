@@ -20,7 +20,13 @@ import java.util.UUID;
  * photo grid (6 photos + selfie), interests, prompts, and preferences.
  */
 @Entity
-@Table(name = "profiles")
+@Table(name = "profiles", indexes = {
+    @Index(name = "idx_profiles_city_hood", columnList = "city, neighborhood"),
+    @Index(name = "idx_profiles_micro_circle", columnList = "micro_circle"),
+    @Index(name = "idx_profiles_dietary", columnList = "dietary_pref"),
+    @Index(name = "idx_profiles_gender", columnList = "gender_display"),
+    @Index(name = "idx_profiles_occupation", columnList = "occupation")
+})
 @Data
 @Builder
 @NoArgsConstructor

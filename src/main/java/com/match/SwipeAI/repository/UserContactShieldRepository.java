@@ -11,6 +11,7 @@ import java.util.UUID;
 @Repository
 public interface UserContactShieldRepository extends JpaRepository<UserContactShield, Long> {
     List<UserContactShield> findByUserId(UUID userId);
+    boolean existsByUserIdAndContactPhoneHash(UUID userId, String contactPhoneHash);
     List<UserContactShield> findByContactPhoneHash(String contactPhoneHash);
     List<UserContactShield> findByCorporateDomain(String corporateDomain);
     Optional<UserContactShield> findByUserIdAndCorporateDomainIsNotNull(UUID userId);

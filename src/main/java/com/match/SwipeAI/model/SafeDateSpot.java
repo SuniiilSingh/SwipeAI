@@ -12,7 +12,10 @@ import lombok.NoArgsConstructor;
  * offering 15% discount coupons and automated live SOS check-in tracking.
  */
 @Entity
-@Table(name = "safe_date_spots")
+@Table(name = "safe_date_spots", indexes = {
+    @Index(name = "idx_safe_spots_city", columnList = "city"),
+    @Index(name = "idx_safe_spots_lat_lng", columnList = "latitude, longitude")
+})
 @Data
 @Builder
 @NoArgsConstructor

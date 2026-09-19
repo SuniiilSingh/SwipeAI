@@ -21,6 +21,7 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.Period;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -40,12 +41,25 @@ public class MatchService {
 
     public List<MatchDto.MatchResponseDto> getMatchesForUser(UUID userId) {
         List<Match> matches = matchRepository.findActiveMatchesForUser(userId);
-        List<MatchDto.MatchResponseDto> result = new ArrayList<>();
+        if (matches.isEmpty()) {
+            return Collections.emptyList();
+        }
 
+        List<UUID> otherUserIds = matches.stream()
+                .map(m -> m.getUserAId().equals(userId) ? m.getUserBId() : m.getUserAId())
+                .distinct()
+                .toList();
+
+        Map<UUID, User> userMap = userRepository.findAllById(otherUserIds).stream()
+                .collect(Collectors.toMap(User::getId, u -> u));
+        Map<UUID, Profile> profileMap = profileRepository.findAllById(otherUserIds).stream()
+                .collect(Collectors.toMap(Profile::getUserId, p -> p));
+
+        List<MatchDto.MatchResponseDto> result = new ArrayList<>(matches.size());
         for (Match match : matches) {
             UUID otherUserId = match.getUserAId().equals(userId) ? match.getUserBId() : match.getUserAId();
-            User otherUser = userRepository.findById(otherUserId).orElse(null);
-            Profile otherProfile = profileRepository.findById(otherUserId).orElse(null);
+            User otherUser = userMap.get(otherUserId);
+            Profile otherProfile = profileMap.get(otherUserId);
 
             if (otherUser != null) {
                 result.add(mapToMatchDto(match, userId, otherUser, otherProfile));

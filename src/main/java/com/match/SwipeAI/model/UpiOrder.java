@@ -19,7 +19,8 @@ import java.util.UUID;
 @Entity
 @Table(name = "upi_orders", indexes = {
     @Index(name = "idx_upi_order_id", columnList = "order_id", unique = true),
-    @Index(name = "idx_upi_user", columnList = "user_id, status")
+    @Index(name = "idx_upi_user", columnList = "user_id, status"),
+    @Index(name = "idx_upi_user_created", columnList = "user_id, created_at DESC")
 })
 @Data
 @Builder

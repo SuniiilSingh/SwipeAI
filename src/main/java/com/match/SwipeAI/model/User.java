@@ -22,7 +22,9 @@ import java.util.UUID;
 @Entity
 @Table(name = "users", indexes = {
     @Index(name = "idx_users_discovery", columnList = "gender, intent, birth_date"),
-    @Index(name = "idx_users_lat_lng", columnList = "latitude, longitude")
+    @Index(name = "idx_users_lat_lng", columnList = "latitude, longitude"),
+    @Index(name = "idx_users_active_gender_age", columnList = "is_incognito, gender, birth_date"),
+    @Index(name = "idx_users_karma", columnList = "karma_score DESC")
 })
 @Data
 @Builder

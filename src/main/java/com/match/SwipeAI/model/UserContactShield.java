@@ -17,6 +17,8 @@ import java.util.UUID;
  */
 @Entity
 @Table(name = "user_contact_shields", indexes = {
+    @Index(name = "idx_contact_shield_user", columnList = "user_id"),
+    @Index(name = "idx_contact_shield_user_hash", columnList = "user_id, contact_phone_hash"),
     @Index(name = "idx_contact_hash", columnList = "contact_phone_hash"),
     @Index(name = "idx_corp_domain", columnList = "corporate_domain")
 })
