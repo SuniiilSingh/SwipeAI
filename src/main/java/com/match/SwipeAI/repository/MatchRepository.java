@@ -21,6 +21,9 @@ public interface MatchRepository extends JpaRepository<Match, UUID> {
     @Query("SELECT m FROM Match m WHERE (m.userAId = :userId OR m.userBId = :userId) AND m.status != 'UNMATCHED' ORDER BY m.matchedAt DESC")
     List<Match> findActiveMatchesForUser(@Param("userId") UUID userId);
 
+    @Query("SELECT m FROM Match m WHERE (m.userAId = :userId OR m.userBId = :userId) AND m.status != 'UNMATCHED' ORDER BY m.matchedAt DESC")
+    List<Match> findActiveMatchesForUser(@Param("userId") UUID userId, org.springframework.data.domain.Pageable pageable);
+
     @Query("SELECT m FROM Match m WHERE ((m.userAId = :userA AND m.userBId = :userB) OR (m.userAId = :userB AND m.userBId = :userA))")
     Optional<Match> findMatchBetween(@Param("userA") UUID userA, @Param("userB") UUID userB);
 

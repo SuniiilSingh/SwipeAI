@@ -31,8 +31,11 @@ public class ChatController {
     @GetMapping("/{matchId}/messages")
     public ResponseEntity<List<ChatDto.ChatMessageResponse>> getMessages(
             @AuthenticationPrincipal UUID userId,
-            @PathVariable UUID matchId) {
-        List<ChatDto.ChatMessageResponse> messages = chatService.getMessages(matchId, userId);
+            @PathVariable UUID matchId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "100") int size) {
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, Math.min(size, 200));
+        List<ChatDto.ChatMessageResponse> messages = chatService.getMessages(matchId, userId, pageable);
         return ResponseEntity.ok(messages);
     }
 

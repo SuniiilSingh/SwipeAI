@@ -34,6 +34,11 @@ public class ChatService {
 
     @Transactional
     public List<ChatDto.ChatMessageResponse> getMessages(UUID matchId, UUID currentUserId) {
+        return getMessages(matchId, currentUserId, org.springframework.data.domain.PageRequest.of(0, 100));
+    }
+
+    @Transactional
+    public List<ChatDto.ChatMessageResponse> getMessages(UUID matchId, UUID currentUserId, org.springframework.data.domain.Pageable pageable) {
         Match match = matchRepository.findById(matchId)
                 .orElseThrow(() -> new IllegalArgumentException("Match not found: " + matchId));
 
@@ -42,7 +47,7 @@ public class ChatService {
             throw new AccessDeniedException("Access denied: You are not an authorized participant in this encrypted chat lounge.");
         }
 
-        List<ChatMessage> messages = chatMessageRepository.findByMatchIdOrderByCreatedAtAsc(matchId);
+        List<ChatMessage> messages = chatMessageRepository.findByMatchIdOrderByCreatedAtAsc(matchId, pageable);
         List<ChatDto.ChatMessageResponse> responses = new ArrayList<>();
         List<ChatMessage> toMarkRead = new ArrayList<>();
         OffsetDateTime now = OffsetDateTime.now();

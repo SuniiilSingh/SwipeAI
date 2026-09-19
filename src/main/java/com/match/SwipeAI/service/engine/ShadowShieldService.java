@@ -68,7 +68,7 @@ public class ShadowShieldService {
             shieldRepository.save(shield);
         }
 
-        long totalCount = shieldRepository.findByUserId(userId).size();
+        long totalCount = shieldRepository.countByUserId(userId);
         log.info("Synced {} contact hashes for user {}. Total active shields: {}", hashesToStore.size(), userId, totalCount);
 
         return ShieldDto.ShieldStatusResponse.builder()

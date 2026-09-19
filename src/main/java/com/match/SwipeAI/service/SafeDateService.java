@@ -21,9 +21,9 @@ public class SafeDateService {
     public List<SafeDateDto.SafeDateSpotDto> getSafeSpots(String city) {
         List<SafeDateSpot> spots;
         if (city != null && !city.isBlank()) {
-            spots = safeDateSpotRepository.findByCityIgnoreCase(city);
+            spots = safeDateSpotRepository.findTop50ByCityIgnoreCaseOrderByNameAsc(city.trim());
         } else {
-            spots = safeDateSpotRepository.findAll();
+            spots = safeDateSpotRepository.findTop50ByOrderByCityAscNameAsc();
         }
 
         List<SafeDateDto.SafeDateSpotDto> dtos = new ArrayList<>();

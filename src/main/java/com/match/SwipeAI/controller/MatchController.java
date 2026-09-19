@@ -30,8 +30,12 @@ public class MatchController {
      * @return List of active matches
      */
     @GetMapping
-    public ResponseEntity<List<MatchDto.MatchResponseDto>> getMatches(@AuthenticationPrincipal UUID userId) {
-        List<MatchDto.MatchResponseDto> matches = matchService.getMatchesForUser(userId);
+    public ResponseEntity<List<MatchDto.MatchResponseDto>> getMatches(
+            @AuthenticationPrincipal UUID userId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size) {
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, Math.min(size, 100));
+        List<MatchDto.MatchResponseDto> matches = matchService.getMatchesForUser(userId, pageable);
         return ResponseEntity.ok(matches);
     }
 

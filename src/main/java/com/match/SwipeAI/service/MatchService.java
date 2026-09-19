@@ -14,6 +14,8 @@ import com.match.SwipeAI.service.integration.AiWingmanService;
 import com.match.SwipeAI.service.integration.PushNotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -42,7 +44,11 @@ public class MatchService {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public List<MatchDto.MatchResponseDto> getMatchesForUser(UUID userId) {
-        List<Match> matches = matchRepository.findActiveMatchesForUser(userId);
+        return getMatchesForUser(userId, PageRequest.of(0, 50));
+    }
+
+    public List<MatchDto.MatchResponseDto> getMatchesForUser(UUID userId, Pageable pageable) {
+        List<Match> matches = matchRepository.findActiveMatchesForUser(userId, pageable);
         if (matches.isEmpty()) {
             return Collections.emptyList();
         }
@@ -202,11 +208,11 @@ public class MatchService {
             matchRepository.save(match);
         }
 
-        List<ChatMessage> messages = chatMessageRepository.findByMatchIdOrderByCreatedAtAsc(match.getId());
+        Optional<ChatMessage> latestOpt = chatMessageRepository.findFirstByMatchIdOrderByCreatedAtDesc(match.getId());
         String lastMsg = null;
         OffsetDateTime lastTime = null;
-        if (!messages.isEmpty()) {
-            ChatMessage latest = messages.get(messages.size() - 1);
+        if (latestOpt.isPresent()) {
+            ChatMessage latest = latestOpt.get();
             if (latest.getContent() != null && latest.getContent().startsWith("E2EE:v1:")) {
                 lastMsg = "🔒 Encrypted message";
             } else {
