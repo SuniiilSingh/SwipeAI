@@ -13,6 +13,7 @@ public enum MessageType {
      * Ephemeral or persistent audio note recorded in native dialect.
      */
     AUDIO_NOTE,
+    AUDIO,
 
     /**
      * Image attachment (inspected by Shield 360 AI Safe Detector).

@@ -29,7 +29,16 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
         log.debug("Received WS message: {}", message.getPayload());
-        // Echo / broadcast handled through ChatService
+        try {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> map = objectMapper.readValue(message.getPayload(), Map.class);
+            String recipientId = (String) map.get("recipientId");
+            if (recipientId != null && !recipientId.isBlank()) {
+                sendMessageToUser(recipientId, map);
+            }
+        } catch (Exception e) {
+            log.trace("Non-JSON or unforwardable WS message: {}", e.getMessage());
+        }
     }
 
     @Override

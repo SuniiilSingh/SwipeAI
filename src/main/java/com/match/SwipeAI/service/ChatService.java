@@ -82,6 +82,7 @@ public class ChatService {
         if (!toMarkRead.isEmpty()) {
             chatMessageRepository.saveAll(toMarkRead);
         }
+        pushNotificationService.markMatchNotificationsAsRead(currentUserId, matchId);
 
         return responses;
     }

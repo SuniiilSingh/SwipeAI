@@ -31,4 +31,12 @@ public class CallingDto {
         private boolean isVideo;
         private boolean isSimulated;
     }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class CallSignalRequest {
+        private UUID matchId;
+        private String signalType; // CALL_ACCEPTED, CALL_DECLINED, CALL_ENDED
+    }
 }

@@ -31,5 +31,9 @@ public interface UserNotificationRepository extends JpaRepository<UserNotificati
     @Query("UPDATE UserNotification n SET n.isRead = true WHERE n.id = :id AND n.userId = :userId")
     int markAsRead(@Param("id") UUID id, @Param("userId") UUID userId);
 
+    @Modifying
+    @Query("UPDATE UserNotification n SET n.isRead = true WHERE n.userId = :userId AND n.isRead = false AND n.dataJson LIKE :matchPattern")
+    int markMatchNotificationsAsRead(@Param("userId") UUID userId, @Param("matchPattern") String matchPattern);
+
     void deleteByIdAndUserId(UUID id, UUID userId);
 }

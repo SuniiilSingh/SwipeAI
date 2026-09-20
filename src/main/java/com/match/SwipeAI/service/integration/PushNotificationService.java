@@ -103,7 +103,7 @@ public class PushNotificationService {
             msg.put("title", title);
             msg.put("body", body);
             msg.put("sound", "default");
-            msg.put("channelId", "default");
+            msg.put("channelId", "blunderr-alerts");
             msg.put("priority", "high");
             if (data != null && !data.isEmpty()) {
                 msg.put("data", data);
@@ -203,6 +203,15 @@ public class PushNotificationService {
     @Transactional
     public int markAllAsRead(UUID userId) {
         return userNotificationRepository.markAllAsRead(userId);
+    }
+
+    @Transactional
+    public int markMatchNotificationsAsRead(UUID userId, UUID matchId) {
+        if (userId == null || matchId == null) return 0;
+        String pattern = "%" + matchId.toString() + "%";
+        int count = userNotificationRepository.markMatchNotificationsAsRead(userId, pattern);
+        log.info("Marked {} notifications as read for match {} and user {}", count, matchId, userId);
+        return count;
     }
 
     @Transactional

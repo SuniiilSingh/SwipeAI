@@ -117,6 +117,17 @@ public class NotificationController {
     }
 
     /**
+     * Mark all notifications as read for a specific match.
+     */
+    @PutMapping("/match/{matchId}/read")
+    public ResponseEntity<Map<String, Object>> markMatchNotificationsAsRead(
+            @PathVariable UUID matchId,
+            @AuthenticationPrincipal UUID userId) {
+        int count = pushNotificationService.markMatchNotificationsAsRead(userId, matchId);
+        return ResponseEntity.ok(Map.of("status", "success", "markedCount", count));
+    }
+
+    /**
      * Delete a notification.
      */
     @DeleteMapping("/{id}")
