@@ -179,6 +179,18 @@ public class MatchService {
         log.info("User {} unmatched match {}", userId, matchId);
     }
 
+    @Transactional
+    public void reportMatch(UUID matchId, UUID userId, String reason) {
+        Match match = matchRepository.findById(matchId).orElseThrow();
+        match.setStatus(MatchStatus.UNMATCHED);
+        matchRepository.save(match);
+
+        UUID reportedUserId = match.getUserAId().equals(userId) ? match.getUserBId() : match.getUserAId();
+        karmaService.penaltyHarassment(reportedUserId);
+        log.warn("User {} reported match {} with user {} for reason: '{}'. Applied -50 karma penalty.",
+                userId, matchId, reportedUserId, reason);
+    }
+
     private MatchDto.MatchResponseDto mapToMatchDto(Match match, UUID currentUserId, User otherUser, Profile otherProfile) {
         long remainingHours = Math.max(0, Duration.between(OffsetDateTime.now(), match.getExpiresAt()).toHours());
 
