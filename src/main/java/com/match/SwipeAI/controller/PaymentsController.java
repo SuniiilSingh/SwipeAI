@@ -33,6 +33,7 @@ public class PaymentsController {
     private final CashfreePaymentService cashfreePaymentService;
     private final PaymentAuditService paymentAuditService;
     private final PaymentCryptoService paymentCryptoService;
+    private final com.match.SwipeAI.service.integration.PaymentExecutionLogService paymentExecutionLogService;
 
     /**
      * Retrieve the full micro-sachet catalog and Weekend Dating Pass pricing.
@@ -46,6 +47,7 @@ public class PaymentsController {
     /**
      * Initiate a micro-sachet transaction and generate an NPCI UPI deep-link intent string.
      */
+    @com.match.SwipeAI.annotation.TrackPaymentTransaction(action = "CREATE_UPI_ORDER")
     @PostMapping("/upi/create-order")
     public ResponseEntity<PaymentDto.CreateOrderResponse> createOrder(
             @AuthenticationPrincipal UUID userId,
@@ -65,6 +67,7 @@ public class PaymentsController {
      * Idempotent payment webhook handler with HMAC-SHA256 signature verification.
      * Automatically credits user balances upon capture.
      */
+    @com.match.SwipeAI.annotation.TrackPaymentTransaction(action = "UPI_WEBHOOK")
     @PostMapping("/upi/webhook")
     public ResponseEntity<Map<String, String>> handleUpiWebhook(
             @RequestHeader(value = "X-Razorpay-Signature", required = false) String signature,
@@ -85,6 +88,7 @@ public class PaymentsController {
     /**
      * Demo simulation endpoint for developer testing without live payment webhooks.
      */
+    @com.match.SwipeAI.annotation.TrackPaymentTransaction(action = "CONFIRM_UPI_ORDER")
     @PostMapping("/upi/test-confirm/{orderId}")
     public ResponseEntity<Map<String, String>> testConfirmOrder(
             @AuthenticationPrincipal UUID userId,
@@ -111,6 +115,7 @@ public class PaymentsController {
     /**
      * Verify and credit Native In-App Purchases (Google Play Billing / Apple StoreKit).
      */
+    @com.match.SwipeAI.annotation.TrackPaymentTransaction(action = "IAP_VERIFY")
     @PostMapping("/iap/verify")
     public ResponseEntity<PaymentDto.IapVerifyResponse> verifyIapPurchase(
             @AuthenticationPrincipal UUID userId,
@@ -131,6 +136,7 @@ public class PaymentsController {
     /**
      * Create Cashfree Checkout Order for web or external payment flows.
      */
+    @com.match.SwipeAI.annotation.TrackPaymentTransaction(action = "CREATE_CASHFREE_ORDER")
     @PostMapping("/cashfree/create-order")
     public ResponseEntity<PaymentDto.CashfreeCreateOrderResponse> createCashfreeOrder(
             @AuthenticationPrincipal UUID userId,
@@ -150,6 +156,7 @@ public class PaymentsController {
     /**
      * Cashfree Webhook Handler with HMAC-SHA256 signature verification.
      */
+    @com.match.SwipeAI.annotation.TrackPaymentTransaction(action = "CASHFREE_WEBHOOK")
     @PostMapping("/cashfree/webhook")
     public ResponseEntity<Map<String, String>> handleCashfreeWebhook(
             @RequestHeader(value = "x-webhook-signature", required = false) String signature,
@@ -170,6 +177,7 @@ public class PaymentsController {
     /**
      * Demo simulation endpoint for developer testing of Cashfree payments.
      */
+    @com.match.SwipeAI.annotation.TrackPaymentTransaction(action = "CONFIRM_CASHFREE_ORDER")
     @PostMapping("/cashfree/test-confirm/{orderId}")
     public ResponseEntity<Map<String, String>> testConfirmCashfreeOrder(
             @PathVariable String orderId) {
@@ -203,12 +211,31 @@ public class PaymentsController {
      * Manual support review and reconciliation endpoint.
      * Allows customer care to attach review notes, resolve disputes, and grant benefits.
      */
+    @com.match.SwipeAI.annotation.TrackPaymentTransaction(action = "MANUAL_ORDER_REVIEW")
     @PostMapping("/audit/orders/{orderId}/review")
     public ResponseEntity<PaymentDto.PaymentAuditTimelineDto> reviewOrder(
             @AuthenticationPrincipal UUID adminUserId,
             @PathVariable String orderId,
             @RequestBody PaymentDto.ReviewOrderRequest request) {
         return ResponseEntity.ok(paymentAuditService.reviewAndReconcileOrder(orderId, request, adminUserId));
+    }
+
+    /**
+     * Retrieve lightweight AOP execution logs for support diagnosis.
+     */
+    @GetMapping("/audit/execution-logs")
+    public ResponseEntity<List<com.match.SwipeAI.model.PaymentExecutionLog>> getExecutionLogs(
+            @RequestParam(required = false) String status) {
+        return ResponseEntity.ok(paymentExecutionLogService.getRecentLogs(status));
+    }
+
+    /**
+     * Retrieve lightweight AOP execution logs for a specific order.
+     */
+    @GetMapping("/audit/execution-logs/{orderId}")
+    public ResponseEntity<List<com.match.SwipeAI.model.PaymentExecutionLog>> getExecutionLogsByOrderId(
+            @PathVariable String orderId) {
+        return ResponseEntity.ok(paymentExecutionLogService.getLogsByOrderId(orderId));
     }
 
     private String extractClientIp(HttpServletRequest request) {

@@ -71,6 +71,9 @@ class SwipeAiFullCrudIntegrationTests {
     private com.match.SwipeAI.repository.PaymentAuditLogRepository paymentAuditLogRepository;
 
     @Autowired
+    private com.match.SwipeAI.repository.PaymentExecutionLogRepository paymentExecutionLogRepository;
+
+    @Autowired
     private JwtAuthFilter jwtAuthFilter;
 
     @Autowired
@@ -102,6 +105,7 @@ class SwipeAiFullCrudIntegrationTests {
                 .thenReturn(true);
 
         // Clean database state before test
+        paymentExecutionLogRepository.deleteAll();
         paymentAuditLogRepository.deleteAll();
         upiOrderRepository.deleteAll();
         chatMessageRepository.deleteAll();
@@ -680,6 +684,29 @@ class SwipeAiFullCrudIntegrationTests {
                 .andExpect(jsonPath("$.adminNotes").value("Reconciled manually with bank UTR #982348572"))
                 .andExpect(jsonPath("$.reviewedBy").value("SupervisorSunil"))
                 .andExpect(jsonPath("$.events[-1].event").value("MANUAL_SUPPORT_REVIEW"));
+
+        // 11. Verify AOP Execution Logs: Recorded automatically with concise 1-line format
+        List<com.match.SwipeAI.model.PaymentExecutionLog> orderLogs = paymentExecutionLogRepository.findByOrderIdOrderByCreatedAtDesc(orderId);
+        assertFalse(orderLogs.isEmpty(), "AOP Aspect must record execution logs for transaction operations");
+        com.match.SwipeAI.model.PaymentExecutionLog latestLog = orderLogs.get(0);
+        assertEquals("SUCCESS", latestLog.getStatus());
+        assertNotNull(latestLog.getAction());
+        assertTrue(latestLog.getSummary().startsWith("SUCCESS: ["), "Summary must follow concise one-line log format");
+        assertNull(latestLog.getErrorMessage(), "Successful execution must have null error message");
+        assertTrue(latestLog.getExecutionTimeMs() >= 0);
+
+        // 12. Retrieve AOP Execution Logs via Endpoint
+        mockMvc.perform(get("/v1/payments/audit/execution-logs/" + orderId)
+                        .header("Authorization", "Bearer " + userToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(greaterThanOrEqualTo(1))))
+                .andExpect(jsonPath("$[0].orderId").value(orderId))
+                .andExpect(jsonPath("$[0].status").value("SUCCESS"));
+
+        mockMvc.perform(get("/v1/payments/audit/execution-logs")
+                        .header("Authorization", "Bearer " + userToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(greaterThanOrEqualTo(1))));
     }
 
     // ==========================================
