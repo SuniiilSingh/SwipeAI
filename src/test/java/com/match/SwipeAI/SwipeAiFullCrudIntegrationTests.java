@@ -594,6 +594,44 @@ class SwipeAiFullCrudIntegrationTests {
                         .content("{\"event\": \"payment.captured\", \"payload\": {\"payment\": {\"entity\": {\"order_id\": \"order_mock_123\"}}}}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").exists());
+
+        // 5. Native In-App Purchase (IAP) Verification (Google Play / Apple StoreKit)
+        PaymentDto.IapVerifyRequest iapReq = PaymentDto.IapVerifyRequest.builder()
+                .platform("android")
+                .productId("blunderr_chai_29")
+                .purchaseToken("mock_purchase_token_gplay_123")
+                .orderId("iap_gplay_" + System.currentTimeMillis())
+                .sku(SkuType.CUTTING_CHAI_21)
+                .build();
+
+        mockMvc.perform(post("/v1/payments/iap/verify")
+                        .header("Authorization", "Bearer " + userToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(iapReq)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.sku").value("CUTTING_CHAI_21"));
+
+        // 6. Cashfree Create Order & Test Confirm
+        PaymentDto.CashfreeCreateOrderRequest cfReq = PaymentDto.CashfreeCreateOrderRequest.builder()
+                .sku(SkuType.WEEKEND_PASS_99)
+                .customerPhone("+919876543210")
+                .build();
+
+        String cfResponse = mockMvc.perform(post("/v1/payments/cashfree/create-order")
+                        .header("Authorization", "Bearer " + userToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(cfReq)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.orderId").exists())
+                .andExpect(jsonPath("$.paymentSessionId").exists())
+                .andReturn().getResponse().getContentAsString();
+
+        String cfOrderId = objectMapper.readTree(cfResponse).get("orderId").asText();
+
+        mockMvc.perform(post("/v1/payments/cashfree/test-confirm/" + cfOrderId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("success"));
     }
 
     // ==========================================

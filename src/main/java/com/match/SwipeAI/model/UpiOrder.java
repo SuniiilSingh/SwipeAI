@@ -57,6 +57,11 @@ public class UpiOrder {
     @Column(nullable = false, length = 30)
     private SkuType sku;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_provider", length = 30)
+    @Builder.Default
+    private com.match.SwipeAI.enums.PaymentProvider paymentProvider = com.match.SwipeAI.enums.PaymentProvider.RAZORPAY_UPI;
+
     @Column(name = "vpa", length = 100)
     private String vpa;
 

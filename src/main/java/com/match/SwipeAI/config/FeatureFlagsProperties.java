@@ -29,6 +29,8 @@ public class FeatureFlagsProperties {
         private LiveKit livekit = new LiveKit();
         private AiWingman aiWingman = new AiWingman();
         private R2Storage r2Storage = new R2Storage();
+        private Cashfree cashfree = new Cashfree();
+        private Iap iap = new Iap();
     }
 
     @Data
@@ -90,5 +92,21 @@ public class FeatureFlagsProperties {
         private String secretAccessKey;
         private String bucketName = "swipeai-media";
         private String publicDomain = "https://cdn.swipeai.in";
+    }
+
+    @Data
+    public static class Cashfree {
+        private boolean enabled = false;
+        private String appId = "TEST_CF_APP_ID_123";
+        private String secretKey = "TEST_CF_SECRET_KEY_123";
+        private String apiVersion = "2023-08-01";
+        private String environment = "SANDBOX";
+    }
+
+    @Data
+    public static class Iap {
+        private boolean enabled = true;
+        private boolean sandbox = true;
+        private String appleSharedSecret = "mock_apple_secret";
     }
 }

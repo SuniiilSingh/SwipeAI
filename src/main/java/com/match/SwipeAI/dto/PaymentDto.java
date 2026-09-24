@@ -67,8 +67,71 @@ public class PaymentDto {
         private SkuType sku;
         private String title;
         private int priceInr;
+        private int storePriceInr;
+        private int directPriceInr;
+        private String googleProductId;
+        private String appleProductId;
         private String subtitle;
         private String tag;
         private List<String> perks;
+    }
+
+    /**
+     * In-App Purchase Verification Request (Google Play / Apple StoreKit).
+     */
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class IapVerifyRequest {
+        private String platform; // "android" or "ios"
+        private String productId;
+        private String purchaseToken;
+        private String orderId;
+        private SkuType sku;
+    }
+
+    /**
+     * In-App Purchase Verification Response.
+     */
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class IapVerifyResponse {
+        private boolean success;
+        private SkuType sku;
+        private String orderId;
+        private String message;
+        private Map<String, Object> perksGranted;
+    }
+
+    /**
+     * Request payload to initiate a Cashfree checkout order.
+     */
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class CashfreeCreateOrderRequest {
+        private SkuType sku;
+        private String customerPhone;
+    }
+
+    /**
+     * Created Cashfree order response with payment session ID.
+     */
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class CashfreeCreateOrderResponse {
+        private String orderId;
+        private String paymentSessionId;
+        private String cfOrderId;
+        private int orderAmount;
+        private String orderCurrency;
+        private SkuType sku;
+        private boolean simulated;
     }
 }

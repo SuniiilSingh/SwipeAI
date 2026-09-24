@@ -24,6 +24,8 @@ import java.util.UUID;
 public class PaymentsController {
 
     private final UpiPaymentService upiPaymentService;
+    private final com.match.SwipeAI.service.integration.IapVerificationService iapVerificationService;
+    private final com.match.SwipeAI.service.integration.CashfreePaymentService cashfreePaymentService;
 
     /**
      * Retrieve the full micro-sachet catalog and Weekend Dating Pass pricing.
@@ -97,5 +99,58 @@ public class PaymentsController {
         );
         boolean processed = upiPaymentService.processWebhook(null, "idem_" + orderId, mockPayload);
         return ResponseEntity.ok(Map.of("status", processed ? "success" : "failed", "orderId", orderId));
+    }
+
+    /**
+     * Verify and credit Native In-App Purchases (Google Play Billing / Apple StoreKit).
+     */
+    @PostMapping("/iap/verify")
+    public ResponseEntity<PaymentDto.IapVerifyResponse> verifyIapPurchase(
+            @AuthenticationPrincipal UUID userId,
+            @RequestBody PaymentDto.IapVerifyRequest request) {
+        log.info("IAP Verification Request from user {}: {}", userId, request);
+        PaymentDto.IapVerifyResponse response = iapVerificationService.verifyAndCreditPurchase(userId, request);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Create Cashfree Checkout Order for web or external payment flows.
+     */
+    @PostMapping("/cashfree/create-order")
+    public ResponseEntity<PaymentDto.CashfreeCreateOrderResponse> createCashfreeOrder(
+            @AuthenticationPrincipal UUID userId,
+            @RequestBody PaymentDto.CashfreeCreateOrderRequest request) {
+        log.info("Create Cashfree Order for user {}: {}", userId, request);
+        PaymentDto.CashfreeCreateOrderResponse response = cashfreePaymentService.createOrder(userId, request.getSku(), request.getCustomerPhone());
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Cashfree Webhook Handler with HMAC-SHA256 signature verification.
+     */
+    @PostMapping("/cashfree/webhook")
+    public ResponseEntity<Map<String, String>> handleCashfreeWebhook(
+            @RequestHeader(value = "x-webhook-signature", required = false) String signature,
+            @RequestHeader(value = "x-webhook-timestamp", required = false) String timestamp,
+            @RequestBody Map<String, Object> payload) {
+        log.info("Received Cashfree Webhook: {}", payload);
+        boolean processed = cashfreePaymentService.processWebhook(signature, timestamp, payload);
+        return ResponseEntity.ok(Map.of(
+                "status", processed ? "success" : "ignored",
+                "message", processed ? "Cashfree payment captured and benefits credited" : "Order already processed or skipped"
+        ));
+    }
+
+    /**
+     * Demo simulation endpoint for developer testing of Cashfree payments.
+     */
+    @PostMapping("/cashfree/test-confirm/{orderId}")
+    public ResponseEntity<Map<String, String>> testConfirmCashfreeOrder(
+            @PathVariable String orderId) {
+        boolean processed = cashfreePaymentService.testConfirmCashfreeOrder(orderId);
+        return ResponseEntity.ok(Map.of(
+                "status", processed ? "success" : "failed",
+                "orderId", orderId
+        ));
     }
 }
