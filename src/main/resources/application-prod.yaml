@@ -49,6 +49,8 @@ app:
     jwt-secret: ${JWT_SECRET:swipeai_prod_jwt_super_secret_signing_key_2026_secure!}
     jwt-expiration-ms: ${JWT_EXPIRATION_MS:2592000000} # 30 days
     server-pepper: ${SERVER_PEPPER:swipeai_prod_shadow_shield_pepper_hash_key_2026}
+    chat-encryption-key: ${CHAT_ENCRYPTION_KEY:swipeai_prod_chat_lounge_aes256_secret_key_2026_super_secure!}
+    payment-encryption-key: ${PAYMENT_ENCRYPTION_KEY:swipeai_prod_payment_vault_aes256_key_2026_super_secure!}
   features:
     # Production Feature Flags: Live 3rd-party integrations
     digilocker:

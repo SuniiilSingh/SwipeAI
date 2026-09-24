@@ -68,7 +68,35 @@ public class UpiOrder {
     @Column(name = "upi_intent_url", length = 512)
     private String upiIntentUrl;
 
+    @Column(name = "external_transaction_id", length = 128)
+    private String externalTransactionId;
+
+    @Column(name = "client_ip", length = 64)
+    private String clientIp;
+
+    @Column(name = "user_agent", length = 256)
+    private String userAgent;
+
+    @Column(name = "raw_payload_encrypted", columnDefinition = "TEXT")
+    private String rawPayloadEncrypted;
+
+    @Column(name = "failure_reason", length = 256)
+    private String failureReason;
+
+    @Column(name = "admin_notes", columnDefinition = "TEXT")
+    private String adminNotes;
+
+    @Column(name = "reviewed_by", length = 64)
+    private String reviewedBy;
+
+    @Column(name = "captured_at")
+    private OffsetDateTime capturedAt;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private OffsetDateTime createdAt;
+
+    @org.hibernate.annotations.UpdateTimestamp
+    @Column(name = "updated_at")
+    private OffsetDateTime updatedAt;
 }

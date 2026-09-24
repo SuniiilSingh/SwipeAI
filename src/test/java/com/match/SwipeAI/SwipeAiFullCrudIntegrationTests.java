@@ -65,6 +65,12 @@ class SwipeAiFullCrudIntegrationTests {
     private UserContactShieldRepository shieldRepository;
 
     @Autowired
+    private com.match.SwipeAI.repository.UpiOrderRepository upiOrderRepository;
+
+    @Autowired
+    private com.match.SwipeAI.repository.PaymentAuditLogRepository paymentAuditLogRepository;
+
+    @Autowired
     private JwtAuthFilter jwtAuthFilter;
 
     @Autowired
@@ -96,6 +102,8 @@ class SwipeAiFullCrudIntegrationTests {
                 .thenReturn(true);
 
         // Clean database state before test
+        paymentAuditLogRepository.deleteAll();
+        upiOrderRepository.deleteAll();
         chatMessageRepository.deleteAll();
         matchRepository.deleteAll();
         shieldRepository.deleteAll();
@@ -632,6 +640,46 @@ class SwipeAiFullCrudIntegrationTests {
         mockMvc.perform(post("/v1/payments/cashfree/test-confirm/" + cfOrderId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("success"));
+
+        // 7. Verify Database Zero-Plaintext Encryption at rest
+        UpiOrder confirmedUpiOrder = upiOrderRepository.findByOrderId(orderId).orElseThrow();
+        assertNotNull(confirmedUpiOrder.getRawPayloadEncrypted(), "Raw payload must be encrypted at rest");
+        assertTrue(confirmedUpiOrder.getRawPayloadEncrypted().startsWith("ENC_PAY_GCM:v1:"),
+                "Payload must be encrypted with AES-256-GCM authenticated prefix");
+
+        // 8. Trace Audit Timeline: GET /v1/payments/audit/orders/{orderId}
+        mockMvc.perform(get("/v1/payments/audit/orders/" + orderId)
+                        .header("Authorization", "Bearer " + userToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.orderId").value(orderId))
+                .andExpect(jsonPath("$.status").value("CAPTURED"))
+                .andExpect(jsonPath("$.paymentProvider").value("RAZORPAY_UPI"))
+                .andExpect(jsonPath("$.events", hasSize(greaterThanOrEqualTo(2))))
+                .andExpect(jsonPath("$.events[0].event").value("ORDER_INITIATED"))
+                .andExpect(jsonPath("$.decryptedRawPayload").exists());
+
+        // 9. User Historical Audit: GET /v1/payments/audit/user/{userId}
+        mockMvc.perform(get("/v1/payments/audit/user/" + testUser.getId())
+                        .header("Authorization", "Bearer " + userToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(greaterThanOrEqualTo(3))));
+
+        // 10. Manual Support Review: POST /v1/payments/audit/orders/{orderId}/review
+        PaymentDto.ReviewOrderRequest reviewReq = new PaymentDto.ReviewOrderRequest();
+        reviewReq.setAdminNotes("Reconciled manually with bank UTR #982348572");
+        reviewReq.setStatus(com.match.SwipeAI.enums.OrderStatus.CAPTURED);
+        reviewReq.setGrantPerks(false);
+        reviewReq.setAdminIdOrName("SupervisorSunil");
+
+        mockMvc.perform(post("/v1/payments/audit/orders/" + orderId + "/review")
+                        .header("Authorization", "Bearer " + userToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(reviewReq)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.orderId").value(orderId))
+                .andExpect(jsonPath("$.adminNotes").value("Reconciled manually with bank UTR #982348572"))
+                .andExpect(jsonPath("$.reviewedBy").value("SupervisorSunil"))
+                .andExpect(jsonPath("$.events[-1].event").value("MANUAL_SUPPORT_REVIEW"));
     }
 
     // ==========================================

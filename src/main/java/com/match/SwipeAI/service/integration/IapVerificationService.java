@@ -29,11 +29,23 @@ public class IapVerificationService {
     private final FeatureFlagsProperties properties;
     private final UpiOrderRepository upiOrderRepository;
     private final UpiPaymentService upiPaymentService;
+    private final com.match.SwipeAI.service.engine.PaymentCryptoService paymentCryptoService;
+    private final PaymentAuditService paymentAuditService;
 
     @Transactional
     public PaymentDto.IapVerifyResponse verifyAndCreditPurchase(UUID userId, PaymentDto.IapVerifyRequest request) {
-        log.info("Verifying In-App Purchase for user {}: platform={}, productId={}, orderId={}",
-                userId, request.getPlatform(), request.getProductId(), request.getOrderId());
+        return verifyAndCreditPurchase(userId, request, "UNKNOWN", "NATIVE_APP");
+    }
+
+    @Transactional
+    public PaymentDto.IapVerifyResponse verifyAndCreditPurchase(
+            UUID userId,
+            PaymentDto.IapVerifyRequest request,
+            String clientIp,
+            String userAgent) {
+        String maskedToken = paymentCryptoService.maskToken(request.getPurchaseToken());
+        log.info("Verifying In-App Purchase for user {}: platform={}, productId={}, orderId={}, token={}",
+                userId, request.getPlatform(), request.getProductId(), request.getOrderId(), maskedToken);
 
         SkuType sku = resolveSkuFromProductId(request.getProductId(), request.getSku());
         PaymentProvider provider = "ios".equalsIgnoreCase(request.getPlatform())
@@ -43,6 +55,17 @@ public class IapVerificationService {
         String orderId = request.getOrderId() != null && !request.getOrderId().isBlank()
                 ? request.getOrderId()
                 : "iap_" + UUID.randomUUID().toString().replace("-", "").substring(0, 16);
+
+        paymentAuditService.recordEvent(
+                orderId,
+                userId,
+                provider,
+                "RECEIPT_RECEIVED",
+                OrderStatus.PENDING,
+                String.format("IAP receipt token received for SKU: %s, token: %s", sku.name(), maskedToken),
+                clientIp,
+                userAgent
+        );
 
         // Idempotency check: Ensure order has not been previously credited
         Optional<UpiOrder> existing = upiOrderRepository.findByOrderId(orderId);
@@ -61,6 +84,16 @@ public class IapVerificationService {
         boolean isValid = validatePurchaseWithStore(request);
         if (!isValid) {
             log.warn("Failed IAP receipt verification for order {}", orderId);
+            paymentAuditService.recordEvent(
+                    orderId,
+                    userId,
+                    provider,
+                    "PAYMENT_FAILED",
+                    OrderStatus.FAILED,
+                    "Store verification rejected receipt token",
+                    clientIp,
+                    userAgent
+            );
             return PaymentDto.IapVerifyResponse.builder()
                     .success(false)
                     .sku(sku)
@@ -69,25 +102,49 @@ public class IapVerificationService {
                     .build();
         }
 
-        // Save order record
+        // Save order record with AES-256-GCM encrypted raw receipt token at rest
         UpiOrder order = existing.orElseGet(() -> UpiOrder.builder()
                 .orderId(orderId)
                 .userId(userId)
                 .amountPaise(sku.getAmountPaise())
                 .sku(sku)
-                .paymentProvider(provider)
-                .paymentId(request.getPurchaseToken() != null ? request.getPurchaseToken() : "token_" + orderId)
                 .currency("INR")
-                .status(OrderStatus.CAPTURED)
                 .build());
 
         order.setStatus(OrderStatus.CAPTURED);
         order.setPaymentProvider(provider);
+        order.setPaymentId(maskedToken);
+        order.setExternalTransactionId(request.getOrderId() != null ? request.getOrderId() : orderId);
+        order.setRawPayloadEncrypted(paymentCryptoService.encrypt(request.getPurchaseToken()));
+        order.setClientIp(clientIp);
+        order.setUserAgent(userAgent);
+        order.setCapturedAt(java.time.OffsetDateTime.now());
         upiOrderRepository.save(order);
 
         // Credit perks to user
         upiPaymentService.grantUserBenefits(userId, sku);
         log.info("Successfully verified IAP and credited {} to user {}", sku, userId);
+
+        paymentAuditService.recordEvent(
+                orderId,
+                userId,
+                provider,
+                "PAYMENT_CAPTURED",
+                OrderStatus.CAPTURED,
+                String.format("Store receipt verified and captured. Provider: %s", provider.name()),
+                clientIp,
+                userAgent
+        );
+        paymentAuditService.recordEvent(
+                orderId,
+                userId,
+                provider,
+                "PERKS_GRANTED",
+                OrderStatus.CAPTURED,
+                String.format("Perks unlocked for SKU: %s (%s)", sku.name(), sku.getDescription()),
+                clientIp,
+                userAgent
+        );
 
         return PaymentDto.IapVerifyResponse.builder()
                 .success(true)

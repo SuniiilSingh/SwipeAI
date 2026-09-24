@@ -27,6 +27,8 @@ public class UpiPaymentService {
     private final FeatureFlagsProperties properties;
     private final UpiOrderRepository upiOrderRepository;
     private final UserRepository userRepository;
+    private final com.match.SwipeAI.service.engine.PaymentCryptoService paymentCryptoService;
+    private final PaymentAuditService paymentAuditService;
 
     public List<PaymentDto.CatalogItemDto> getCatalog() {
         return List.of(
@@ -143,6 +145,11 @@ public class UpiPaymentService {
 
     @Transactional
     public PaymentDto.CreateOrderResponse createOrder(UUID userId, SkuType sku, String vpa) {
+        return createOrder(userId, sku, vpa, "UNKNOWN", "UNKNOWN");
+    }
+
+    @Transactional
+    public PaymentDto.CreateOrderResponse createOrder(UUID userId, SkuType sku, String vpa, String clientIp, String userAgent) {
         String orderId = "order_sachet_" + UUID.randomUUID().toString().substring(0, 8);
         int amountPaise = sku.getAmountPaise();
         int amountInr = amountPaise / 100;
@@ -163,26 +170,30 @@ public class UpiPaymentService {
                 .vpa(vpa != null ? vpa : "user@okaxis")
                 .status(OrderStatus.PENDING)
                 .upiIntentUrl(upiIntentUrl)
+                .clientIp(clientIp)
+                .userAgent(userAgent)
+                .paymentProvider(com.match.SwipeAI.enums.PaymentProvider.RAZORPAY_UPI)
                 .build();
 
         upiOrderRepository.save(order);
 
+        paymentAuditService.recordEvent(
+                orderId,
+                userId,
+                com.match.SwipeAI.enums.PaymentProvider.RAZORPAY_UPI,
+                "ORDER_INITIATED",
+                OrderStatus.PENDING,
+                String.format("Created UPI order for SKU: %s, amount: ₹%d, vpa: %s",
+                        sku.name(), amountInr, paymentCryptoService.maskVpa(order.getVpa())),
+                clientIp,
+                userAgent
+        );
+
         boolean razorpayEnabled = properties.getFeatures().getRazorpay().isEnabled();
         if (razorpayEnabled) {
             log.info("[FEATURE_FLAG: Razorpay LIVE] Creating live Razorpay order for user {} - Amount: ₹{}", userId, amountInr);
-            /*
-             * LIVE INTEGRATION SKELETON:
-             * RazorpayClient client = new RazorpayClient(properties.getFeatures().getRazorpay().getKeyId(), properties.getFeatures().getRazorpay().getKeySecret());
-             * JSONObject orderRequest = new JSONObject();
-             * orderRequest.put("amount", amountPaise);
-             * orderRequest.put("currency", "INR");
-             * orderRequest.put("receipt", orderId);
-             * orderRequest.put("notes", Map.of("userId", userId.toString(), "sku", sku.name()));
-             * Order razorpayOrder = client.orders.create(orderRequest);
-             * orderId = razorpayOrder.get("id");
-             */
         } else {
-            log.info("[MOCK TESTING ENVIRONMENT] Razorpay is disabled. Generated simulated UPI Intent: {} for user {}", upiIntentUrl, userId);
+            log.info("[MOCK TESTING ENVIRONMENT] Razorpay is disabled. Generated simulated UPI Intent for user {}", userId);
         }
 
         return PaymentDto.CreateOrderResponse.builder()
@@ -199,7 +210,13 @@ public class UpiPaymentService {
 
     @Transactional
     public boolean processWebhook(String signature, String idempotencyKey, Map<String, Object> webhookPayload) {
-        log.info("Processing UPI webhook with idempotencyKey: {}", idempotencyKey);
+        return processWebhook(signature, idempotencyKey, webhookPayload, "GATEWAY_WEBHOOK", "RAZORPAY_SERVER");
+    }
+
+    @Transactional
+    public boolean processWebhook(String signature, String idempotencyKey, Map<String, Object> webhookPayload, String clientIp, String userAgent) {
+        log.info("Processing UPI webhook with idempotencyKey: {}, payload: {}",
+                idempotencyKey, paymentCryptoService.sanitizePayloadForLogging(webhookPayload));
 
         boolean razorpayEnabled = properties.getFeatures().getRazorpay().isEnabled();
         if (razorpayEnabled) {
@@ -237,18 +254,56 @@ public class UpiPaymentService {
             return true;
         }
 
+        // Encrypt raw payload at rest
+        order.setRawPayloadEncrypted(paymentCryptoService.encrypt(webhookPayload.toString()));
+
         if ("captured".equalsIgnoreCase(status) || "success".equalsIgnoreCase(status)) {
             order.setStatus(OrderStatus.CAPTURED);
             order.setPaymentId(paymentId != null ? paymentId : "pay_" + UUID.randomUUID().toString().substring(0, 8));
+            order.setExternalTransactionId(paymentId);
+            order.setCapturedAt(OffsetDateTime.now());
             upiOrderRepository.save(order);
 
             // Credit benefits to user
             grantUserBenefits(order.getUserId(), order.getSku());
             log.info("Successfully captured UPI payment for order {}, granted SKU {}", orderId, order.getSku());
+
+            paymentAuditService.recordEvent(
+                    orderId,
+                    order.getUserId(),
+                    order.getPaymentProvider(),
+                    "PAYMENT_CAPTURED",
+                    OrderStatus.CAPTURED,
+                    String.format("Payment captured successfully. PaymentId: %s", paymentCryptoService.maskToken(paymentId)),
+                    clientIp,
+                    userAgent
+            );
+            paymentAuditService.recordEvent(
+                    orderId,
+                    order.getUserId(),
+                    order.getPaymentProvider(),
+                    "PERKS_GRANTED",
+                    OrderStatus.CAPTURED,
+                    String.format("Perks credited for SKU: %s (%s)", order.getSku().name(), order.getSku().getDescription()),
+                    clientIp,
+                    userAgent
+            );
             return true;
         } else {
             order.setStatus(OrderStatus.FAILED);
+            order.setFailureReason("Gateway reported non-success status: " + status);
             upiOrderRepository.save(order);
+
+            paymentAuditService.recordEvent(
+                    orderId,
+                    order.getUserId(),
+                    order.getPaymentProvider(),
+                    "PAYMENT_FAILED",
+                    OrderStatus.FAILED,
+                    "Webhook payment status failed: " + status,
+                    clientIp,
+                    userAgent
+            );
             return false;
         }
     }

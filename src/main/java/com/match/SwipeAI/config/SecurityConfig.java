@@ -38,6 +38,7 @@ public class SecurityConfig {
                                 "/api/images/**",
                                 "/uploads/**",
                                 "/v1/payments/upi/webhook",
+                                "/v1/payments/cashfree/webhook",
                                 "/v1/payments/store/catalog",
                                 "/v1/safe-date/spots",
                                 "/ws/**",
@@ -58,7 +59,9 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOriginPatterns(List.of("*"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "X-Razorpay-Signature", "X-Idempotency-Key"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With",
+                "X-Razorpay-Signature", "X-Idempotency-Key", "x-webhook-signature", "x-webhook-timestamp",
+                "X-Client-Platform", "X-App-Version", "X-Device-Id"));
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

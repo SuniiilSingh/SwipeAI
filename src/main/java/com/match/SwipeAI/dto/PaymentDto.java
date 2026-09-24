@@ -134,4 +134,63 @@ public class PaymentDto {
         private SkuType sku;
         private boolean simulated;
     }
+
+    /**
+     * Single timestamped audit log event within a payment lifecycle.
+     */
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class PaymentAuditEventDto {
+        private UUID id;
+        private String event;
+        private OrderStatus status;
+        private String decryptedMetadata;
+        private String clientIp;
+        private String userAgent;
+        private java.time.OffsetDateTime timestamp;
+    }
+
+    /**
+     * Full audit timeline and trace details for manual review by support/admin.
+     */
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class PaymentAuditTimelineDto {
+        private String orderId;
+        private UUID userId;
+        private com.match.SwipeAI.enums.PaymentProvider paymentProvider;
+        private SkuType sku;
+        private int amountPaise;
+        private String currency;
+        private OrderStatus status;
+        private String paymentId;
+        private String externalTransactionId;
+        private String clientIp;
+        private String userAgent;
+        private String failureReason;
+        private String adminNotes;
+        private String reviewedBy;
+        private java.time.OffsetDateTime createdAt;
+        private java.time.OffsetDateTime capturedAt;
+        private java.time.OffsetDateTime updatedAt;
+        private String decryptedRawPayload;
+        private List<PaymentAuditEventDto> events;
+    }
+
+    /**
+     * Manual review and reconciliation request by customer support or admin.
+     */
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class ReviewOrderRequest {
+        private String adminNotes;
+        private OrderStatus status; // Optional override, e.g. CAPTURED, FAILED, REFUNDED
+        private boolean grantPerks; // Whether to credit sparks/pass if reconciled to CAPTURED
+        private String adminIdOrName;
+    }
 }

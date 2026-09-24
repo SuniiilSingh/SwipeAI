@@ -42,6 +42,7 @@ app:
     jwt-expiration-ms: 2592000000 # 30 days
     server-pepper: "swipeai_shadow_shield_server_pepper_salt_key_2026"
     chat-encryption-key: "${CHAT_ENCRYPTION_KEY:swipeai_chat_lounge_aes256_secret_key_2026_super_secure!}"
+    payment-encryption-key: "${PAYMENT_ENCRYPTION_KEY:swipeai_payment_vault_aes256_key_2026_super_secure!}"
   features:
     # Feature Flags: In Default/Local profile, all external integrations default to false
     # and use the built-in high-fidelity simulated fallback functionality.

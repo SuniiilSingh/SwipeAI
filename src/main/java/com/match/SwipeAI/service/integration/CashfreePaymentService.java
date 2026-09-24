@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
+import java.time.OffsetDateTime;
 import java.util.*;
 
 /**
@@ -29,8 +30,14 @@ public class CashfreePaymentService {
     private final FeatureFlagsProperties properties;
     private final UpiOrderRepository upiOrderRepository;
     private final UpiPaymentService upiPaymentService;
+    private final com.match.SwipeAI.service.engine.PaymentCryptoService paymentCryptoService;
+    private final PaymentAuditService paymentAuditService;
 
     public PaymentDto.CashfreeCreateOrderResponse createOrder(UUID userId, SkuType sku, String customerPhone) {
+        return createOrder(userId, sku, customerPhone, "UNKNOWN", "UNKNOWN");
+    }
+
+    public PaymentDto.CashfreeCreateOrderResponse createOrder(UUID userId, SkuType sku, String customerPhone, String clientIp, String userAgent) {
         String orderId = "cf_order_" + UUID.randomUUID().toString().replace("-", "").substring(0, 16);
         int amountPaise = sku.getAmountPaise();
         int amountInr = amountPaise / 100;
@@ -46,10 +53,25 @@ public class CashfreePaymentService {
                 .paymentProvider(PaymentProvider.CASHFREE)
                 .currency("INR")
                 .status(OrderStatus.PENDING)
+                .clientIp(clientIp)
+                .userAgent(userAgent)
                 .build();
 
         upiOrderRepository.save(order);
-        log.info("Created Cashfree Order {} for user {} SKU {}", orderId, userId, sku);
+        log.info("Created Cashfree Order {} for user {} SKU {} (phone: {})",
+                orderId, userId, sku, paymentCryptoService.maskPhone(customerPhone));
+
+        paymentAuditService.recordEvent(
+                orderId,
+                userId,
+                PaymentProvider.CASHFREE,
+                "ORDER_INITIATED",
+                OrderStatus.PENDING,
+                String.format("Cashfree order initiated for SKU: %s, amount: ₹%d, phone: %s",
+                        sku.name(), amountInr, paymentCryptoService.maskPhone(customerPhone)),
+                clientIp,
+                userAgent
+        );
 
         return PaymentDto.CashfreeCreateOrderResponse.builder()
                 .orderId(orderId)
@@ -64,12 +86,28 @@ public class CashfreePaymentService {
 
     @Transactional
     public boolean processWebhook(String signature, String timestamp, Map<String, Object> payload) {
-        log.info("Processing Cashfree webhook: timestamp={}, payload={}", timestamp, payload);
+        return processWebhook(signature, timestamp, payload, "GATEWAY_WEBHOOK", "CASHFREE_SERVER");
+    }
+
+    @Transactional
+    public boolean processWebhook(String signature, String timestamp, Map<String, Object> payload, String clientIp, String userAgent) {
+        log.info("Processing Cashfree webhook: timestamp={}, payload={}",
+                timestamp, paymentCryptoService.sanitizePayloadForLogging(payload));
 
         if (properties.getFeatures().getCashfree().isEnabled()) {
             boolean valid = verifyCashfreeSignature(signature, timestamp, payload);
             if (!valid) {
                 log.warn("Invalid Cashfree webhook signature!");
+                paymentAuditService.recordEvent(
+                        "UNKNOWN_ORDER",
+                        UUID.fromString("00000000-0000-0000-0000-000000000000"),
+                        PaymentProvider.CASHFREE,
+                        "SIGNATURE_VERIFICATION_FAILED",
+                        OrderStatus.FAILED,
+                        "Cashfree webhook signature mismatch",
+                        clientIp,
+                        userAgent
+                );
                 return false;
             }
         }
@@ -104,17 +142,55 @@ public class CashfreePaymentService {
             return true;
         }
 
+        // Store AES-256-GCM encrypted raw payload
+        order.setRawPayloadEncrypted(paymentCryptoService.encrypt(payload.toString()));
+
         if ("SUCCESS".equalsIgnoreCase(paymentStatus) || "PAID".equalsIgnoreCase(paymentStatus)) {
             order.setStatus(OrderStatus.CAPTURED);
             order.setPaymentId(paymentId != null ? paymentId : "cf_pay_" + UUID.randomUUID().toString().substring(0, 8));
+            order.setExternalTransactionId(paymentId);
+            order.setCapturedAt(OffsetDateTime.now());
             upiOrderRepository.save(order);
 
             upiPaymentService.grantUserBenefits(order.getUserId(), order.getSku());
             log.info("Successfully captured Cashfree payment for order {}, granted SKU {}", orderId, order.getSku());
+
+            paymentAuditService.recordEvent(
+                    orderId,
+                    order.getUserId(),
+                    PaymentProvider.CASHFREE,
+                    "PAYMENT_CAPTURED",
+                    OrderStatus.CAPTURED,
+                    String.format("Cashfree payment captured. GatewayPaymentId: %s", paymentCryptoService.maskToken(paymentId)),
+                    clientIp,
+                    userAgent
+            );
+            paymentAuditService.recordEvent(
+                    orderId,
+                    order.getUserId(),
+                    PaymentProvider.CASHFREE,
+                    "PERKS_GRANTED",
+                    OrderStatus.CAPTURED,
+                    String.format("Perks unlocked for SKU: %s (%s)", order.getSku().name(), order.getSku().getDescription()),
+                    clientIp,
+                    userAgent
+            );
             return true;
         } else {
             order.setStatus(OrderStatus.FAILED);
+            order.setFailureReason("Cashfree paymentStatus: " + paymentStatus);
             upiOrderRepository.save(order);
+
+            paymentAuditService.recordEvent(
+                    orderId,
+                    order.getUserId(),
+                    PaymentProvider.CASHFREE,
+                    "PAYMENT_FAILED",
+                    OrderStatus.FAILED,
+                    "Cashfree payment failed with status: " + paymentStatus,
+                    clientIp,
+                    userAgent
+            );
             return false;
         }
     }
@@ -126,11 +202,36 @@ public class CashfreePaymentService {
         UpiOrder order = optionalOrder.get();
         if (order.getStatus() == OrderStatus.CAPTURED) return true;
 
+        String testPaymentId = "cf_test_pay_" + System.currentTimeMillis();
         order.setStatus(OrderStatus.CAPTURED);
-        order.setPaymentId("cf_test_pay_" + System.currentTimeMillis());
+        order.setPaymentId(testPaymentId);
+        order.setExternalTransactionId(testPaymentId);
+        order.setCapturedAt(OffsetDateTime.now());
+        order.setRawPayloadEncrypted(paymentCryptoService.encrypt("{\"simulated\": true, \"orderId\": \"" + orderId + "\"}"));
         upiOrderRepository.save(order);
 
         upiPaymentService.grantUserBenefits(order.getUserId(), order.getSku());
+
+        paymentAuditService.recordEvent(
+                orderId,
+                order.getUserId(),
+                PaymentProvider.CASHFREE,
+                "PAYMENT_CAPTURED",
+                OrderStatus.CAPTURED,
+                "Test simulated Cashfree capture confirmed",
+                "127.0.0.1",
+                "INTERNAL_SIMULATOR"
+        );
+        paymentAuditService.recordEvent(
+                orderId,
+                order.getUserId(),
+                PaymentProvider.CASHFREE,
+                "PERKS_GRANTED",
+                OrderStatus.CAPTURED,
+                String.format("Perks credited for SKU: %s", order.getSku().name()),
+                "127.0.0.1",
+                "INTERNAL_SIMULATOR"
+        );
         return true;
     }
 
