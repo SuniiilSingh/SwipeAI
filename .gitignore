@@ -39,6 +39,7 @@ out/
 # Local Environment Variables
 .env
 .env.*
+!.env.prod.example
 *.env
 
 # Uploads directory

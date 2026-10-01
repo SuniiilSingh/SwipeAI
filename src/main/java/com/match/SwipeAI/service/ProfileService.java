@@ -5,15 +5,23 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.match.SwipeAI.dto.ProfileDto;
 import com.match.SwipeAI.model.Profile;
 import com.match.SwipeAI.model.User;
-import com.match.SwipeAI.repository.ProfileRepository;
-import com.match.SwipeAI.repository.UserRepository;
+import com.match.SwipeAI.repository.*;
 import com.match.SwipeAI.service.engine.CosmicChemistryEngine;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.match.SwipeAI.enums.ActionType;
+import com.match.SwipeAI.enums.MatchStatus;
+import com.match.SwipeAI.enums.TicketCategory;
+import com.match.SwipeAI.enums.TicketStatus;
+import com.match.SwipeAI.model.Interaction;
+import com.match.SwipeAI.model.Match;
+import com.match.SwipeAI.model.SupportTicket;
+
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.time.Period;
 import java.util.*;
 
@@ -24,6 +32,14 @@ public class ProfileService {
 
     private final ProfileRepository profileRepository;
     private final UserRepository userRepository;
+    private final DesireProfileRepository desireProfileRepository;
+    private final PushTokenRepository pushTokenRepository;
+    private final UserContactShieldRepository userContactShieldRepository;
+    private final UserNotificationRepository userNotificationRepository;
+    private final InteractionRepository interactionRepository;
+    private final MatchRepository matchRepository;
+    private final SupportTicketRepository supportTicketRepository;
+    private final com.match.SwipeAI.service.engine.MatchKarmaService karmaService;
     private final CosmicChemistryEngine cosmicChemistryEngine;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -205,8 +221,126 @@ public class ProfileService {
     @Transactional
     public void deleteProfile(UUID userId) {
         log.info("Deleting user profile and account for userId: {}", userId);
+        try {
+            desireProfileRepository.deleteById(userId);
+        } catch (Exception e) {
+            log.warn("Could not delete desire profile for userId {}: {}", userId, e.getMessage());
+        }
+        try {
+            pushTokenRepository.deleteByUserId(userId);
+        } catch (Exception e) {
+            log.warn("Could not delete push tokens for userId {}: {}", userId, e.getMessage());
+        }
+        try {
+            userContactShieldRepository.deleteByUserId(userId);
+        } catch (Exception e) {
+            log.warn("Could not delete contact shield for userId {}: {}", userId, e.getMessage());
+        }
+        try {
+            userNotificationRepository.deleteByUserId(userId);
+        } catch (Exception e) {
+            log.warn("Could not delete notifications for userId {}: {}", userId, e.getMessage());
+        }
         profileRepository.deleteById(userId);
         userRepository.deleteById(userId);
+    }
+
+    /**
+     * Report a candidate profile for objectionable content, harassment, or fake identity.
+     * Complies with Apple Review Guideline 1.2 & Google Play UGC Safety Policy.
+     */
+    @Transactional
+    public void reportProfile(UUID reporterId, UUID targetUserId, String reason) {
+        log.warn("User {} reported candidate {} for reason: {}", reporterId, targetUserId, reason);
+
+        // 1. Penalize karma of reported user
+        try {
+            karmaService.penaltyHarassment(targetUserId);
+        } catch (Exception e) {
+            log.warn("Could not apply karma penalty: {}", e.getMessage());
+        }
+
+        // 2. Immediately mark as PASS so reporter never sees target again in discovery
+        try {
+            Interaction existing = interactionRepository.findByActorIdAndTargetId(reporterId, targetUserId).orElse(null);
+            if (existing == null) {
+                Interaction interaction = Interaction.builder()
+                        .actorId(reporterId)
+                        .targetId(targetUserId)
+                        .actionType(ActionType.PASS)
+                        .createdAt(OffsetDateTime.now())
+                        .build();
+                interactionRepository.save(interaction);
+            } else {
+                existing.setActionType(ActionType.PASS);
+                interactionRepository.save(existing);
+            }
+        } catch (Exception e) {
+            log.warn("Could not record PASS interaction for reported user: {}", e.getMessage());
+        }
+
+        // 3. Sever any existing match
+        try {
+            matchRepository.findMatchBetween(reporterId, targetUserId).ifPresent(m -> {
+                m.setStatus(MatchStatus.UNMATCHED);
+                matchRepository.save(m);
+            });
+        } catch (Exception e) {
+            log.warn("Could not unmatch reported user: {}", e.getMessage());
+        }
+
+        // 4. Create Support / Trust & Safety moderation ticket
+        try {
+            String ticketNumber = "UGC-" + (10000 + new Random().nextInt(90000));
+            SupportTicket ticket = SupportTicket.builder()
+                    .userId(reporterId)
+                    .ticketNumber(ticketNumber)
+                    .category(TicketCategory.SAFETY_HARASSMENT)
+                    .status(TicketStatus.PENDING)
+                    .subject("Profile Report: " + (reason != null ? reason : "Objectionable Content"))
+                    .description("Reporter ID: " + reporterId + "\nReported Target User ID: " + targetUserId + "\nReason: " + reason)
+                    .build();
+            supportTicketRepository.save(ticket);
+        } catch (Exception e) {
+            log.warn("Could not create support ticket for report: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Block a user completely. Immediately hides them from discovery and severs any match.
+     */
+    @Transactional
+    public void blockProfile(UUID blockerId, UUID targetUserId) {
+        log.info("User {} blocked target {}", blockerId, targetUserId);
+
+        // 1. Record PASS interaction so blocker never sees target in discovery
+        try {
+            Interaction existing = interactionRepository.findByActorIdAndTargetId(blockerId, targetUserId).orElse(null);
+            if (existing == null) {
+                Interaction interaction = Interaction.builder()
+                        .actorId(blockerId)
+                        .targetId(targetUserId)
+                        .actionType(ActionType.PASS)
+                        .createdAt(OffsetDateTime.now())
+                        .build();
+                interactionRepository.save(interaction);
+            } else {
+                existing.setActionType(ActionType.PASS);
+                interactionRepository.save(existing);
+            }
+        } catch (Exception e) {
+            log.warn("Could not record block interaction: {}", e.getMessage());
+        }
+
+        // 2. Sever any existing match
+        try {
+            matchRepository.findMatchBetween(blockerId, targetUserId).ifPresent(m -> {
+                m.setStatus(MatchStatus.UNMATCHED);
+                matchRepository.save(m);
+            });
+        } catch (Exception e) {
+            log.warn("Could not unmatch blocked user: {}", e.getMessage());
+        }
     }
 
     public ProfileDto.CosmicChemistryResponse getCosmicChemistry(UUID viewerId, UUID candidateId) {

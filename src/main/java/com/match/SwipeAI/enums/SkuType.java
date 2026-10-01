@@ -42,12 +42,48 @@ public enum SkuType {
     WEEKLY_PASS_149(14900, "₹149 Weekly VIP Pass"),
 
     /**
+    /**
      * ₹199 14-Day Fortnight Pass: 14-day full VIP access + 6 Super Sparks + 2 Boosts.
      */
     FORTNIGHT_PASS_199(19900, "₹199 14-Day Fortnight Dating Pass"),
 
     /**
-     * ₹999 Select Club: Quarterly high-income concierge recommendations and priority DigiLocker pool.
+     * ₹79 5 Super Sparks Pack: Volume discount for high-intent swipers (Save ₹16).
+     */
+    SPARKS_PACK_5_79(7900, "₹79 5 Super Sparks Pack"),
+
+    /**
+     * ₹39 Friday Night Boost: 10x profile visibility during 9 PM - 1 AM peak.
+     */
+    BOOST_1X_FRIDAY_39(3900, "₹39 Friday Night Boost"),
+
+    /**
+     * ₹89 3 Direct DMs: Scarcity-protected direct intro messaging.
+     */
+    DIRECT_DMS_3X_89(8900, "₹89 3 Direct DMs"),
+
+    /**
+     * ₹79 Weekend Dating Pass: Peak Friday–Sunday unlimited likes + 3 Sparks.
+     */
+    WEEKEND_PASS_79(7900, "₹79 Weekend Dating Pass"),
+
+    /**
+     * ₹199 Weekend Wingman Bundle: Weekend Pass + 5 Sparks + 1 Boost + 2 DMs (Save ₹88).
+     */
+    WINGMAN_BUNDLE_199(19900, "₹199 Weekend Wingman Bundle"),
+
+    /**
+     * ₹349 30-Day Monthly VIP Pass: Monthly salary-cycle subscription with full VIP perks.
+     */
+    MONTHLY_PASS_349(34900, "₹349 30-Day Monthly VIP Pass"),
+
+    /**
+     * ₹899 Select Club: Quarterly high-income concierge recommendations.
+     */
+    SELECT_QUARTERLY_899(89900, "₹899 Select Club Quarterly"),
+
+    /**
+     * ₹999 Select Club (Legacy/Anchor).
      */
     SELECT_QUARTERLY_999(99900, "₹999 Select Club Quarterly");
 

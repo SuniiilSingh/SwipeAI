@@ -138,4 +138,30 @@ public class ProfileController {
         profileService.deleteProfile(userId);
         return ResponseEntity.ok(Map.of("status", "success", "message", "Account and profile deleted successfully."));
     }
+
+    /**
+     * Report an objectionable profile or abusive candidate.
+     * Complies with Apple Guideline 1.2 & Google Play UGC Policies.
+     */
+    @PostMapping("/{id}/report")
+    public ResponseEntity<Map<String, String>> reportCandidate(
+            @AuthenticationPrincipal UUID userId,
+            @PathVariable UUID id,
+            @RequestBody(required = false) Map<String, String> body) {
+        String reason = (body != null && body.containsKey("reason")) ? body.get("reason") : "Objectionable Content";
+        profileService.reportProfile(userId, id, reason);
+        return ResponseEntity.ok(Map.of("status", "success", "message", "Profile reported and hidden from discovery."));
+    }
+
+    /**
+     * Block a candidate user from discovery and future interactions.
+     * Complies with Apple Guideline 1.2 & Google Play UGC Policies.
+     */
+    @PostMapping("/{id}/block")
+    public ResponseEntity<Map<String, String>> blockCandidate(
+            @AuthenticationPrincipal UUID userId,
+            @PathVariable UUID id) {
+        profileService.blockProfile(userId, id);
+        return ResponseEntity.ok(Map.of("status", "success", "message", "User blocked successfully."));
+    }
 }

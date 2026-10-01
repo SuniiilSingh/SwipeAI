@@ -1,0 +1,101 @@
+services:
+  # ==========================================
+  # 1. PostgreSQL Database
+  # ==========================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: swipeai-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-swipeai_prod}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ChangeMeSecurePassword2026!}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-swipeai_prod}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - swipeai-network
+    # Port 5432 is internal only (NOT exposed to the internet for security)
+    expose:
+      - "5432"
+
+  # ==========================================
+  # 2. SwipeAI Spring Boot Backend
+  # ==========================================
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: swipeai-backend:latest
+    container_name: swipeai-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env.prod
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-swipeai_prod}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-ChangeMeSecurePassword2026!}
+      PORT: 8080
+    volumes:
+      - uploads_data:/app/uploads
+    networks:
+      - swipeai-network
+    # Exposed internally to Nginx reverse proxy
+    expose:
+      - "8080"
+
+  # ==========================================
+  # 3. Nginx Reverse Proxy with SSL
+  # ==========================================
+  nginx:
+    image: nginx:alpine
+    container_name: swipeai-nginx
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./certbot/conf:/etc/letsencrypt:ro
+      - ./certbot/www:/var/www/certbot:ro
+      - uploads_data:/app/uploads:ro
+    networks:
+      - swipeai-network
+
+  # ==========================================
+  # 4. Certbot (Automated SSL Renewal)
+  # ==========================================
+  certbot:
+    image: certbot/certbot:latest
+    container_name: swipeai-certbot
+    restart: unless-stopped
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    networks:
+      - swipeai-network
+
+volumes:
+  postgres_data:
+    name: swipeai_postgres_data
+  uploads_data:
+    name: swipeai_uploads_data
+
+networks:
+  swipeai-network:
+    name: swipeai_network
+    driver: bridge

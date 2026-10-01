@@ -172,15 +172,18 @@ public class IapVerificationService {
         if (productId == null || productId.isBlank()) return fallback != null ? fallback : SkuType.CUTTING_CHAI_21;
         String lower = productId.toLowerCase();
         if (lower.contains("chai")) return SkuType.CUTTING_CHAI_21;
+        if (lower.contains("spark") && (lower.contains("5") || lower.contains("pack"))) return SkuType.SPARKS_PACK_5_79;
         if (lower.contains("spark")) return SkuType.SUPER_SPARK_19;
-        if (lower.contains("weekend")) return SkuType.WEEKEND_PASS_99;
-        if (lower.contains("boost") && lower.contains("3x")) return SkuType.DIRECT_DMS_3X_49;
-        if (lower.contains("boost")) return SkuType.BOOST_1X_FRIDAY_29;
-        if (lower.contains("dms") || lower.contains("direct")) return SkuType.DIRECT_DMS_3X_49;
+        if (lower.contains("wingman") || lower.contains("bundle")) return SkuType.WINGMAN_BUNDLE_199;
+        if (lower.contains("weekend")) return SkuType.WEEKEND_PASS_79;
+        if (lower.contains("monthly") || lower.contains("30d")) return SkuType.MONTHLY_PASS_349;
+        if (lower.contains("boost") && lower.contains("3x")) return SkuType.DIRECT_DMS_3X_89;
+        if (lower.contains("boost")) return SkuType.BOOST_1X_FRIDAY_39;
+        if (lower.contains("dms") || lower.contains("direct")) return SkuType.DIRECT_DMS_3X_89;
         if (lower.contains("revive")) return SkuType.REVIVE_MATCH_19;
         if (lower.contains("weekly") || lower.contains("vip")) return SkuType.WEEKLY_PASS_149;
         if (lower.contains("fortnight") || lower.contains("14d")) return SkuType.FORTNIGHT_PASS_199;
-        if (lower.contains("select") || lower.contains("quarterly")) return SkuType.SELECT_QUARTERLY_999;
+        if (lower.contains("select") || lower.contains("quarterly")) return SkuType.SELECT_QUARTERLY_899;
         return fallback != null ? fallback : SkuType.CUTTING_CHAI_21;
     }
 }

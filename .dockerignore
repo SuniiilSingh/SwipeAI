@@ -1,0 +1,11 @@
+.git
+.gitignore
+.gradle
+.idea
+build
+uploads
+*.pdf
+.env
+.env.prod
+HELP.md
+API_DOCUMENTATION.md

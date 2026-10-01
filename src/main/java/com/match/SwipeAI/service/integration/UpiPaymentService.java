@@ -33,16 +33,16 @@ public class UpiPaymentService {
     public List<PaymentDto.CatalogItemDto> getCatalog() {
         return List.of(
                 PaymentDto.CatalogItemDto.builder()
-                        .sku(SkuType.WEEKEND_PASS_99)
+                        .sku(SkuType.WEEKEND_PASS_79)
                         .title("Weekend Dating Pass")
-                        .priceInr(99)
-                        .directPriceInr(99)
-                        .storePriceInr(129)
-                        .googleProductId("blunderr_pass_weekend_129")
+                        .priceInr(79)
+                        .directPriceInr(79)
+                        .storePriceInr(99)
+                        .googleProductId("blunderr_pass_weekend_99")
                         .appleProductId("com.blunderr.pass.weekend")
                         .subtitle("Unlimited Likes + 3 Sparks + See Who Liked You")
-                        .tag("MOST POPULAR IN BENGALURU & DELHI")
-                        .perks(List.of("Unlimited Daily Swipes", "3 Super Sparks Included", "Priority Profile Pool"))
+                        .tag("MOST POPULAR FOR WEEKENDS")
+                        .perks(List.of("Unlimited Daily Swipes (3 Days)", "3 Super Sparks Included", "Unlimited Chat & Messages after matching (100% Free)", "Priority Profile Pool", "Validity: 3 Days (Fri-Sun)"))
                         .build(),
                 PaymentDto.CatalogItemDto.builder()
                         .sku(SkuType.SUPER_SPARK_19)
@@ -54,7 +54,19 @@ public class UpiPaymentService {
                         .appleProductId("com.blunderr.spark.29")
                         .subtitle("Stand out instantly with 3x reply rate")
                         .tag("SACHET")
-                        .perks(List.of("Highlights your profile at top of feed"))
+                        .perks(List.of("Highlights your profile at top of feed", "Unlimited Chat once matched", "Validity: No Expiry (Valid until used)"))
+                        .build(),
+                PaymentDto.CatalogItemDto.builder()
+                        .sku(SkuType.SPARKS_PACK_5_79)
+                        .title("5 Super Sparks Pack")
+                        .priceInr(79)
+                        .directPriceInr(79)
+                        .storePriceInr(99)
+                        .googleProductId("blunderr_sparks_5_99")
+                        .appleProductId("com.blunderr.sparks.5")
+                        .subtitle("Top-of-feed visibility 5 times (Save ₹16)")
+                        .tag("VOLUME VALUE")
+                        .perks(List.of("5 Super Sparks to highlight profile", "Unlimited Chat once matched", "Validity: No Expiry (Valid until used)"))
                         .build(),
                 PaymentDto.CatalogItemDto.builder()
                         .sku(SkuType.CUTTING_CHAI_21)
@@ -66,31 +78,31 @@ public class UpiPaymentService {
                         .appleProductId("com.blunderr.chai.29")
                         .subtitle("Send a digital cutting chai + 15% partner cafe coupon")
                         .tag("HIGH REACTION")
-                        .perks(List.of("100% of women say they reply to chai invites", "15% off Blue Tokai & Third Wave coupon"))
+                        .perks(List.of("100% of women say they reply to chai invites", "15% off Blue Tokai & Third Wave coupon", "Unlimited Chat once matched"))
                         .build(),
                 PaymentDto.CatalogItemDto.builder()
-                        .sku(SkuType.BOOST_1X_FRIDAY_29)
+                        .sku(SkuType.BOOST_1X_FRIDAY_39)
                         .title("1 Friday Night Boost")
-                        .priceInr(29)
-                        .directPriceInr(29)
-                        .storePriceInr(49)
-                        .googleProductId("blunderr_boost_49")
-                        .appleProductId("com.blunderr.boost.49")
+                        .priceInr(39)
+                        .directPriceInr(39)
+                        .storePriceInr(59)
+                        .googleProductId("blunderr_boost_59")
+                        .appleProductId("com.blunderr.boost.59")
                         .subtitle("10x profile visibility during 9 PM - 1 AM peak")
                         .tag("PEAK CONVERSION")
-                        .perks(List.of("Surfaces profile to top of nearby candidates for 1 hour"))
+                        .perks(List.of("Surfaces profile to top of nearby candidates for 1 hour", "Unlimited Chat once matched", "Validity: 90 Days to activate"))
                         .build(),
                 PaymentDto.CatalogItemDto.builder()
-                        .sku(SkuType.DIRECT_DMS_3X_49)
+                        .sku(SkuType.DIRECT_DMS_3X_89)
                         .title("3 Direct DMs")
-                        .priceInr(49)
-                        .directPriceInr(49)
-                        .storePriceInr(69)
-                        .googleProductId("blunderr_dms_69")
-                        .appleProductId("com.blunderr.dms.69")
+                        .priceInr(89)
+                        .directPriceInr(89)
+                        .storePriceInr(119)
+                        .googleProductId("blunderr_dms_119")
+                        .appleProductId("com.blunderr.dms.119")
                         .subtitle("Skip the queue and message high-intent matches directly")
-                        .tag("SACHET")
-                        .perks(List.of("Send personalized intro before matching"))
+                        .tag("SCARCITY PERK")
+                        .perks(List.of("Send personalized intro before matching", "Verified direct inbox placement", "Unlimited Chat once matched", "Validity: No Expiry (Valid until used)"))
                         .build(),
                 PaymentDto.CatalogItemDto.builder()
                         .sku(SkuType.REVIVE_MATCH_19)
@@ -102,7 +114,7 @@ public class UpiPaymentService {
                         .appleProductId("com.blunderr.revive.29")
                         .subtitle("Unfreeze 48h timer and restore match")
                         .tag("SACHET")
-                        .perks(List.of("Re-opens icebreaker chat lounge for 48 hours"))
+                        .perks(List.of("Re-opens icebreaker chat lounge for 48 hours", "Unlimited Chat in active window"))
                         .build(),
                 PaymentDto.CatalogItemDto.builder()
                         .sku(SkuType.WEEKLY_PASS_149)
@@ -112,9 +124,33 @@ public class UpiPaymentService {
                         .storePriceInr(199)
                         .googleProductId("blunderr_weekly_199")
                         .appleProductId("com.blunderr.weekly.199")
-                        .subtitle("Full VIP access for 7 days with direct DMs")
+                        .subtitle("Full VIP access for 7 days + 1 Boost + 5 Sparks + 3 DMs")
                         .tag("POPULAR")
-                        .perks(List.of("Unlimited likes", "5 Super Sparks", "3 Direct DMs"))
+                        .perks(List.of("Unlimited likes for 7 days", "5 Super Sparks Included", "1 Profile Boost", "3 Direct DMs", "Unlimited Chat once matched", "Validity: 7 Days"))
+                        .build(),
+                PaymentDto.CatalogItemDto.builder()
+                        .sku(SkuType.WINGMAN_BUNDLE_199)
+                        .title("Weekend Wingman Bundle")
+                        .priceInr(199)
+                        .directPriceInr(199)
+                        .storePriceInr(249)
+                        .googleProductId("blunderr_bundle_wingman_249")
+                        .appleProductId("com.blunderr.bundle.wingman")
+                        .subtitle("Weekend Pass + 5 Sparks + 1 Boost + 2 Direct DMs (Save ₹88)")
+                        .tag("ALL-IN-ONE BUNDLE")
+                        .perks(List.of("Active VIP Pass for 3 days", "5 Super Sparks", "1 Profile Boost", "2 Direct DMs", "Unlimited Chat once matched", "Validity: 7 Days VIP Access"))
+                        .build(),
+                PaymentDto.CatalogItemDto.builder()
+                        .sku(SkuType.MONTHLY_PASS_349)
+                        .title("30-Day Monthly VIP Pass")
+                        .priceInr(349)
+                        .directPriceInr(349)
+                        .storePriceInr(449)
+                        .googleProductId("blunderr_monthly_449")
+                        .appleProductId("com.blunderr.monthly.449")
+                        .subtitle("Full monthly unlimited access + 15 Sparks + 4 Boosts + 10 DMs")
+                        .tag("BEST OVERALL VALUE")
+                        .perks(List.of("Unlimited likes for 30 days", "15 Super Sparks Included", "4 Profile Boosts", "10 Direct DMs", "Unlimited Chat & Messages once matched (100% Free)", "Priority DigiLocker badge", "Validity: 30 Days"))
                         .build(),
                 PaymentDto.CatalogItemDto.builder()
                         .sku(SkuType.FORTNIGHT_PASS_199)
@@ -125,20 +161,20 @@ public class UpiPaymentService {
                         .googleProductId("blunderr_fortnight_249")
                         .appleProductId("com.blunderr.fortnight.249")
                         .subtitle("Full VIP access for 14 days + 6 Sparks + 2 Boosts")
-                        .tag("BEST VALUE")
-                        .perks(List.of("Unlimited likes for 14 days", "6 Super Sparks", "2 Profile Boosts", "5 Direct DMs"))
+                        .tag("VALUE PASS")
+                        .perks(List.of("Unlimited likes for 14 days", "6 Super Sparks", "2 Profile Boosts", "5 Direct DMs", "Unlimited Chat once matched", "Validity: 14 Days"))
                         .build(),
                 PaymentDto.CatalogItemDto.builder()
-                        .sku(SkuType.SELECT_QUARTERLY_999)
-                        .title("Select Club (Quarterly)")
-                        .priceInr(999)
-                        .directPriceInr(999)
-                        .storePriceInr(1299)
-                        .googleProductId("blunderr_select_1299")
-                        .appleProductId("com.blunderr.select.1299")
+                        .sku(SkuType.SELECT_QUARTERLY_899)
+                        .title("Select Club (Quarterly Concierge)")
+                        .priceInr(899)
+                        .directPriceInr(899)
+                        .storePriceInr(1199)
+                        .googleProductId("blunderr_select_1199")
+                        .appleProductId("com.blunderr.select.1199")
                         .subtitle("Concierge recommendations & priority DigiLocker pool")
-                        .tag("PREMIUM")
-                        .perks(List.of("Concierge curated dates", "Unlimited access", "Exclusive offline mixers"))
+                        .tag("PREMIUM CLUB")
+                        .perks(List.of("Concierge curated dates", "Unlimited access for 90 days", "Unlimited Chat & Messaging", "Exclusive offline mixers", "Validity: 90 Days"))
                         .build()
         );
     }
@@ -313,23 +349,37 @@ public class UpiPaymentService {
         userRepository.findById(userId).ifPresent(user -> {
             switch (sku) {
                 case BOOST_1X_FRIDAY_29:
+                case BOOST_1X_FRIDAY_39:
                     user.setBoostsBalance(user.getBoostsBalance() + 1);
                     break;
                 case DIRECT_DMS_3X_49:
+                case DIRECT_DMS_3X_89:
                     user.setDirectDmsBalance(user.getDirectDmsBalance() + 3);
                     break;
                 case SUPER_SPARK_19:
                     user.setSparksBalance(user.getSparksBalance() + 1);
                     break;
+                case SPARKS_PACK_5_79:
+                    user.setSparksBalance(user.getSparksBalance() + 5);
+                    break;
                 case WEEKEND_PASS_99:
+                case WEEKEND_PASS_79:
                     user.setHasActivePass(true);
                     user.setPassExpiry(OffsetDateTime.now().plusDays(3));
                     user.setSparksBalance(user.getSparksBalance() + 3);
+                    break;
+                case WINGMAN_BUNDLE_199:
+                    user.setHasActivePass(true);
+                    user.setPassExpiry(OffsetDateTime.now().plusDays(3));
+                    user.setSparksBalance(user.getSparksBalance() + 5);
+                    user.setBoostsBalance(user.getBoostsBalance() + 1);
+                    user.setDirectDmsBalance(user.getDirectDmsBalance() + 2);
                     break;
                 case WEEKLY_PASS_149:
                     user.setHasActivePass(true);
                     user.setPassExpiry(OffsetDateTime.now().plusDays(7));
                     user.setSparksBalance(user.getSparksBalance() + 5);
+                    user.setBoostsBalance(user.getBoostsBalance() + 1);
                     user.setDirectDmsBalance(user.getDirectDmsBalance() + 3);
                     break;
                 case FORTNIGHT_PASS_199:
@@ -339,6 +389,15 @@ public class UpiPaymentService {
                     user.setBoostsBalance(user.getBoostsBalance() + 2);
                     user.setDirectDmsBalance(user.getDirectDmsBalance() + 5);
                     break;
+                case MONTHLY_PASS_349:
+                    user.setHasActivePass(true);
+                    user.setPassExpiry(OffsetDateTime.now().plusDays(30));
+                    user.setSparksBalance(user.getSparksBalance() + 15);
+                    user.setBoostsBalance(user.getBoostsBalance() + 4);
+                    user.setDirectDmsBalance(user.getDirectDmsBalance() + 10);
+                    user.setKarmaScore(Math.min(200, user.getKarmaScore() + 10));
+                    break;
+                case SELECT_QUARTERLY_899:
                 case SELECT_QUARTERLY_999:
                     user.setHasActivePass(true);
                     user.setPassExpiry(OffsetDateTime.now().plusDays(90));

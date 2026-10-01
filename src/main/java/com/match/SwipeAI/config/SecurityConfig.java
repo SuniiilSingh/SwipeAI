@@ -41,6 +41,7 @@ public class SecurityConfig {
                                 "/v1/payments/cashfree/webhook",
                                 "/v1/payments/store/catalog",
                                 "/v1/safe-date/spots",
+                                "/v1/support/faqs",
                                 "/ws/**",
                                 "/error",
                                 "/h2-console/**"

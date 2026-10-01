@@ -36,4 +36,6 @@ public interface UserNotificationRepository extends JpaRepository<UserNotificati
     int markMatchNotificationsAsRead(@Param("userId") UUID userId, @Param("matchPattern") String matchPattern);
 
     void deleteByIdAndUserId(UUID id, UUID userId);
+
+    void deleteByUserId(UUID userId);
 }
