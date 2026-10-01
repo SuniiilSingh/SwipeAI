@@ -107,8 +107,8 @@
     <p><strong>Note:</strong> Deleting your account is permanent. All profile photos, matches, chat history, and stored location data will be purged within 30 days.</p>
 
     <form id="deleteForm">
-      <label for="phone">Registered Phone Number (with Country Code):</label>
-      <input type="text" id="phone" placeholder="+918910653499" required>
+      <label for="phone">Registered 10-Digit Mobile Number:</label>
+      <input type="tel" id="phone" placeholder="8910653499" maxlength="10" minlength="10" pattern="[0-9]{10}" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)" required>
 
       <label for="reason">Reason for deletion (Optional):</label>
       <textarea id="reason" rows="3" placeholder="Tell us why you are leaving..."></textarea>
