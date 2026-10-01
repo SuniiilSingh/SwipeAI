@@ -15,6 +15,7 @@ import java.util.UUID;
  * Enforces the 25 profile/day anti-fatigue hard cap, applies Shadow Shield contact filtering,
  * and ranks candidates using the multi-objective formula.
  */
+@CrossOrigin
 @RestController
 @RequestMapping("/v1/discovery")
 @RequiredArgsConstructor

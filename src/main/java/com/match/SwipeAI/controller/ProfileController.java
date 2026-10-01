@@ -15,6 +15,7 @@ import java.util.UUID;
  * Manages dietary preferences, living status, vernacular voice prompts,
  * Meme DNA daily swipes, and Cosmic Chemistry 2.0 vibe cards.
  */
+@CrossOrigin
 @RestController
 @RequestMapping("/v1/profiles")
 @RequiredArgsConstructor

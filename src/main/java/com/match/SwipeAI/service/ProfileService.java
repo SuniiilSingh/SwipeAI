@@ -72,32 +72,32 @@ public class ProfileService {
         Profile profile = profileRepository.findById(userId)
                 .orElseGet(() -> Profile.builder().userId(user.getId()).build());
 
-        if (request.getDisplayName() != null) profile.setDisplayName(request.getDisplayName());
-        if (request.getFullName() != null) profile.setDisplayName(request.getFullName());
-        if (request.getBio() != null) profile.setBio(request.getBio());
+        if (request.getDisplayName() != null) profile.setDisplayName(sanitize(request.getDisplayName(), 30));
+        if (request.getFullName() != null) profile.setDisplayName(sanitize(request.getFullName(), 30));
+        if (request.getBio() != null) profile.setBio(sanitize(request.getBio(), 500));
         if (request.getDietaryPref() != null) profile.setDietaryPref(request.getDietaryPref());
         if (request.getLivingStatus() != null) profile.setLivingStatus(request.getLivingStatus());
         if (request.getLanguagesSpoken() != null) profile.setLanguagesSpoken(request.getLanguagesSpoken());
-        if (request.getZodiacSign() != null) profile.setZodiacSign(request.getZodiacSign());
-        if (request.getSunSign() != null) profile.setSunSign(request.getSunSign());
-        if (request.getMoonSign() != null) profile.setMoonSign(request.getMoonSign());
-        if (request.getCompany() != null) profile.setCompany(request.getCompany());
-        if (request.getOccupation() != null) profile.setOccupation(request.getOccupation());
-        if (request.getJob() != null) profile.setJob(request.getJob());
-        if (request.getEducation() != null) profile.setEducation(request.getEducation());
-        if (request.getInstitute() != null) profile.setInstitute(request.getInstitute());
-        if (request.getInterests() != null) profile.setInterests(request.getInterests());
-        if (request.getHeight() != null) profile.setHeight(request.getHeight());
-        if (request.getLocation() != null) profile.setLocation(request.getLocation());
-        if (request.getMaxDistanceKm() != null) profile.setMaxDistanceKm(request.getMaxDistanceKm());
-        if (request.getSexualOrientation() != null) profile.setSexualOrientation(request.getSexualOrientation());
+        if (request.getZodiacSign() != null) profile.setZodiacSign(sanitize(request.getZodiacSign(), 30));
+        if (request.getSunSign() != null) profile.setSunSign(sanitize(request.getSunSign(), 30));
+        if (request.getMoonSign() != null) profile.setMoonSign(sanitize(request.getMoonSign(), 30));
+        if (request.getCompany() != null) profile.setCompany(sanitize(request.getCompany(), 30));
+        if (request.getOccupation() != null) profile.setOccupation(sanitize(request.getOccupation(), 100));
+        if (request.getJob() != null) profile.setJob(sanitize(request.getJob(), 100));
+        if (request.getEducation() != null) profile.setEducation(sanitize(request.getEducation(), 100));
+        if (request.getInstitute() != null) profile.setInstitute(sanitize(request.getInstitute(), 30));
+        if (request.getInterests() != null) profile.setInterests(sanitize(request.getInterests(), 250));
+        if (request.getHeight() != null) profile.setHeight(Math.min(250, Math.max(100, request.getHeight())));
+        if (request.getLocation() != null) profile.setLocation(sanitize(request.getLocation(), 25));
+        if (request.getMaxDistanceKm() != null) profile.setMaxDistanceKm(Math.min(500, Math.max(1, request.getMaxDistanceKm())));
+        if (request.getSexualOrientation() != null) profile.setSexualOrientation(sanitize(request.getSexualOrientation(), 50));
         if (request.getShowOrientationOnProfile() != null) profile.setShowOrientationOnProfile(request.getShowOrientationOnProfile());
-        if (request.getGenderDisplay() != null) profile.setGenderDisplay(request.getGenderDisplay());
+        if (request.getGenderDisplay() != null) profile.setGenderDisplay(sanitize(request.getGenderDisplay(), 50));
         if (request.getShowGenderOnProfile() != null) profile.setShowGenderOnProfile(request.getShowGenderOnProfile());
-        if (request.getGenderPreferenceDisplay() != null) profile.setGenderPreferenceDisplay(request.getGenderPreferenceDisplay());
-        if (request.getRelationshipIntent() != null) profile.setRelationshipIntent(request.getRelationshipIntent());
-        if (request.getProfilePromptQuestion() != null) profile.setProfilePromptQuestion(request.getProfilePromptQuestion());
-        if (request.getProfilePromptAnswer() != null) profile.setProfilePromptAnswer(request.getProfilePromptAnswer());
+        if (request.getGenderPreferenceDisplay() != null) profile.setGenderPreferenceDisplay(sanitize(request.getGenderPreferenceDisplay(), 50));
+        if (request.getRelationshipIntent() != null) profile.setRelationshipIntent(sanitize(request.getRelationshipIntent(), 50));
+        if (request.getProfilePromptQuestion() != null) profile.setProfilePromptQuestion(sanitize(request.getProfilePromptQuestion(), 150));
+        if (request.getProfilePromptAnswer() != null) profile.setProfilePromptAnswer(sanitize(request.getProfilePromptAnswer(), 500));
         if (request.getPhoto1() != null) profile.setPhoto1(request.getPhoto1().trim().isEmpty() ? null : request.getPhoto1().trim());
         if (request.getPhoto2() != null) profile.setPhoto2(request.getPhoto2().trim().isEmpty() ? null : request.getPhoto2().trim());
         if (request.getPhoto3() != null) profile.setPhoto3(request.getPhoto3().trim().isEmpty() ? null : request.getPhoto3().trim());
@@ -105,18 +105,18 @@ public class ProfileService {
         if (request.getPhoto5() != null) profile.setPhoto5(request.getPhoto5().trim().isEmpty() ? null : request.getPhoto5().trim());
         if (request.getPhoto6() != null) profile.setPhoto6(request.getPhoto6().trim().isEmpty() ? null : request.getPhoto6().trim());
         if (request.getSelfieUrl() != null) profile.setSelfieUrl(request.getSelfieUrl().trim().isEmpty() ? null : request.getSelfieUrl().trim());
-        if (request.getSmokingHabit() != null) profile.setSmokingHabit(request.getSmokingHabit());
-        if (request.getDrinkingHabit() != null) profile.setDrinkingHabit(request.getDrinkingHabit());
-        if (request.getHobbies() != null) profile.setHobbies(request.getHobbies());
-        if (request.getVacationPreference() != null) profile.setVacationPreference(request.getVacationPreference());
-        if (request.getCity() != null) profile.setCity(request.getCity());
-        if (request.getNeighborhood() != null) profile.setNeighborhood(request.getNeighborhood());
-        if (request.getMicroCircle() != null) profile.setMicroCircle(request.getMicroCircle());
+        if (request.getSmokingHabit() != null) profile.setSmokingHabit(sanitize(request.getSmokingHabit(), 50));
+        if (request.getDrinkingHabit() != null) profile.setDrinkingHabit(sanitize(request.getDrinkingHabit(), 50));
+        if (request.getHobbies() != null) profile.setHobbies(sanitize(request.getHobbies(), 250));
+        if (request.getVacationPreference() != null) profile.setVacationPreference(sanitize(request.getVacationPreference(), 50));
+        if (request.getCity() != null) profile.setCity(sanitize(request.getCity(), 25));
+        if (request.getNeighborhood() != null) profile.setNeighborhood(sanitize(request.getNeighborhood(), 25));
+        if (request.getMicroCircle() != null) profile.setMicroCircle(sanitize(request.getMicroCircle(), 25));
         if (request.getVoicePromptUrl() != null) profile.setVoicePromptUrl(request.getVoicePromptUrl().trim().isEmpty() ? null : request.getVoicePromptUrl().trim());
         if (request.getVoicePromptDuration() != null) profile.setVoicePromptDuration(request.getVoicePromptDuration());
-        if (request.getVoicePromptText() != null) profile.setVoicePromptText(request.getVoicePromptText());
+        if (request.getVoicePromptText() != null) profile.setVoicePromptText(sanitize(request.getVoicePromptText(), 300));
         if (request.getSelectedMemeUrl() != null) profile.setSelectedMemeUrl(request.getSelectedMemeUrl().trim().isEmpty() ? null : request.getSelectedMemeUrl().trim());
-        if (request.getSelectedMemeTitle() != null) profile.setSelectedMemeTitle(request.getSelectedMemeTitle());
+        if (request.getSelectedMemeTitle() != null) profile.setSelectedMemeTitle(sanitize(request.getSelectedMemeTitle(), 150));
 
         if (request.getPhotos() != null) {
             try {
@@ -495,5 +495,11 @@ public class ProfileService {
                 .selectedMemeUrl(profile.getSelectedMemeUrl())
                 .selectedMemeTitle(profile.getSelectedMemeTitle())
                 .build();
+    }
+
+    private String sanitize(String value, int maxLen) {
+        if (value == null) return null;
+        String trimmed = value.trim();
+        return trimmed.length() > maxLen ? trimmed.substring(0, maxLen) : trimmed;
     }
 }

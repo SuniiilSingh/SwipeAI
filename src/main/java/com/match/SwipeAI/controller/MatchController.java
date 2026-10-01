@@ -16,6 +16,7 @@ import java.util.UUID;
  * Handles 48-hour ephemeral countdown timers, 10-second rapid fire quiz answers,
  * and AI Wingman conversational spark generation.
  */
+@CrossOrigin
 @RestController
 @RequestMapping("/v1/matches")
 @RequiredArgsConstructor

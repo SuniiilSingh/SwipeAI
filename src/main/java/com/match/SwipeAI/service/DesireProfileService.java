@@ -73,7 +73,7 @@ public class DesireProfileService {
                 .communicationPace("VOICE_NOTES_AND_MEMES")
                 .banterStyle("DRY_WIT")
                 .loveLanguage("QUALITY_TIME")
-                .greenFlags(List.of("Reads physical books 📚", "Emotionally articulate 🧠", "Orders dessert for the table 🍰"))
+                .greenFlags(List.of("Reads physical books 📚", "Emotionally articulate 🧠", "Orders dessert for table 🍰"))
                 .preferredProfessions(List.of())
                 .naturalLanguagePrompt("Someone authentic and creative who enjoys good coffee, meaningful conversations, and exploring the city.")
                 .build();

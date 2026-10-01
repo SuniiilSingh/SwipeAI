@@ -13,6 +13,7 @@ import java.util.Map;
  * Authentication and Session Controller.
  * Provides endpoints for mobile OTP and WhatsApp 1-tap instant verification.
  */
+@CrossOrigin
 @RestController
 @RequestMapping("/v1/auth")
 @RequiredArgsConstructor
