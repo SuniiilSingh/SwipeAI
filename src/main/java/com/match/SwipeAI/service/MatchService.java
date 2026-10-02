@@ -233,6 +233,13 @@ public class MatchService {
             lastTime = latest.getCreatedAt();
         }
 
+        MatchDto.IcebreakerQuizDto quizDto = icebreakerEngine.parseQuizData(match.getIcebreakerGameData());
+        if (quizDto != null) {
+            boolean isUserA = match.getUserAId().equals(currentUserId);
+            boolean answered = isUserA ? (quizDto.getUserAAnswer() != null) : (quizDto.getUserBAnswer() != null);
+            quizDto.setHasAnswered(answered || quizDto.isCompleted());
+        }
+
         return MatchDto.MatchResponseDto.builder()
                 .id(match.getId())
                 .otherUserId(otherUser.getId())
@@ -246,7 +253,7 @@ public class MatchService {
                 .expiresAt(match.getExpiresAt())
                 .matchedAt(match.getMatchedAt())
                 .e2eeSecret(match.getE2eeSecret())
-                .icebreakerQuiz(icebreakerEngine.parseQuizData(match.getIcebreakerGameData()))
+                .icebreakerQuiz(quizDto)
                 .lastMessage(lastMsg)
                 .lastMessageTime(lastTime)
                 .otherProfile(candidateCard)

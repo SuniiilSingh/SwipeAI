@@ -65,6 +65,9 @@ public class MatchDto {
         @com.fasterxml.jackson.annotation.JsonAlias({"mutualAgreement", "isMutualAgreement"})
         private boolean isMutualAgreement;
 
+        @com.fasterxml.jackson.annotation.JsonProperty("hasAnswered")
+        private boolean hasAnswered;
+
         private String wingmanRecommendation;
     }
 
