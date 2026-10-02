@@ -51,7 +51,9 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
     }
 
     public void sendMessageToUser(String userId, Object messagePayload) {
-        WebSocketSession session = userSessions.get(userId);
+        if (userId == null || userId.isBlank()) return;
+        String normalizedKey = userId.trim().toLowerCase();
+        WebSocketSession session = userSessions.get(normalizedKey);
         if (session != null && session.isOpen()) {
             try {
                 String payload = objectMapper.writeValueAsString(messagePayload);
@@ -59,6 +61,8 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
             } catch (IOException e) {
                 log.error("Failed to deliver WS message to user {}", userId, e);
             }
+        } else {
+            log.debug("User {} not currently connected on WebSocket", normalizedKey);
         }
     }
 
@@ -69,8 +73,8 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         String query = session.getUri().getQuery();
         for (String param : query.split("&")) {
             String[] pair = param.split("=");
-            if (pair.length == 2 && "userId".equals(pair[0])) {
-                return pair[1];
+            if (pair.length == 2 && "userId".equalsIgnoreCase(pair[0])) {
+                return pair[1].trim().toLowerCase();
             }
         }
         return null;
