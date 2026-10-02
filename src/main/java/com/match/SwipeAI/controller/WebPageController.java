@@ -47,6 +47,11 @@ public class WebPageController {
         return renderStaticHtml("delete-account.html");
     }
 
+    @GetMapping({"/safety", "/safety.html", "/community-guidelines", "/zero-tolerance", "/safety-rules"})
+    public ResponseEntity<String> safety() {
+        return renderStaticHtml("safety.html");
+    }
+
     @GetMapping({"/"})
     public ResponseEntity<String> index() {
         return renderStaticHtml("index.html");
