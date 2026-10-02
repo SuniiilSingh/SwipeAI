@@ -33,6 +33,19 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Public endpoints
                         .requestMatchers(
+                                "/",
+                                "/terms",
+                                "/terms.html",
+                                "/terms-of-service",
+                                "/privacy",
+                                "/privacy.html",
+                                "/privacy-policy",
+                                "/delete-account",
+                                "/delete-account.html",
+                                "/data-deletion",
+                                "/eula",
+                                "/index.html",
+                                "/*.html",
                                 "/v1/auth/**",
                                 "/v1/images/**",
                                 "/api/images/**",
