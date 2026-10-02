@@ -209,6 +209,8 @@ public class PaymentDto {
         private int directDmsBalance;
         private boolean hasActivePass;
         private String passExpiryDate;
+        private Long passExpiryDaysLeft;
+        private String passValidUntil;
         private List<TransactionHistoryItemDto> recentTransactions;
     }
 

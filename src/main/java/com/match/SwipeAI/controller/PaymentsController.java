@@ -36,6 +36,7 @@ public class PaymentsController {
     private final com.match.SwipeAI.service.integration.PaymentExecutionLogService paymentExecutionLogService;
     private final UserRepository userRepository;
     private final PaymentExecutionLogRepository paymentExecutionLogRepository;
+    private final com.match.SwipeAI.repository.UpiOrderRepository upiOrderRepository;
 
     /**
      * Retrieve active membership plan, credit balances, and order history for the current user.
@@ -45,23 +46,81 @@ public class PaymentsController {
         User user = userRepository.findById(userId).orElse(null);
         if (user == null) return ResponseEntity.notFound().build();
 
-        String planName = Boolean.TRUE.equals(user.getHasActivePass()) ? "VIP Pass (Active)" : "Free Plan";
-        String planStatus = Boolean.TRUE.equals(user.getHasActivePass()) ? "ACTIVE" : "FREE";
-        String passExpiry = Boolean.TRUE.equals(user.getHasActivePass()) ? "Active (Auto-Renewing)" : "No Active Pass";
+        boolean hasPass = Boolean.TRUE.equals(user.getHasActivePass());
+        java.time.OffsetDateTime expiry = user.getPassExpiry();
+        String planName = hasPass ? "VIP Pass (Active)" : "Free Plan";
+        String planStatus = hasPass ? "ACTIVE" : "FREE";
+        String passExpiryStr = "No Active Pass";
+        Long daysLeft = 0L;
+        String validUntilStr = "N/A";
 
-        List<PaymentDto.TransactionHistoryItemDto> history = paymentExecutionLogRepository
-                .findByUserIdOrderByCreatedAtDesc(userId)
-                .stream()
-                .limit(10)
-                .<PaymentDto.TransactionHistoryItemDto>map(log -> PaymentDto.TransactionHistoryItemDto.builder()
-                        .orderId(log.getOrderId() != null ? log.getOrderId() : "TRX-" + log.getId().toString().substring(0, 8))
-                        .title(log.getSummary() != null ? log.getSummary() : (log.getAction() != null ? log.getAction() : "Store Purchase"))
-                        .amountFormatted("₹0")
-                        .date(log.getCreatedAt() != null ? log.getCreatedAt().toString().substring(0, 10) : "Recent")
-                        .status(log.getStatus() != null ? log.getStatus() : "COMPLETED")
-                        .provider("STORE")
-                        .build())
-                .toList();
+        if (hasPass || (expiry != null && expiry.isAfter(java.time.OffsetDateTime.now()))) {
+            if (expiry != null && expiry.isAfter(java.time.OffsetDateTime.now())) {
+                daysLeft = Math.max(1L, java.time.Duration.between(java.time.OffsetDateTime.now(), expiry).toDays());
+                validUntilStr = expiry.format(java.time.format.DateTimeFormatter.ofPattern("MMM dd, yyyy"));
+                passExpiryStr = "Valid until " + validUntilStr + " (" + daysLeft + " days left)";
+            } else {
+                daysLeft = 7L;
+                validUntilStr = java.time.OffsetDateTime.now().plusDays(7).format(java.time.format.DateTimeFormatter.ofPattern("MMM dd, yyyy"));
+                passExpiryStr = "VIP Pass Active (7 days left)";
+            }
+        }
+
+        // Fetch real UPI Orders first for accurate amounts
+        List<com.match.SwipeAI.model.UpiOrder> upiOrders = upiOrderRepository.findByUserIdOrderByCreatedAtDesc(userId);
+        List<PaymentDto.TransactionHistoryItemDto> history;
+
+        if (!upiOrders.isEmpty()) {
+            history = upiOrders.stream()
+                    .limit(15)
+                    .map(order -> {
+                        int priceInr = (order.getAmountPaise() != null && order.getAmountPaise() > 0)
+                                ? (order.getAmountPaise() / 100)
+                                : 79;
+                        String title = order.getSku() != null ? order.getSku().name().replace('_', ' ') : "Store Purchase";
+                        String dateStr = order.getCreatedAt() != null
+                                ? order.getCreatedAt().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))
+                                : "Recent";
+                        return PaymentDto.TransactionHistoryItemDto.builder()
+                                .orderId(order.getOrderId() != null ? order.getOrderId() : "TRX-" + order.getId().toString().substring(0, 8))
+                                .title(title)
+                                .amountFormatted("₹" + priceInr)
+                                .date(dateStr)
+                                .status(order.getStatus() != null ? order.getStatus().name() : "SUCCESS")
+                                .provider("UPI")
+                                .build();
+                    })
+                    .toList();
+        } else {
+            history = paymentExecutionLogRepository
+                    .findByUserIdOrderByCreatedAtDesc(userId)
+                    .stream()
+                    .limit(15)
+                    .<PaymentDto.TransactionHistoryItemDto>map(log -> {
+                        String summary = log.getSummary() != null ? log.getSummary() : "";
+                        String amtStr = "₹79";
+                        if (summary.contains("₹")) {
+                            int idx = summary.indexOf("₹");
+                            int spaceIdx = summary.indexOf(" ", idx);
+                            amtStr = spaceIdx > idx ? summary.substring(idx, spaceIdx) : summary.substring(idx);
+                        } else if (summary.contains("_")) {
+                            String[] parts = summary.split("_");
+                            try {
+                                int val = Integer.parseInt(parts[parts.length - 1]);
+                                amtStr = "₹" + val;
+                            } catch (Exception ignored) {}
+                        }
+                        return PaymentDto.TransactionHistoryItemDto.builder()
+                                .orderId(log.getOrderId() != null ? log.getOrderId() : "TRX-" + log.getId().toString().substring(0, 8))
+                                .title(log.getSummary() != null ? log.getSummary() : (log.getAction() != null ? log.getAction() : "Store Purchase"))
+                                .amountFormatted(amtStr)
+                                .date(log.getCreatedAt() != null ? log.getCreatedAt().toString().substring(0, 10) : "Recent")
+                                .status(log.getStatus() != null ? log.getStatus() : "COMPLETED")
+                                .provider("STORE")
+                                .build();
+                    })
+                    .toList();
+        }
 
         PaymentDto.ActivePlanResponse response = PaymentDto.ActivePlanResponse.builder()
                 .activePlanName(planName)
@@ -69,8 +128,10 @@ public class PaymentsController {
                 .sparksBalance(user.getSparksBalance() != null ? user.getSparksBalance() : 0)
                 .boostsBalance(user.getBoostsBalance() != null ? user.getBoostsBalance() : 0)
                 .directDmsBalance(user.getDirectDmsBalance() != null ? user.getDirectDmsBalance() : 0)
-                .hasActivePass(Boolean.TRUE.equals(user.getHasActivePass()))
-                .passExpiryDate(passExpiry)
+                .hasActivePass(hasPass)
+                .passExpiryDate(passExpiryStr)
+                .passExpiryDaysLeft(daysLeft)
+                .passValidUntil(validUntilStr)
                 .recentTransactions(history)
                 .build();
 
