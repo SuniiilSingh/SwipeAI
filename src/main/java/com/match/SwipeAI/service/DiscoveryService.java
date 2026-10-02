@@ -391,47 +391,63 @@ public class DiscoveryService {
             throw new IllegalStateException("Daily swipe limit of 25 reached. Unlock Weekend Pass for unlimited likes!");
         }
 
-        // Save interaction
-        Interaction interaction = Interaction.builder()
-                .actorId(actorId)
-                .targetId(request.getTargetId())
-                .actionType(request.getActionType())
-                .contextType(request.getContextType())
-                .contextTargetId(request.getContextTargetId())
-                .commentText(request.getCommentText())
-                .build();
-
+        // Save or update interaction (upsert to handle re-swipes / retries without unique constraint violations)
+        Optional<Interaction> existingOpt = interactionRepository.findByActorIdAndTargetId(actorId, request.getTargetId());
+        Interaction interaction;
+        if (existingOpt.isPresent()) {
+            interaction = existingOpt.get();
+            interaction.setActionType(request.getActionType());
+            interaction.setContextType(request.getContextType());
+            interaction.setContextTargetId(request.getContextTargetId());
+            interaction.setCommentText(request.getCommentText());
+            interaction.setCreatedAt(OffsetDateTime.now());
+        } else {
+            interaction = Interaction.builder()
+                    .actorId(actorId)
+                    .targetId(request.getTargetId())
+                    .actionType(request.getActionType())
+                    .contextType(request.getContextType())
+                    .contextTargetId(request.getContextTargetId())
+                    .commentText(request.getCommentText())
+                    .build();
+        }
         interactionRepository.save(interaction);
 
         boolean isMatch = false;
         UUID matchId = null;
 
-        // If LIKE or SUPER_CHAI, check if target liked actor previously
+        // If LIKE or SUPER_CHAI, check if target liked actor previously or if match exists
         if (request.getActionType() == ActionType.LIKE || request.getActionType() == ActionType.SUPER_CHAI) {
-            Optional<Interaction> reciprocal = interactionRepository.findByActorIdAndTargetId(request.getTargetId(), actorId);
-            if (reciprocal.isPresent() &&
-                    (reciprocal.get().getActionType() == ActionType.LIKE || reciprocal.get().getActionType() == ActionType.SUPER_CHAI)) {
-                // Form new Match in PENDING_ICEBREAKER state with 48h timer
+            Optional<Match> existingMatch = matchRepository.findMatchBetween(actorId, request.getTargetId());
+            if (existingMatch.isPresent() && existingMatch.get().getStatus() != MatchStatus.UNMATCHED) {
                 isMatch = true;
-                Match match = Match.builder()
-                        .userAId(actorId)
-                        .userBId(request.getTargetId())
-                        .initiatorId(actorId)
-                        .status(MatchStatus.PENDING_ICEBREAKER)
-                        .expiresAt(OffsetDateTime.now().plusHours(48))
-                        .messagesCount(0)
-                        .e2eeSecret(UUID.randomUUID().toString())
-                        .icebreakerGameData("{\"quizId\":\"quiz_sunday_vibe\",\"title\":\"10s Rapid-Fire Quiz\",\"question\":\"Your Ultimate Sunday Vibe:\",\"options\":[\"Filter Coffee & Dosa crawl in Indiranagar\",\"Sleep until 2 PM & binge true-crime podcasts\",\"Spontaneous drive to Nandi Hills\"],\"userAAnswer\":null,\"userBAnswer\":null,\"isCompleted\":false,\"isMutualAgreement\":false}")
-                        .build();
+                matchId = existingMatch.get().getId();
+            } else {
+                Optional<Interaction> reciprocal = interactionRepository.findByActorIdAndTargetId(request.getTargetId(), actorId);
+                if (reciprocal.isPresent() &&
+                        (reciprocal.get().getActionType() == ActionType.LIKE || reciprocal.get().getActionType() == ActionType.SUPER_CHAI)) {
+                    // Form new Match in PENDING_ICEBREAKER state with 48h timer
+                    isMatch = true;
+                    Match match = Match.builder()
+                            .userAId(actorId)
+                            .userBId(request.getTargetId())
+                            .initiatorId(actorId)
+                            .status(MatchStatus.PENDING_ICEBREAKER)
+                            .expiresAt(OffsetDateTime.now().plusHours(48))
+                            .messagesCount(0)
+                            .e2eeSecret(UUID.randomUUID().toString())
+                            .icebreakerGameData("{\"quizId\":\"quiz_sunday_vibe\",\"title\":\"10s Rapid-Fire Quiz\",\"question\":\"Your Ultimate Sunday Vibe:\",\"options\":[\"Filter Coffee & Dosa crawl in Indiranagar\",\"Sleep until 2 PM & binge true-crime podcasts\",\"Spontaneous drive to Nandi Hills\"],\"userAAnswer\":null,\"userBAnswer\":null,\"isCompleted\":false,\"isMutualAgreement\":false}")
+                            .build();
 
-                match = matchRepository.save(match);
-                matchId = match.getId();
-                log.info("Mutual Like! Created Match {} between {} and {}", matchId, actorId, request.getTargetId());
+                    match = matchRepository.save(match);
+                    matchId = match.getId();
+                    log.info("Mutual Like! Created Match {} between {} and {}", matchId, actorId, request.getTargetId());
 
-                // Dispatch push notification to both users
-                String actorName = profileRepository.findById(actorId).map(Profile::getDisplayName).orElse("Your match");
-                String targetName = profileRepository.findById(request.getTargetId()).map(Profile::getDisplayName).orElse("Your match");
-                pushNotificationService.sendMatchNotification(actorId, request.getTargetId(), matchId, actorName, targetName);
+                    // Dispatch push notification to both users
+                    String actorName = profileRepository.findById(actorId).map(Profile::getDisplayName).orElse("Your match");
+                    String targetName = profileRepository.findById(request.getTargetId()).map(Profile::getDisplayName).orElse("Your match");
+                    pushNotificationService.sendMatchNotification(actorId, request.getTargetId(), matchId, actorName, targetName);
+                }
             }
         }
 
