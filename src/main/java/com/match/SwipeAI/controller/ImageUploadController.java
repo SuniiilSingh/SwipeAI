@@ -19,7 +19,7 @@ import java.util.Map;
 @RestController
 @RequestMapping({"/api/images", "/v1/images"})
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
+@CrossOrigin(originPatterns = "*")
 public class ImageUploadController {
 
     private final R2StorageService r2StorageService;
