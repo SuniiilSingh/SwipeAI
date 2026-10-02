@@ -193,4 +193,38 @@ public class PaymentDto {
         private boolean grantPerks; // Whether to credit sparks/pass if reconciled to CAPTURED
         private String adminIdOrName;
     }
+
+    /**
+     * Active plan, credit balances, and recent transaction history.
+     */
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class ActivePlanResponse {
+        private String activePlanName;
+        private String planStatus;
+        private int sparksBalance;
+        private int boostsBalance;
+        private int directDmsBalance;
+        private boolean hasActivePass;
+        private String passExpiryDate;
+        private List<TransactionHistoryItemDto> recentTransactions;
+    }
+
+    /**
+     * Lightweight transaction history item DTO.
+     */
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class TransactionHistoryItemDto {
+        private String orderId;
+        private String title;
+        private String amountFormatted;
+        private String date;
+        private String status;
+        private String provider;
+    }
 }

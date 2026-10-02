@@ -1,6 +1,9 @@
 package com.match.SwipeAI.controller;
 
 import com.match.SwipeAI.dto.PaymentDto;
+import com.match.SwipeAI.model.User;
+import com.match.SwipeAI.repository.PaymentExecutionLogRepository;
+import com.match.SwipeAI.repository.UserRepository;
 import com.match.SwipeAI.service.engine.PaymentCryptoService;
 import com.match.SwipeAI.service.integration.CashfreePaymentService;
 import com.match.SwipeAI.service.integration.IapVerificationService;
@@ -13,16 +16,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * Enterprise Monetization, Webhook, and Payment Audit Controller.
- * Provides micro-pricing (₹19–₹99) catalog, generates NPCI UPI deep-links, verifies native IAP receipts,
- * processes Cashfree checkouts, and exposes encrypted forensic audit trails for customer support/fraud ops.
- */
 @Slf4j
+@CrossOrigin
 @RestController
 @RequestMapping("/v1/payments")
 @RequiredArgsConstructor
@@ -34,6 +34,48 @@ public class PaymentsController {
     private final PaymentAuditService paymentAuditService;
     private final PaymentCryptoService paymentCryptoService;
     private final com.match.SwipeAI.service.integration.PaymentExecutionLogService paymentExecutionLogService;
+    private final UserRepository userRepository;
+    private final PaymentExecutionLogRepository paymentExecutionLogRepository;
+
+    /**
+     * Retrieve active membership plan, credit balances, and order history for the current user.
+     */
+    @GetMapping("/active-plan")
+    public ResponseEntity<PaymentDto.ActivePlanResponse> getActivePlan(@AuthenticationPrincipal UUID userId) {
+        User user = userRepository.findById(userId).orElse(null);
+        if (user == null) return ResponseEntity.notFound().build();
+
+        String planName = Boolean.TRUE.equals(user.getHasActivePass()) ? "VIP Pass (Active)" : "Free Plan";
+        String planStatus = Boolean.TRUE.equals(user.getHasActivePass()) ? "ACTIVE" : "FREE";
+        String passExpiry = Boolean.TRUE.equals(user.getHasActivePass()) ? "Active (Auto-Renewing)" : "No Active Pass";
+
+        List<PaymentDto.TransactionHistoryItemDto> history = paymentExecutionLogRepository
+                .findByUserIdOrderByCreatedAtDesc(userId)
+                .stream()
+                .limit(10)
+                .<PaymentDto.TransactionHistoryItemDto>map(log -> PaymentDto.TransactionHistoryItemDto.builder()
+                        .orderId(log.getOrderId() != null ? log.getOrderId() : "TRX-" + log.getId().toString().substring(0, 8))
+                        .title(log.getSummary() != null ? log.getSummary() : (log.getAction() != null ? log.getAction() : "Store Purchase"))
+                        .amountFormatted("₹0")
+                        .date(log.getCreatedAt() != null ? log.getCreatedAt().toString().substring(0, 10) : "Recent")
+                        .status(log.getStatus() != null ? log.getStatus() : "COMPLETED")
+                        .provider("STORE")
+                        .build())
+                .toList();
+
+        PaymentDto.ActivePlanResponse response = PaymentDto.ActivePlanResponse.builder()
+                .activePlanName(planName)
+                .planStatus(planStatus)
+                .sparksBalance(user.getSparksBalance() != null ? user.getSparksBalance() : 0)
+                .boostsBalance(user.getBoostsBalance() != null ? user.getBoostsBalance() : 0)
+                .directDmsBalance(user.getDirectDmsBalance() != null ? user.getDirectDmsBalance() : 0)
+                .hasActivePass(Boolean.TRUE.equals(user.getHasActivePass()))
+                .passExpiryDate(passExpiry)
+                .recentTransactions(history)
+                .build();
+
+        return ResponseEntity.ok(response);
+    }
 
     /**
      * Retrieve the full micro-sachet catalog and Weekend Dating Pass pricing.
