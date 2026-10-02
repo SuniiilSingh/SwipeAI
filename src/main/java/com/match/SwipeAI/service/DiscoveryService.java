@@ -416,16 +416,24 @@ public class DiscoveryService {
         boolean isMatch = false;
         UUID matchId = null;
 
-        // If LIKE or SUPER_CHAI, check if target liked actor previously or if match exists
-        if (request.getActionType() == ActionType.LIKE || request.getActionType() == ActionType.SUPER_CHAI) {
+        // If LIKE, SUPER_CHAI, or SUPER_SPARK, check if target liked actor previously or if match exists
+        boolean isHighIntent = request.getActionType() == ActionType.LIKE ||
+                request.getActionType() == ActionType.SUPER_CHAI ||
+                request.getActionType() == ActionType.SUPER_SPARK;
+
+        if (isHighIntent) {
             Optional<Match> existingMatch = matchRepository.findMatchBetween(actorId, request.getTargetId());
             if (existingMatch.isPresent() && existingMatch.get().getStatus() != MatchStatus.UNMATCHED) {
                 isMatch = true;
                 matchId = existingMatch.get().getId();
             } else {
                 Optional<Interaction> reciprocal = interactionRepository.findByActorIdAndTargetId(request.getTargetId(), actorId);
-                if (reciprocal.isPresent() &&
-                        (reciprocal.get().getActionType() == ActionType.LIKE || reciprocal.get().getActionType() == ActionType.SUPER_CHAI)) {
+                boolean reciprocalIsHighIntent = reciprocal.isPresent() && (
+                        reciprocal.get().getActionType() == ActionType.LIKE ||
+                        reciprocal.get().getActionType() == ActionType.SUPER_CHAI ||
+                        reciprocal.get().getActionType() == ActionType.SUPER_SPARK
+                );
+                if (reciprocalIsHighIntent) {
                     // Form new Match in PENDING_ICEBREAKER state with 48h timer
                     isMatch = true;
                     Match match = Match.builder()

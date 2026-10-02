@@ -17,5 +17,10 @@ public enum ActionType {
     /**
      * Micro-invite sachet interaction: "Send Virtual Cutting Chai" (₹21) or Super Spark.
      */
-    SUPER_CHAI
+    SUPER_CHAI,
+
+    /**
+     * High-intent Super Spark interaction (⚡).
+     */
+    SUPER_SPARK
 }
