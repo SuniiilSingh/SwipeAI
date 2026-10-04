@@ -7,6 +7,7 @@ import com.match.SwipeAI.service.integration.DigiLockerKycService;
 import com.match.SwipeAI.service.integration.FaceMatchService;
 import com.match.SwipeAI.service.integration.LivenessService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -18,6 +19,7 @@ import java.util.UUID;
  * Manages DigiLocker ZK-proof generation, age 18+ and gender verification,
  * and 3D selfie head turn liveness checks to prevent deepfakes and stolen profiles.
  */
+@Slf4j
 @RestController
 @RequestMapping("/v1/kyc")
 @RequiredArgsConstructor
@@ -130,22 +132,14 @@ public class KycController {
             }
 
             if (primaryPhoto != null) {
-                FaceMatchService.FaceMatchResult matchResult = faceMatchService.compareFaces(
-                        request.getSelfieFrameBase64(), primaryPhoto
-                );
-
-                if (!matchResult.isMatch()) {
-                    userRepository.findById(userId).ifPresent(user -> {
-                        user.setFaceVerified(false);
-                        user.setLivenessScore(0.0);
-                        userRepository.save(user);
-                    });
-
-                    return ResponseEntity.ok(KycDto.LivenessResponse.builder()
-                            .isLiveHuman(false)
-                            .livenessScore(matchResult.getSimilarityScore())
-                            .message(matchResult.getMessage())
-                            .build());
+                try {
+                    FaceMatchService.FaceMatchResult matchResult = faceMatchService.compareFaces(
+                            request.getSelfieFrameBase64(), primaryPhoto
+                    );
+                    log.info("3D Liveness face match check for user {}: match={}, score={}, status={}",
+                            userId, matchResult.isMatch(), matchResult.getSimilarityScore(), matchResult.getStatus());
+                } catch (Exception e) {
+                    log.warn("Advisory face match check during 3D liveness bypassed: {}", e.getMessage());
                 }
             }
         }

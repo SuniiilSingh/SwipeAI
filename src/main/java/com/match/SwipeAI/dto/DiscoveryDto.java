@@ -105,6 +105,9 @@ public class DiscoveryDto {
         private String photo3;
         private Integer desireMatchPercent;
         private List<String> desireMatchHighlights;
+        private String selectedMemeUrl;
+        private String selectedMemeTitle;
+        private String voicePromptUrl;
     }
 
     @Data

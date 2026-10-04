@@ -550,9 +550,43 @@ public class DiscoveryService {
         String photo2 = photos.size() > 1 ? photos.get(1) : (profile != null ? profile.getPhoto2() : null);
         String photo3 = photos.size() > 2 ? photos.get(2) : (profile != null ? profile.getPhoto3() : null);
 
-        String voiceUrl = profile != null ? profile.getVoicePromptUrl() : null;
-        String promptText = profile != null ? profile.getVoicePromptText() : "My controversial chai opinion";
-        if (promptText == null) promptText = "My controversial chai opinion";
+        String voiceUrl = (profile != null && profile.getVoicePromptUrl() != null && !profile.getVoicePromptUrl().trim().isEmpty())
+                ? profile.getVoicePromptUrl().trim() : null;
+        if (voiceUrl != null && !voiceUrl.startsWith("http://") && !voiceUrl.startsWith("https://")) {
+            voiceUrl = "https://api.blunderr.in/" + voiceUrl.replaceAll("^/+", "");
+        }
+
+        String promptText = profile != null ? profile.getVoicePromptText() : null;
+        if (promptText == null || promptText.trim().isEmpty()) {
+            promptText = "My controversial chai opinion ☕";
+        }
+
+        DiscoveryDto.VoicePromptDto voicePromptDto = null;
+        if (voiceUrl != null) {
+            voicePromptDto = DiscoveryDto.VoicePromptDto.builder()
+                    .audioUrl(voiceUrl)
+                    .durationSec(profile != null && profile.getVoicePromptDuration() != null ? profile.getVoicePromptDuration() : 15)
+                    .promptText(promptText)
+                    .build();
+        }
+
+        String memeUrl = (profile != null && profile.getSelectedMemeUrl() != null && !profile.getSelectedMemeUrl().trim().isEmpty())
+                ? profile.getSelectedMemeUrl().trim() : null;
+        String memeTitle = (profile != null && profile.getSelectedMemeTitle() != null && !profile.getSelectedMemeTitle().trim().isEmpty())
+                ? profile.getSelectedMemeTitle().trim() : "Profile Meme DNA 🤣";
+
+        if (memeUrl != null && !memeUrl.startsWith("http://") && !memeUrl.startsWith("https://")) {
+            memeUrl = "https://api.blunderr.in/" + memeUrl.replaceAll("^/+", "");
+        }
+
+        DiscoveryDto.MemeMatchDto memeMatchDto = null;
+        if (memeUrl != null) {
+            memeMatchDto = DiscoveryDto.MemeMatchDto.builder()
+                    .matchPercent(compScore > 0 ? Math.min(99, compScore + 4) : 91)
+                    .memeTitle(memeTitle)
+                    .memeImageUrl(memeUrl)
+                    .build();
+        }
 
         return DiscoveryDto.CandidateCardDto.builder()
                 .userId(user.getId())
@@ -569,16 +603,11 @@ public class DiscoveryService {
                         .languages(profile != null && profile.getLanguagesSpoken() != null ? profile.getLanguagesSpoken() : List.of("English", "Hindi"))
                         .zodiac(profile != null && profile.getZodiacSign() != null ? profile.getZodiacSign() : "Leo")
                         .build())
-                .voicePrompt(DiscoveryDto.VoicePromptDto.builder()
-                        .audioUrl(voiceUrl != null ? voiceUrl : "https://cdn.swipeai.in/audio/chai_opinion.m4a")
-                        .durationSec(profile != null && profile.getVoicePromptDuration() != null ? profile.getVoicePromptDuration() : 14)
-                        .promptText(promptText)
-                        .build())
-                .memeMatch(DiscoveryDto.MemeMatchDto.builder()
-                        .matchPercent(88)
-                        .memeTitle("Bangalore Silk Board Peak Hour")
-                        .memeImageUrl("https://images.unsplash.com/photo-1578632767115-351597cf2477?w=500")
-                        .build())
+                .voicePrompt(voicePromptDto)
+                .voicePromptUrl(voiceUrl)
+                .selectedMemeUrl(memeUrl)
+                .selectedMemeTitle(memeTitle)
+                .memeMatch(memeMatchDto)
                 .cosmicChemistry(DiscoveryDto.CosmicChemistryDto.builder()
                         .synergyTag("89% Weekend Vibe Match")
                         .score(89)
