@@ -98,7 +98,18 @@ public class ProfileService {
         if (request.getRelationshipIntent() != null) profile.setRelationshipIntent(sanitize(request.getRelationshipIntent(), 50));
         if (request.getProfilePromptQuestion() != null) profile.setProfilePromptQuestion(sanitize(request.getProfilePromptQuestion(), 150));
         if (request.getProfilePromptAnswer() != null) profile.setProfilePromptAnswer(sanitize(request.getProfilePromptAnswer(), 500));
-        if (request.getPhoto1() != null) profile.setPhoto1(request.getPhoto1().trim().isEmpty() ? null : request.getPhoto1().trim());
+        if (request.getPhoto1() != null) {
+            String newPhoto1 = request.getPhoto1().trim().isEmpty() ? null : request.getPhoto1().trim();
+            if (profile.getPhoto1() != null && !profile.getPhoto1().equals(newPhoto1)) {
+                if (Boolean.TRUE.equals(user.getFaceVerified())) {
+                    log.info("User {} modified primary profile photo; resetting biometric face verification.", userId);
+                    user.setFaceVerified(false);
+                    user.setLivenessScore(0.0);
+                    userRepository.save(user);
+                }
+            }
+            profile.setPhoto1(newPhoto1);
+        }
         if (request.getPhoto2() != null) profile.setPhoto2(request.getPhoto2().trim().isEmpty() ? null : request.getPhoto2().trim());
         if (request.getPhoto3() != null) profile.setPhoto3(request.getPhoto3().trim().isEmpty() ? null : request.getPhoto3().trim());
         if (request.getPhoto4() != null) profile.setPhoto4(request.getPhoto4().trim().isEmpty() ? null : request.getPhoto4().trim());
@@ -442,6 +453,7 @@ public class ProfileService {
                 .intent(user.getIntent())
                 .digilockerVerified(Boolean.TRUE.equals(user.getDigilockerVerified()))
                 .whatsappVerified(Boolean.TRUE.equals(user.getWhatsappVerified()))
+                .faceVerified(Boolean.TRUE.equals(user.getFaceVerified()))
                 .livenessScore(user.getLivenessScore() != null ? user.getLivenessScore() : 0.0)
                 .karmaScore(user.getKarmaScore() != null ? user.getKarmaScore() : 100)
                 .dietaryPref(profile.getDietaryPref())

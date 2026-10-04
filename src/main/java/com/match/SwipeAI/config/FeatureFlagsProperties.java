@@ -25,6 +25,7 @@ public class FeatureFlagsProperties {
     public static class Features {
         private DigiLocker digilocker = new DigiLocker();
         private WhatsApp whatsapp = new WhatsApp();
+        private FaceMatch facematch = new FaceMatch();
         private Twilio twilio = new Twilio();
         private Razorpay razorpay = new Razorpay();
         private LiveKit livekit = new LiveKit();
@@ -32,6 +33,13 @@ public class FeatureFlagsProperties {
         private R2Storage r2Storage = new R2Storage();
         private Cashfree cashfree = new Cashfree();
         private Iap iap = new Iap();
+    }
+
+    @Data
+    public static class FaceMatch {
+        private boolean enabled = true;
+        private String serviceUrl = "http://facematch:5000";
+        private double threshold = 0.363;
     }
 
     @Data

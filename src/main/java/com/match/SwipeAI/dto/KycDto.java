@@ -71,4 +71,30 @@ public class KycDto {
         private double livenessScore;
         private String message;
     }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class FaceMatchRequest {
+        private String selfieBase64;
+        private String profilePhotoUrl;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class FaceMatchResponse {
+        private boolean verified;
+        private double similarityScore;
+        private double confidencePercent;
+        private int selfieFacesDetected;
+        private int photoFacesDetected;
+        private String status;
+        private String message;
+        private String selfieUrl;
+    }
 }

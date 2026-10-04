@@ -37,6 +37,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      facematch:
+        condition: service_started
     env_file:
       - .env.prod
     environment:
@@ -46,6 +48,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-swipeai_prod}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-SwipeAIPassword2026!}
+      FACEMATCH_SERVICE_URL: http://facematch:5000
       PORT: 8080
     volumes:
       - uploads_data:/app/uploads
@@ -56,7 +59,24 @@ services:
       - "8080"
 
   # ==========================================
-  # 3. Nginx Reverse Proxy with SSL
+  # 3. Self-Hosted Biometric Face Match Service
+  # ==========================================
+  facematch:
+    build:
+      context: ./facematch-service
+      dockerfile: Dockerfile
+    image: swipeai-facematch:latest
+    container_name: swipeai-facematch
+    restart: unless-stopped
+    volumes:
+      - uploads_data:/app/uploads:ro
+    networks:
+      - swipeai-network
+    expose:
+      - "5000"
+
+  # ==========================================
+  # 4. Nginx Reverse Proxy with SSL
   # ==========================================
   nginx:
     image: nginx:alpine

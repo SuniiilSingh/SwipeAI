@@ -62,6 +62,13 @@ public class User {
     private Double livenessScore = 0.0;
 
     /**
+     * Biometric 1:1 Face Match verified against profile photos.
+     */
+    @Builder.Default
+    @Column(name = "face_verified")
+    private Boolean faceVerified = false;
+
+    /**
      * Dynamic Ghost-Buster Karma score (0 - 200, default 100).
      * High karma grants profile spotlighting; ghosters get deprioritized.
      */

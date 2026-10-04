@@ -110,6 +110,7 @@ public class ProfileDto {
         private DatingIntent intent;
         private boolean digilockerVerified;
         private boolean whatsappVerified;
+        private boolean faceVerified;
         private double livenessScore;
         private int karmaScore;
         private DietaryPreference dietaryPref;
