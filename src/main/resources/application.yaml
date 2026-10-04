@@ -23,12 +23,17 @@ spring:
     properties:
       hibernate:
         format_sql: false
-  jackson:
-    serialization:
-      fail-on-empty-beans: false
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 50MB
+      max-request-size: 50MB
 
 server:
   port: ${PORT:8080}
+  tomcat:
+    max-swallow-size: 50MB
+    max-http-form-post-size: 50MB
 
 logging:
   level:
