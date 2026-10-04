@@ -517,19 +517,33 @@ public class DiscoveryService {
         List<String> photos = new java.util.ArrayList<>();
         if (profile != null && profile.getPhotosJson() != null && !profile.getPhotosJson().isBlank()) {
             try {
-                photos = objectMapper.readValue(profile.getPhotosJson(), new TypeReference<>() {});
+                List<String> parsed = objectMapper.readValue(profile.getPhotosJson(), new TypeReference<>() {});
+                if (parsed != null) {
+                    for (String p : parsed) {
+                        if (p != null && !p.isBlank() && !p.startsWith("file:") && !p.startsWith("content:")) {
+                            photos.add(p.trim());
+                        }
+                    }
+                }
             } catch (Exception ignored) {}
         }
         if (photos.isEmpty() && profile != null) {
-            if (profile.getPhoto1() != null && !profile.getPhoto1().isBlank()) photos.add(profile.getPhoto1());
-            if (profile.getPhoto2() != null && !profile.getPhoto2().isBlank()) photos.add(profile.getPhoto2());
-            if (profile.getPhoto3() != null && !profile.getPhoto3().isBlank()) photos.add(profile.getPhoto3());
-            if (profile.getPhoto4() != null && !profile.getPhoto4().isBlank()) photos.add(profile.getPhoto4());
-            if (profile.getPhoto5() != null && !profile.getPhoto5().isBlank()) photos.add(profile.getPhoto5());
-            if (profile.getPhoto6() != null && !profile.getPhoto6().isBlank()) photos.add(profile.getPhoto6());
+            java.util.List<String> rawSlots = java.util.List.of(
+                profile.getPhoto1() != null ? profile.getPhoto1() : "",
+                profile.getPhoto2() != null ? profile.getPhoto2() : "",
+                profile.getPhoto3() != null ? profile.getPhoto3() : "",
+                profile.getPhoto4() != null ? profile.getPhoto4() : "",
+                profile.getPhoto5() != null ? profile.getPhoto5() : "",
+                profile.getPhoto6() != null ? profile.getPhoto6() : ""
+            );
+            for (String p : rawSlots) {
+                if (!p.isBlank() && !p.startsWith("file:") && !p.startsWith("content:")) {
+                    photos.add(p.trim());
+                }
+            }
         }
         if (photos.isEmpty()) {
-            photos = List.of("https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500");
+            photos.add("https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800");
         }
 
         String photo1 = !photos.isEmpty() ? photos.get(0) : (profile != null ? profile.getPhoto1() : null);

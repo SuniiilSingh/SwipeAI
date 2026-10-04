@@ -99,7 +99,7 @@ public class ProfileService {
         if (request.getProfilePromptQuestion() != null) profile.setProfilePromptQuestion(sanitize(request.getProfilePromptQuestion(), 150));
         if (request.getProfilePromptAnswer() != null) profile.setProfilePromptAnswer(sanitize(request.getProfilePromptAnswer(), 500));
         if (request.getPhoto1() != null) {
-            String newPhoto1 = request.getPhoto1().trim().isEmpty() ? null : request.getPhoto1().trim();
+            String newPhoto1 = sanitizePhotoUrl(request.getPhoto1());
             if (profile.getPhoto1() != null && !profile.getPhoto1().equals(newPhoto1)) {
                 if (Boolean.TRUE.equals(user.getFaceVerified())) {
                     log.info("User {} modified primary profile photo; resetting biometric face verification.", userId);
@@ -110,12 +110,12 @@ public class ProfileService {
             }
             profile.setPhoto1(newPhoto1);
         }
-        if (request.getPhoto2() != null) profile.setPhoto2(request.getPhoto2().trim().isEmpty() ? null : request.getPhoto2().trim());
-        if (request.getPhoto3() != null) profile.setPhoto3(request.getPhoto3().trim().isEmpty() ? null : request.getPhoto3().trim());
-        if (request.getPhoto4() != null) profile.setPhoto4(request.getPhoto4().trim().isEmpty() ? null : request.getPhoto4().trim());
-        if (request.getPhoto5() != null) profile.setPhoto5(request.getPhoto5().trim().isEmpty() ? null : request.getPhoto5().trim());
-        if (request.getPhoto6() != null) profile.setPhoto6(request.getPhoto6().trim().isEmpty() ? null : request.getPhoto6().trim());
-        if (request.getSelfieUrl() != null) profile.setSelfieUrl(request.getSelfieUrl().trim().isEmpty() ? null : request.getSelfieUrl().trim());
+        if (request.getPhoto2() != null) profile.setPhoto2(sanitizePhotoUrl(request.getPhoto2()));
+        if (request.getPhoto3() != null) profile.setPhoto3(sanitizePhotoUrl(request.getPhoto3()));
+        if (request.getPhoto4() != null) profile.setPhoto4(sanitizePhotoUrl(request.getPhoto4()));
+        if (request.getPhoto5() != null) profile.setPhoto5(sanitizePhotoUrl(request.getPhoto5()));
+        if (request.getPhoto6() != null) profile.setPhoto6(sanitizePhotoUrl(request.getPhoto6()));
+        if (request.getSelfieUrl() != null) profile.setSelfieUrl(sanitizePhotoUrl(request.getSelfieUrl()));
         if (request.getSmokingHabit() != null) profile.setSmokingHabit(sanitize(request.getSmokingHabit(), 50));
         if (request.getDrinkingHabit() != null) profile.setDrinkingHabit(sanitize(request.getDrinkingHabit(), 50));
         if (request.getHobbies() != null) profile.setHobbies(sanitize(request.getHobbies(), 250));
@@ -132,6 +132,7 @@ public class ProfileService {
         if (request.getPhotos() != null) {
             try {
                 List<String> cleanPhotos = request.getPhotos().stream()
+                        .map(this::sanitizePhotoUrl)
                         .filter(p -> p != null && !p.trim().isEmpty())
                         .toList();
                 profile.setPhotosJson(objectMapper.writeValueAsString(cleanPhotos));
@@ -513,5 +514,14 @@ public class ProfileService {
         if (value == null) return null;
         String trimmed = value.trim();
         return trimmed.length() > maxLen ? trimmed.substring(0, maxLen) : trimmed;
+    }
+
+    private String sanitizePhotoUrl(String url) {
+        if (url == null) return null;
+        String trimmed = url.trim();
+        if (trimmed.isEmpty() || trimmed.startsWith("file:") || trimmed.startsWith("content:")) {
+            return null;
+        }
+        return trimmed;
     }
 }
