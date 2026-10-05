@@ -121,8 +121,8 @@ public class ProfileService {
         if (request.getHobbies() != null) profile.setHobbies(sanitize(request.getHobbies(), 250));
         if (request.getVacationPreference() != null) profile.setVacationPreference(sanitize(request.getVacationPreference(), 50));
         if (request.getCity() != null) profile.setCity(sanitize(request.getCity(), 25));
-        if (request.getNeighborhood() != null) profile.setNeighborhood(sanitize(request.getNeighborhood(), 25));
-        if (request.getMicroCircle() != null) profile.setMicroCircle(sanitize(request.getMicroCircle(), 25));
+        if (request.getNeighborhood() != null) profile.setNeighborhood(sanitize(request.getNeighborhood(), 50));
+        if (request.getMicroCircle() != null) profile.setMicroCircle(sanitize(request.getMicroCircle(), 100));
         if (request.getVoicePromptUrl() != null) profile.setVoicePromptUrl(request.getVoicePromptUrl().trim().isEmpty() ? null : request.getVoicePromptUrl().trim());
         if (request.getVoicePromptDuration() != null) profile.setVoicePromptDuration(request.getVoicePromptDuration());
         if (request.getVoicePromptText() != null) profile.setVoicePromptText(sanitize(request.getVoicePromptText(), 300));

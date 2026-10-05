@@ -98,8 +98,9 @@ public class CandidateSearchRepository {
 
         // 7. Micro-circle pushdown (utilizes idx_profiles_micro_circle)
         if (criteria.getMicroCircle() != null && !criteria.getMicroCircle().isBlank()) {
-            jpql.append("AND LOWER(p.microCircle) = :microCircle ");
+            jpql.append("AND (LOWER(p.microCircle) = :microCircle OR LOWER(p.microCircle) LIKE :microCircleLike) ");
             params.put("microCircle", criteria.getMicroCircle().trim().toLowerCase());
+            params.put("microCircleLike", "%" + criteria.getMicroCircle().trim().toLowerCase() + "%");
         }
 
         // 8. Dietary preferences pushdown (utilizes idx_profiles_dietary)

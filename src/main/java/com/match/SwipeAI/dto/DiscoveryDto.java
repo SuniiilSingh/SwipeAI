@@ -187,9 +187,15 @@ public class DiscoveryDto {
     @AllArgsConstructor
     public static class CircleDto {
         private String id;
+        private String city;
         private String name;
+        private String slug;
+        private String tagline;
+        private String vibeCategory;
+        private String badgeIcon;
         private String description;
         private int activeMembers;
         private String icon;
+        private boolean isPopular;
     }
 }

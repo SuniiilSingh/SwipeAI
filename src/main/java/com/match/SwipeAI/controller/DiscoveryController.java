@@ -63,8 +63,8 @@ public class DiscoveryController {
      * @return List of active micro-circles with member counts
      */
     @GetMapping("/circles")
-    public ResponseEntity<List<DiscoveryDto.CircleDto>> getMicroCircles() {
-        List<DiscoveryDto.CircleDto> circles = discoveryService.getMicroCircles();
+    public ResponseEntity<List<DiscoveryDto.CircleDto>> getMicroCircles(@RequestParam(required = false) String city) {
+        List<DiscoveryDto.CircleDto> circles = discoveryService.getMicroCircles(city);
         return ResponseEntity.ok(circles);
     }
 }

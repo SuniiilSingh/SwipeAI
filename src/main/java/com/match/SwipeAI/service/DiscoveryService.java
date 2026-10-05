@@ -36,6 +36,7 @@ public class DiscoveryService {
     private final DesireProfileService desireProfileService;
     private final PushNotificationService pushNotificationService;
     private final CandidateSearchRepository candidateSearchRepository;
+    private final MicroCommunityRepository microCommunityRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private static final int DAILY_HARD_CAP = 25;
@@ -344,6 +345,13 @@ public class DiscoveryService {
                 );
             }
 
+            // Micro-Community Synergy Bonus (+15% if viewer and candidate belong to the same circle)
+            if (viewerProfile != null && viewerProfile.getMicroCircle() != null && candidateProfile != null && candidateProfile.getMicroCircle() != null) {
+                if (viewerProfile.getMicroCircle().trim().equalsIgnoreCase(candidateProfile.getMicroCircle().trim())) {
+                    compScore = Math.min(99, compScore + 15);
+                }
+            }
+
             candidateCards.add(buildCandidateCard(candidate, candidateProfile, distanceKm, compScore,
                     desireScorePercent, desireHighlights));
         }
@@ -353,12 +361,21 @@ public class DiscoveryService {
             List<Profile> allProfiles = profileRepository.findAll();
             for (Profile p : allProfiles) {
                 if (p.getUserId() != null && p.getUserId().equals(viewerId)) continue;
+
+                // If user requested a specific micro-community circle, strictly filter fallback by that circle
+                if (request.getMicroCircle() != null && !request.getMicroCircle().isBlank()) {
+                    String reqCircle = request.getMicroCircle().trim().toLowerCase();
+                    if (p.getMicroCircle() == null || !p.getMicroCircle().toLowerCase().contains(reqCircle)) {
+                        continue;
+                    }
+                }
+
                 User candidateUser = userRepository.findById(p.getUserId()).orElse(null);
                 if (candidateUser == null) continue;
                 int age = candidateUser.getBirthDate() != null
                         ? Period.between(candidateUser.getBirthDate(), LocalDate.now()).getYears()
                         : 24;
-                candidateCards.add(buildCandidateCard(candidateUser, p, 3.5, 88, 88, List.of("Bengaluru", "High Synergy")));
+                candidateCards.add(buildCandidateCard(candidateUser, p, 3.5, 88, 88, List.of("High Synergy", "Local Circle")));
             }
         }
 
@@ -471,36 +488,35 @@ public class DiscoveryService {
     }
 
     public List<DiscoveryDto.CircleDto> getMicroCircles() {
-        return List.of(
-                DiscoveryDto.CircleDto.builder()
-                        .id("koramangala-tech")
-                        .name("Koramangala Tech Founders")
-                        .description("Early stage builders, product designers & VC analysts")
-                        .activeMembers(1420)
-                        .icon("laptop-outline")
-                        .build(),
-                DiscoveryDto.CircleDto.builder()
-                        .id("dmrc-yellow-line")
-                        .name("DMRC Yellow Line Commuters")
-                        .description("Gurgaon to Hauz Khas daily podcast listeners")
-                        .activeMembers(2890)
-                        .icon("subway-outline")
-                        .build(),
-                DiscoveryDto.CircleDto.builder()
-                        .id("indie-music")
-                        .name("Indie Music & Festival Goers")
-                        .description("NH7 Weekender, Prateek Kuhad, Peter Cat Recording Co.")
-                        .activeMembers(1850)
-                        .icon("musical-notes-outline")
-                        .build(),
-                DiscoveryDto.CircleDto.builder()
-                        .id("dog-parents")
-                        .name("Dog Parents & Pet Lovers")
-                        .description("Cubbon park Sunday dog meetup regulars")
-                        .activeMembers(980)
-                        .icon("paw-outline")
-                        .build()
-        );
+        return getMicroCircles(null);
+    }
+
+    public List<DiscoveryDto.CircleDto> getMicroCircles(String city) {
+        List<MicroCommunity> list;
+        if (city != null && !city.trim().isEmpty()) {
+            list = microCommunityRepository.findByCityIgnoreCaseOrderByIsPopularDescNameAsc(city.trim());
+        } else {
+            list = microCommunityRepository.findAllByOrderByCityAscNameAsc();
+        }
+
+        if (list == null || list.isEmpty()) {
+            return List.of();
+        }
+
+        return list.stream().map(c -> DiscoveryDto.CircleDto.builder()
+                .id(c.getId() != null ? c.getId().toString() : c.getSlug())
+                .city(c.getCity())
+                .name(c.getName())
+                .slug(c.getSlug())
+                .tagline(c.getTagline())
+                .vibeCategory(c.getVibeCategory())
+                .badgeIcon(c.getBadgeIcon())
+                .description(c.getTagline())
+                .activeMembers(c.getActiveMembersCount() != null ? c.getActiveMembersCount() : 120)
+                .icon(c.getIconName() != null ? c.getIconName() : "people-outline")
+                .isPopular(Boolean.TRUE.equals(c.getIsPopular()))
+                .build()
+        ).collect(Collectors.toList());
     }
 
     public DiscoveryDto.CandidateCardDto buildCandidateCard(User user, Profile profile, double distanceKm, int compScore) {
