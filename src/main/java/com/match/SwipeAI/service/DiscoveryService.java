@@ -37,6 +37,7 @@ public class DiscoveryService {
     private final PushNotificationService pushNotificationService;
     private final CandidateSearchRepository candidateSearchRepository;
     private final MicroCommunityRepository microCommunityRepository;
+    private final VedicAstrologyService astrologyService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private static final int DAILY_HARD_CAP = 25;
@@ -352,7 +353,7 @@ public class DiscoveryService {
                 }
             }
 
-            candidateCards.add(buildCandidateCard(candidate, candidateProfile, distanceKm, compScore,
+            candidateCards.add(buildCandidateCard(viewerId, candidate, candidateProfile, distanceKm, compScore,
                     desireScorePercent, desireHighlights));
         }
 
@@ -375,7 +376,7 @@ public class DiscoveryService {
                 int age = candidateUser.getBirthDate() != null
                         ? Period.between(candidateUser.getBirthDate(), LocalDate.now()).getYears()
                         : 24;
-                candidateCards.add(buildCandidateCard(candidateUser, p, 3.5, 88, 88, List.of("High Synergy", "Local Circle")));
+                candidateCards.add(buildCandidateCard(viewerId, candidateUser, p, 3.5, 88, 88, List.of("High Synergy", "Local Circle")));
             }
         }
 
@@ -529,10 +530,15 @@ public class DiscoveryService {
     }
 
     public DiscoveryDto.CandidateCardDto buildCandidateCard(User user, Profile profile, double distanceKm, int compScore) {
-        return buildCandidateCard(user, profile, distanceKm, compScore, 88, List.of("High vibe alignment ✨"));
+        return buildCandidateCard(null, user, profile, distanceKm, compScore, 88, List.of("High vibe alignment ✨"));
     }
 
     public DiscoveryDto.CandidateCardDto buildCandidateCard(User user, Profile profile, double distanceKm, int compScore,
+                                                             Integer desireMatchPercent, List<String> desireMatchHighlights) {
+        return buildCandidateCard(null, user, profile, distanceKm, compScore, desireMatchPercent, desireMatchHighlights);
+    }
+
+    public DiscoveryDto.CandidateCardDto buildCandidateCard(UUID viewerId, User user, Profile profile, double distanceKm, int compScore,
                                                              Integer desireMatchPercent, List<String> desireMatchHighlights) {
         int age = 24;
         if (user.getBirthDate() != null) {
@@ -613,6 +619,26 @@ public class DiscoveryService {
                     .build();
         }
 
+        // Live 36-Point Ashtakoot Cosmic Chemistry
+        int gunaTotal = 28;
+        String synergyTag = "28/36 Cosmic Chemistry ✨";
+        String sunSign = (profile != null && profile.getSunSign() != null) ? profile.getSunSign() : null;
+        String moonSign = (profile != null && profile.getMoonSign() != null) ? profile.getMoonSign() : null;
+
+        if (viewerId != null && user != null && user.getId() != null) {
+            try {
+                var astroMatch = astrologyService.calculateAshtakootMatch(viewerId, user.getId());
+                gunaTotal = astroMatch.getTotalScore();
+                synergyTag = String.format("%d/36 %s", gunaTotal, astroMatch.getVibeTitle());
+                if (astroMatch.getCandidate() != null) {
+                    if (sunSign == null) sunSign = astroMatch.getCandidate().getSunSign();
+                    if (moonSign == null) moonSign = astroMatch.getCandidate().getChandraRashi();
+                }
+            } catch (Exception e) {
+                log.debug("Astro match calculation fallback: {}", e.getMessage());
+            }
+        }
+
         return DiscoveryDto.CandidateCardDto.builder()
                 .userId(user.getId())
                 .displayName(profile != null && profile.getDisplayName() != null ? profile.getDisplayName() : "Single in City")
@@ -626,7 +652,7 @@ public class DiscoveryService {
                         .diet(profile != null && profile.getDietaryPref() != null ? profile.getDietaryPref() : DietaryPreference.PURE_VEG)
                         .living(profile != null && profile.getLivingStatus() != null ? profile.getLivingStatus() : LivingStatus.INDEPENDENT_FLAT)
                         .languages(profile != null && profile.getLanguagesSpoken() != null ? profile.getLanguagesSpoken() : List.of("English", "Hindi"))
-                        .zodiac(profile != null && profile.getZodiacSign() != null ? profile.getZodiacSign() : "Leo")
+                        .zodiac(sunSign != null ? sunSign : (profile != null && profile.getZodiacSign() != null ? profile.getZodiacSign() : "Leo"))
                         .build())
                 .voicePrompt(voicePromptDto)
                 .voicePromptUrl(voiceUrl)
@@ -634,8 +660,8 @@ public class DiscoveryService {
                 .selectedMemeTitle(memeTitle)
                 .memeMatch(memeMatchDto)
                 .cosmicChemistry(DiscoveryDto.CosmicChemistryDto.builder()
-                        .synergyTag("89% Weekend Vibe Match")
-                        .score(89)
+                        .synergyTag(synergyTag)
+                        .score(gunaTotal)
                         .build())
                 .compatibilityScore(compScore)
                 .bio(profile != null && profile.getBio() != null ? profile.getBio() : "")
