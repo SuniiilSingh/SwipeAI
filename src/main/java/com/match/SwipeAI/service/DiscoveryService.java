@@ -495,10 +495,12 @@ public class DiscoveryService {
         List<MicroCommunity> list;
         if (city != null && !city.trim().isEmpty()) {
             String trimmed = city.trim();
-            if (trimmed.equalsIgnoreCase("Delhi NCR")) {
-                list = microCommunityRepository.findByCitiesIgnoreCase(List.of("delhi ncr", "delhi", "gurgaon", "gurugram", "noida"));
+            if (trimmed.equalsIgnoreCase("Delhi NCR") || trimmed.equalsIgnoreCase("Delhi")) {
+                list = microCommunityRepository.findByCitiesIgnoreCase(List.of("delhi ncr", "delhi", "gurgaon", "gurugram", "noida", "greater noida"));
             } else if (trimmed.equalsIgnoreCase("Gurgaon") || trimmed.equalsIgnoreCase("Gurugram")) {
                 list = microCommunityRepository.findByCitiesIgnoreCase(List.of("gurgaon", "gurugram"));
+            } else if (trimmed.equalsIgnoreCase("Noida") || trimmed.equalsIgnoreCase("Greater Noida")) {
+                list = microCommunityRepository.findByCitiesIgnoreCase(List.of("noida", "greater noida"));
             } else {
                 list = microCommunityRepository.findByCityIgnoreCaseOrderByIsPopularDescNameAsc(trimmed);
             }
