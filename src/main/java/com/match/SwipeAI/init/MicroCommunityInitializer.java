@@ -20,12 +20,7 @@ public class MicroCommunityInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        if (repository.count() > 0) {
-            log.info("Micro-communities already seeded (total: {}). Skipping seed.", repository.count());
-            return;
-        }
-
-        log.info("Seeding Indian Urban Micro-Communities across Bengaluru, Mumbai, Delhi NCR, Pune, Hyderabad, Goa, Kolkata & Chennai...");
+        log.info("Checking and seeding Indian Urban Micro-Communities across Bengaluru, Mumbai, Delhi NCR, Gurgaon, Pune, Hyderabad, Goa, Kolkata & Chennai...");
 
         List<MicroCommunity> communities = List.of(
             // BENGALURU
@@ -458,10 +453,113 @@ public class MicroCommunityInitializer implements CommandLineRunner {
                 .centerLng(80.2425)
                 .activeMembersCount(870)
                 .isPopular(true)
+                .build(),
+
+            // GURGAON (GURUGRAM)
+            MicroCommunity.builder()
+                .city("Gurgaon")
+                .name("Cyber Hub & DLF Phase 2")
+                .slug("ggn-cyber-hub")
+                .tagline("Fortune 500 consultants, MNC tech leads, rooftop beers & post-work networking")
+                .vibeCategory("CORPORATE")
+                .badgeIcon("🏙️")
+                .iconName("business-outline")
+                .centerLat(28.4950)
+                .centerLng(77.0895)
+                .activeMembersCount(2450)
+                .isPopular(true)
+                .build(),
+            MicroCommunity.builder()
+                .city("Gurgaon")
+                .name("Golf Course Road & Horizon Luxe")
+                .slug("ggn-golf-course-rd")
+                .tagline("Private equity, luxury high-rises, artisanal matcha & weekend golfers")
+                .vibeCategory("LUXURY")
+                .badgeIcon("⛳")
+                .iconName("trophy-outline")
+                .centerLat(28.4680)
+                .centerLng(77.0980)
+                .activeMembersCount(1980)
+                .isPopular(true)
+                .build(),
+            MicroCommunity.builder()
+                .city("Gurgaon")
+                .name("32nd Avenue Aesthetic Dates")
+                .slug("ggn-32nd-avenue")
+                .tagline("Cobblestone alleys, jazz evenings at Piano Man, boutique gelato & curated date nights")
+                .vibeCategory("ROMANTIC")
+                .badgeIcon("🍷")
+                .iconName("sparkles-outline")
+                .centerLat(28.4611)
+                .centerLng(77.0514)
+                .activeMembersCount(2150)
+                .isPopular(true)
+                .build(),
+            MicroCommunity.builder()
+                .city("Gurgaon")
+                .name("Sector 29 Craft Beer & Live Gigs")
+                .slug("ggn-sector-29")
+                .tagline("Microbrewery hopping, fresh wheat beer on tap, live Bollywood rock & weekend party animals")
+                .vibeCategory("NIGHTLIFE")
+                .badgeIcon("🍻")
+                .iconName("beer-outline")
+                .centerLat(28.4682)
+                .centerLng(77.0628)
+                .activeMembersCount(2800)
+                .isPopular(true)
+                .build(),
+            MicroCommunity.builder()
+                .city("Gurgaon")
+                .name("Galleria Market & Phase 4 Chills")
+                .slug("ggn-galleria-market")
+                .tagline("Fountain steps banter, third-wave coffee, dog parents & nostalgic DLF community vibes")
+                .vibeCategory("LIFESTYLE")
+                .badgeIcon("☕")
+                .iconName("cafe-outline")
+                .centerLat(28.4674)
+                .centerLng(77.0818)
+                .activeMembersCount(1760)
+                .isPopular(true)
+                .build(),
+            MicroCommunity.builder()
+                .city("Gurgaon")
+                .name("Golf Course Ext & Sohna Rd Startups")
+                .slug("ggn-gcr-ext-startups")
+                .tagline("Fintech founders, modern gated societies, Cult.fit regulars & weekend pickleball")
+                .vibeCategory("STARTUP")
+                .badgeIcon("🚀")
+                .iconName("rocket-outline")
+                .centerLat(28.4180)
+                .centerLng(77.0650)
+                .activeMembersCount(1340)
+                .isPopular(false)
+                .build(),
+            MicroCommunity.builder()
+                .city("Gurgaon")
+                .name("Aravali Trails & Sunset Riders")
+                .slug("ggn-aravali-biodiversity")
+                .tagline("Sunrise gravel cycling, Leopard Trail chai, marathon training & nature lovers")
+                .vibeCategory("FITNESS")
+                .badgeIcon("🚴")
+                .iconName("bicycle-outline")
+                .centerLat(28.4350)
+                .centerLng(77.0180)
+                .activeMembersCount(1120)
+                .isPopular(false)
                 .build()
         );
 
-        repository.saveAll(communities);
-        log.info("Successfully seeded {} micro-communities across 8 Indian metropolitan hubs.", communities.size());
+        int added = 0;
+        for (MicroCommunity comm : communities) {
+            if (repository.findBySlug(comm.getSlug()).isEmpty()) {
+                repository.save(comm);
+                added++;
+            }
+        }
+        if (added > 0) {
+            log.info("Successfully added {} new micro-communities. Total now in DB: {}.", added, repository.count());
+        } else {
+            log.info("All {} micro-communities already up to date.", repository.count());
+        }
     }
 }

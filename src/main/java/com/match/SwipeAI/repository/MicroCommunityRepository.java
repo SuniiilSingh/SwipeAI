@@ -14,4 +14,7 @@ public interface MicroCommunityRepository extends JpaRepository<MicroCommunity, 
     List<MicroCommunity> findAllByOrderByCityAscNameAsc();
     Optional<MicroCommunity> findBySlug(String slug);
     Optional<MicroCommunity> findByNameIgnoreCase(String name);
+
+    @org.springframework.data.jpa.repository.Query("SELECT m FROM MicroCommunity m WHERE LOWER(m.city) IN :cities ORDER BY m.isPopular DESC, m.name ASC")
+    List<MicroCommunity> findByCitiesIgnoreCase(@org.springframework.data.repository.query.Param("cities") List<String> cities);
 }

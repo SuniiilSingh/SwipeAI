@@ -494,7 +494,14 @@ public class DiscoveryService {
     public List<DiscoveryDto.CircleDto> getMicroCircles(String city) {
         List<MicroCommunity> list;
         if (city != null && !city.trim().isEmpty()) {
-            list = microCommunityRepository.findByCityIgnoreCaseOrderByIsPopularDescNameAsc(city.trim());
+            String trimmed = city.trim();
+            if (trimmed.equalsIgnoreCase("Delhi NCR")) {
+                list = microCommunityRepository.findByCitiesIgnoreCase(List.of("delhi ncr", "delhi", "gurgaon", "gurugram", "noida"));
+            } else if (trimmed.equalsIgnoreCase("Gurgaon") || trimmed.equalsIgnoreCase("Gurugram")) {
+                list = microCommunityRepository.findByCitiesIgnoreCase(List.of("gurgaon", "gurugram"));
+            } else {
+                list = microCommunityRepository.findByCityIgnoreCaseOrderByIsPopularDescNameAsc(trimmed);
+            }
         } else {
             list = microCommunityRepository.findAllByOrderByCityAscNameAsc();
         }
