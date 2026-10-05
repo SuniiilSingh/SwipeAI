@@ -75,7 +75,7 @@ public class DesireProfileService {
                 .loveLanguage("QUALITY_TIME")
                 .greenFlags(List.of("Reads physical books 📚", "Emotionally articulate 🧠", "Orders dessert for table 🍰"))
                 .preferredProfessions(List.of())
-                .naturalLanguagePrompt("Someone authentic and creative who enjoys good coffee, meaningful conversations, and exploring the city.")
+                .naturalLanguagePrompt("")
                 .build();
     }
 
