@@ -633,6 +633,178 @@
       100% { transform: translateY(-3px); }
     }
 
+    /* Top Features Carousel (3D, Live, Genuine, etc.) */
+    .top-carousel-wrapper {
+      position: relative;
+      z-index: 15;
+      background: rgba(10, 12, 20, 0.75);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 12px 0 14px;
+      backdrop-filter: blur(14px);
+    }
+    .top-carousel-header {
+      max-width: 1240px;
+      margin: 0 auto 10px;
+      padding: 0 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .carousel-pill-badge {
+      font-size: 0.74rem;
+      font-weight: 800;
+      color: #94A3B8;
+      letter-spacing: 0.8px;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .carousel-dot-live {
+      width: 7px;
+      height: 7px;
+      background: var(--coral);
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--coral);
+      animation: pulseLiveDot 2s infinite;
+    }
+    .carousel-controls {
+      display: flex;
+      gap: 8px;
+    }
+    .carousel-nav-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #181C2E;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #FFF;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      font-size: 1.15rem;
+      line-height: 1;
+      padding: 0 0 2px 0;
+      transition: all 0.2s;
+    }
+    .carousel-nav-btn:hover {
+      background: var(--coral);
+      border-color: var(--coral);
+      transform: scale(1.08);
+    }
+    .top-carousel-container {
+      overflow-x: auto;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      padding: 0 20px;
+      cursor: grab;
+    }
+    .top-carousel-container::-webkit-scrollbar {
+      display: none;
+    }
+    .top-carousel-track {
+      display: inline-flex;
+      gap: 14px;
+      animation: scrollFeatures 42s linear infinite;
+      will-change: transform;
+    }
+    .top-carousel-wrapper:hover .top-carousel-track {
+      animation-play-state: paused;
+    }
+    @keyframes scrollFeatures {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+    .feature-carousel-card {
+      background: rgba(18, 22, 38, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 16px;
+      padding: 10px 16px;
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      white-space: nowrap;
+      transition: all 0.25s ease;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+      flex-shrink: 0;
+    }
+    .feature-carousel-card:hover {
+      transform: translateY(-3px);
+      background: #1B2136;
+      border-color: rgba(255, 56, 92, 0.55);
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55), 0 0 20px rgba(255, 56, 92, 0.2);
+    }
+    .fcard-icon {
+      font-size: 1.5rem;
+      flex-shrink: 0;
+    }
+    .fcard-content {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .fcard-title {
+      font-size: 0.88rem;
+      font-weight: 800;
+      color: #FFF;
+      line-height: 1.2;
+    }
+    .fcard-sub {
+      font-size: 0.72rem;
+      color: #94A3B8;
+      font-weight: 600;
+      line-height: 1.2;
+    }
+    .fcard-tag {
+      font-size: 0.68rem;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 8px;
+      letter-spacing: 0.3px;
+      flex-shrink: 0;
+    }
+    .fcard-tag.green {
+      background: rgba(16, 185, 129, 0.18);
+      color: #6EE7B7;
+      border: 1px solid rgba(16, 185, 129, 0.45);
+    }
+    .fcard-tag.coral {
+      background: rgba(255, 56, 92, 0.18);
+      color: #FFA4B6;
+      border: 1px solid rgba(255, 56, 92, 0.45);
+    }
+    .fcard-tag.cyan {
+      background: rgba(56, 189, 248, 0.18);
+      color: #7DD3FC;
+      border: 1px solid rgba(56, 189, 248, 0.45);
+    }
+    .fcard-tag.amber {
+      background: rgba(245, 158, 11, 0.18);
+      color: #FCD34D;
+      border: 1px solid rgba(245, 158, 11, 0.45);
+    }
+    .fcard-tag.purple {
+      background: rgba(168, 85, 247, 0.18);
+      color: #D8B4FE;
+      border: 1px solid rgba(168, 85, 247, 0.45);
+    }
+    .fcard-tag.gold {
+      background: rgba(251, 191, 36, 0.18);
+      color: #FDE68A;
+      border: 1px solid rgba(251, 191, 36, 0.45);
+    }
+    .fcard-tag.rose {
+      background: rgba(244, 63, 94, 0.18);
+      color: #FDA4AF;
+      border: 1px solid rgba(244, 63, 94, 0.45);
+    }
+    .fcard-tag.red {
+      background: rgba(239, 68, 68, 0.18);
+      color: #FCA5A5;
+      border: 1px solid rgba(239, 68, 68, 0.45);
+    }
+
     /* Neighborhood Ticker Marquee */
     .ticker-section {
       border-top: 1px solid var(--card-border);
@@ -974,6 +1146,22 @@
         max-width: 340px;
         padding: 9px 14px;
       }
+      .top-carousel-header {
+        padding: 0 16px;
+      }
+      .top-carousel-wrapper {
+        padding: 10px 0 12px;
+      }
+      .feature-carousel-card {
+        padding: 8px 14px;
+        gap: 10px;
+      }
+      .fcard-title {
+        font-size: 0.82rem;
+      }
+      .fcard-sub {
+        font-size: 0.68rem;
+      }
     }
   </style>
 </head>
@@ -1001,6 +1189,170 @@
       </button>
     </div>
   </header>
+
+  <!-- Top Features Carousel (3D, Live, Genuine, Chai, Circles, Kundali, Memes, Safety) -->
+  <div class="top-carousel-wrapper">
+    <div class="top-carousel-header">
+      <span class="carousel-pill-badge">
+        <span class="carousel-dot-live"></span>
+        TOP INNOVATION HIGHLIGHTS
+      </span>
+      <div class="carousel-controls">
+        <button class="carousel-nav-btn prev" onclick="scrollFeatureCarousel(-1)" title="Previous feature">‹</button>
+        <button class="carousel-nav-btn next" onclick="scrollFeatureCarousel(1)" title="Next feature">›</button>
+      </div>
+    </div>
+    
+    <div class="top-carousel-container" id="topFeatureCarousel">
+      <div class="top-carousel-track">
+        <!-- Set 1 -->
+        <a href="/app" class="feature-carousel-card">
+          <span class="fcard-icon">🛡️</span>
+          <div class="fcard-content">
+            <div class="fcard-title">3D Biometric Liveness</div>
+            <div class="fcard-sub">Zero Catfish • Real Human Face Verification</div>
+          </div>
+          <span class="fcard-tag green">3D Shield</span>
+        </a>
+
+        <a href="/app" class="feature-carousel-card">
+          <span class="fcard-icon">⚡</span>
+          <div class="fcard-content">
+            <div class="fcard-title">Live Web View</div>
+            <div class="fcard-sub">Zero Install • Instant Browser Match & Chat</div>
+          </div>
+          <span class="fcard-tag coral">Instant Live</span>
+        </a>
+
+        <a href="/safety" class="feature-carousel-card">
+          <span class="fcard-icon">💎</span>
+          <div class="fcard-content">
+            <div class="fcard-title">100% Genuine Profiles</div>
+            <div class="fcard-sub">Anti-Deepfake & Bot Shield Guarantee</div>
+          </div>
+          <span class="fcard-tag cyan">Verified Only</span>
+        </a>
+
+        <a href="/app" class="feature-carousel-card">
+          <span class="fcard-icon">☕</span>
+          <div class="fcard-content">
+            <div class="fcard-title">15s Virtual Chai Calls</div>
+            <div class="fcard-sub">Encrypted Voice Spark Before Numbers</div>
+          </div>
+          <span class="fcard-tag amber">Voice Date</span>
+        </a>
+
+        <a href="#features" class="feature-carousel-card">
+          <span class="fcard-icon">🏙️</span>
+          <div class="fcard-content">
+            <div class="fcard-title">Neighborhood Circles</div>
+            <div class="fcard-sub">Koramangala, Bandra, HSR & Cyber Hub</div>
+          </div>
+          <span class="fcard-tag purple">Hyper-Local</span>
+        </a>
+
+        <a href="/app" class="feature-carousel-card">
+          <span class="fcard-icon">✨</span>
+          <div class="fcard-content">
+            <div class="fcard-title">Vedic Cosmic Kundali</div>
+            <div class="fcard-sub">36-Guna Astro-Chemistry Resonance</div>
+          </div>
+          <span class="fcard-tag gold">Cosmic Sync</span>
+        </a>
+
+        <a href="/app" class="feature-carousel-card">
+          <span class="fcard-icon">🎯</span>
+          <div class="fcard-content">
+            <div class="fcard-title">Meme DNA Vibe Match</div>
+            <div class="fcard-sub">Humor Clustering • Zero Dry Conversations</div>
+          </div>
+          <span class="fcard-tag rose">Humor Match</span>
+        </a>
+
+        <a href="/safety" class="feature-carousel-card">
+          <span class="fcard-icon">🚨</span>
+          <div class="fcard-content">
+            <div class="fcard-title">Safe Date Guardian</div>
+            <div class="fcard-sub">Live Emergency SOS & Safety Check-In</div>
+          </div>
+          <span class="fcard-tag red">Safety Shield</span>
+        </a>
+
+        <!-- Set 2 (Duplicate for continuous seamless infinity loop) -->
+        <a href="/app" class="feature-carousel-card">
+          <span class="fcard-icon">🛡️</span>
+          <div class="fcard-content">
+            <div class="fcard-title">3D Biometric Liveness</div>
+            <div class="fcard-sub">Zero Catfish • Real Human Face Verification</div>
+          </div>
+          <span class="fcard-tag green">3D Shield</span>
+        </a>
+
+        <a href="/app" class="feature-carousel-card">
+          <span class="fcard-icon">⚡</span>
+          <div class="fcard-content">
+            <div class="fcard-title">Live Web View</div>
+            <div class="fcard-sub">Zero Install • Instant Browser Match & Chat</div>
+          </div>
+          <span class="fcard-tag coral">Instant Live</span>
+        </a>
+
+        <a href="/safety" class="feature-carousel-card">
+          <span class="fcard-icon">💎</span>
+          <div class="fcard-content">
+            <div class="fcard-title">100% Genuine Profiles</div>
+            <div class="fcard-sub">Anti-Deepfake & Bot Shield Guarantee</div>
+          </div>
+          <span class="fcard-tag cyan">Verified Only</span>
+        </a>
+
+        <a href="/app" class="feature-carousel-card">
+          <span class="fcard-icon">☕</span>
+          <div class="fcard-content">
+            <div class="fcard-title">15s Virtual Chai Calls</div>
+            <div class="fcard-sub">Encrypted Voice Spark Before Numbers</div>
+          </div>
+          <span class="fcard-tag amber">Voice Date</span>
+        </a>
+
+        <a href="#features" class="feature-carousel-card">
+          <span class="fcard-icon">🏙️</span>
+          <div class="fcard-content">
+            <div class="fcard-title">Neighborhood Circles</div>
+            <div class="fcard-sub">Koramangala, Bandra, HSR & Cyber Hub</div>
+          </div>
+          <span class="fcard-tag purple">Hyper-Local</span>
+        </a>
+
+        <a href="/app" class="feature-carousel-card">
+          <span class="fcard-icon">✨</span>
+          <div class="fcard-content">
+            <div class="fcard-title">Vedic Cosmic Kundali</div>
+            <div class="fcard-sub">36-Guna Astro-Chemistry Resonance</div>
+          </div>
+          <span class="fcard-tag gold">Cosmic Sync</span>
+        </a>
+
+        <a href="/app" class="feature-carousel-card">
+          <span class="fcard-icon">🎯</span>
+          <div class="fcard-content">
+            <div class="fcard-title">Meme DNA Vibe Match</div>
+            <div class="fcard-sub">Humor Clustering • Zero Dry Conversations</div>
+          </div>
+          <span class="fcard-tag rose">Humor Match</span>
+        </a>
+
+        <a href="/safety" class="feature-carousel-card">
+          <span class="fcard-icon">🚨</span>
+          <div class="fcard-content">
+            <div class="fcard-title">Safe Date Guardian</div>
+            <div class="fcard-sub">Live Emergency SOS & Safety Check-In</div>
+          </div>
+          <span class="fcard-tag red">Safety Shield</span>
+        </a>
+      </div>
+    </div>
+  </div>
 
   <!-- Hero Section -->
   <main class="hero-container">
@@ -1361,6 +1713,12 @@
     }
     function toggleFaq(el) {
       el.classList.toggle('active');
+    }
+    function scrollFeatureCarousel(direction) {
+      const container = document.getElementById('topFeatureCarousel');
+      if (container) {
+        container.scrollBy({ left: direction * 320, behavior: 'smooth' });
+      }
     }
     window.addEventListener('keydown', function(e) {
       if (e.key === 'Escape') {
