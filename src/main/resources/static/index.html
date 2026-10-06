@@ -4,8 +4,25 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>BlunderR — Real Connections, Zero Catfish ⚡</title>
-  <meta name="description" content="BlunderR is India's next-generation connection app with 3D Biometric Liveness Verification, Micro-Community Circles, and Encrypted Virtual Chai calls.">
   <link rel="icon" type="image/png" href="https://img.icons8.com/color/96/flame.png">
+  <script>
+    // Disable right-click inspect and DevTools shortcuts
+    document.addEventListener('contextmenu', function(e) {
+      e.preventDefault();
+      return false;
+    });
+    document.addEventListener('keydown', function(e) {
+      if (
+        e.key === 'F12' ||
+        (e.ctrlKey && e.shiftKey && ['I','i','J','j','C','c','K','k'].includes(e.key)) ||
+        (e.metaKey && e.altKey && ['I','i','J','j','C','c','U','u'].includes(e.key)) ||
+        ((e.ctrlKey || e.metaKey) && (e.key === 'U' || e.key === 'u' || e.key === 'S' || e.key === 's'))
+      ) {
+        e.preventDefault();
+        return false;
+      }
+    });
+  </script>
   <style>
     :root {
       --bg: #08080E;
