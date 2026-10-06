@@ -1333,6 +1333,7 @@
       <div id="public-nav-links" style="display:flex; align-items:center; gap:16px;">
         <a href="/safety" class="nav-link">🛡️ Safety</a>
         <a href="/privacy" class="nav-link">Privacy</a>
+        <a href="/app" class="nav-link" style="color:var(--coral); font-weight:800; display:inline-flex; align-items:center; gap:4px;">🚀 Launch Web App</a>
       </div>
 
       <!-- Persistent Download APK Button -->
@@ -1395,6 +1396,10 @@
           <button class="btn-whatsapp" onclick="handleWhatsAppLogin()">
             <span>💬 Continue with WhatsApp</span>
           </button>
+
+          <a href="/app" class="btn-login" style="margin-top: 14px; text-decoration:none; background: #161926; border: 1.5px solid rgba(255,56,92,0.45); box-shadow: none;">
+            <span>🚀 Open React Native Web App</span> ➔
+          </a>
 
           <div class="login-terms">
             By signing in, you agree to our <a href="/terms">Terms</a> and <a href="/privacy">Privacy Policy</a>. Zero bots guaranteed.
@@ -1823,9 +1828,12 @@
         localStorage.setItem('blunderr_token', authToken);
         localStorage.setItem('blunderr_userId', currentUserId);
         localStorage.setItem('blunderr_phone', currentPhone);
+        localStorage.setItem('@swipeai_auth_token', authToken);
+        localStorage.setItem('@swipeai_user_id', currentUserId);
+        localStorage.setItem('@swipeai_onboarding_completed', 'true');
         
-        // Enter Web App
-        initApp();
+        // Fast-forward directly into the React Native Web App
+        window.location.href = '/app';
       })
       .catch(err => {
         alert('Invalid verification code. Please check and try again.');
