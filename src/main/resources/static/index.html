@@ -3,64 +3,120 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Blunderr Dating — Authentic Connections & Zero Catfish</title>
+  <title>BlunderR — Real Connections, Zero Catfish ⚡</title>
+  <meta name="description" content="BlunderR is India's next-generation connection app with 3D Biometric Liveness Verification, Micro-Community Circles, and Encrypted Virtual Chai calls.">
+  <link rel="icon" type="image/png" href="https://img.icons8.com/color/96/flame.png">
   <style>
     :root {
-      --bg: #08080e;
-      --card: #12121a;
-      --text: #e2e8f0;
-      --muted: #94a3b8;
-      --accent: #ff2b66;
-      --border: #1e293b;
+      --bg: #08080E;
+      --card: #12131C;
+      --card-border: #1E212E;
+      --text: #F1F5F9;
+      --muted: #8E94A5;
+      --coral: #FF385C;
+      --rose: #FF758C;
+      --amber: #F59E0B;
+      --cyan: #00E5FF;
     }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background-color: var(--bg);
-      color: var(--text);
+    * {
+      box-sizing: border-box;
       margin: 0;
       padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
       line-height: 1.6;
+      overflow-x: hidden;
     }
     header {
-      padding: 20px 40px;
+      padding: 22px 36px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      border-bottom: 1px solid var(--border);
+      border-bottom: 1px solid var(--card-border);
+      background: rgba(8, 8, 14, 0.85);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 50;
     }
-    .logo {
-      font-size: 1.5rem;
-      font-weight: 800;
-      color: #fff;
+    .brand-wordmark {
+      font-size: 1.75rem;
+      font-weight: 900;
+      font-style: italic;
+      letter-spacing: -0.5px;
+      background: linear-gradient(135deg, var(--coral) 0%, var(--rose) 55%, var(--amber) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: baseline;
+      transform: skewX(-5deg);
+    }
+    .brand-wordmark .accent-r {
+      font-size: 2.1rem;
+      color: var(--amber);
+      -webkit-text-fill-color: var(--amber);
+      text-shadow: 0 0 16px rgba(245, 158, 11, 0.5);
+    }
+    .nav-links {
       display: flex;
+      gap: 20px;
       align-items: center;
-      gap: 8px;
     }
-    .logo span {
-      color: var(--accent);
+    .nav-link {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.95rem;
+      font-weight: 600;
+      transition: color 0.2s;
+    }
+    .nav-link:hover {
+      color: var(--coral);
     }
     .hero {
       text-align: center;
-      padding: 100px 20px 60px;
-      max-width: 800px;
+      padding: 90px 24px 60px;
+      max-width: 860px;
       margin: 0 auto;
     }
-    .hero h1 {
-      font-size: 3.2rem;
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 56, 92, 0.12);
+      border: 1px solid rgba(255, 56, 92, 0.35);
+      padding: 6px 14px;
+      border-radius: 20px;
+      color: var(--coral);
+      font-size: 0.85rem;
       font-weight: 800;
-      color: #fff;
-      margin-bottom: 16px;
-      line-height: 1.2;
+      margin-bottom: 24px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
-    .hero h1 span {
-      background: linear-gradient(135deg, #ff2b66, #ff758c);
+    .hero h1 {
+      font-size: 3.4rem;
+      font-weight: 900;
+      color: #FFF;
+      margin-bottom: 20px;
+      line-height: 1.15;
+      letter-spacing: -0.8px;
+    }
+    .hero h1 .gradient-text {
+      background: linear-gradient(135deg, var(--coral) 0%, var(--rose) 50%, var(--amber) 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
     .hero p {
-      font-size: 1.2rem;
+      font-size: 1.25rem;
       color: var(--muted);
-      margin-bottom: 36px;
+      margin-bottom: 40px;
+      max-width: 720px;
+      margin-left: auto;
+      margin-right: auto;
     }
     .buttons {
       display: flex;
@@ -70,99 +126,163 @@
     }
     .btn {
       background: var(--card);
-      border: 1px solid var(--border);
-      color: #fff;
-      padding: 14px 28px;
+      border: 1px solid var(--card-border);
+      color: #FFF;
+      padding: 15px 32px;
       border-radius: 30px;
-      font-weight: 600;
+      font-weight: 700;
+      font-size: 1rem;
       text-decoration: none;
-      transition: all 0.2s;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
     }
     .btn-primary {
-      background: var(--accent);
-      border-color: var(--accent);
+      background: linear-gradient(135deg, var(--coral), #E0264B);
+      border-color: var(--coral);
+      box-shadow: 0 8px 24px rgba(255, 56, 92, 0.35);
     }
-    .btn:hover {
+    .btn-primary:hover {
       transform: translateY(-2px);
-      box-shadow: 0 8px 24px rgba(255, 43, 102, 0.3);
+      box-shadow: 0 12px 28px rgba(255, 56, 92, 0.45);
+    }
+    .btn-secondary:hover {
+      background: #181A26;
+      border-color: #2D3245;
+      transform: translateY(-2px);
     }
     .features {
-      max-width: 1000px;
-      margin: 60px auto;
+      max-width: 1060px;
+      margin: 60px auto 90px;
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
       gap: 24px;
-      padding: 0 20px;
+      padding: 0 24px;
     }
     .feature-card {
       background: var(--card);
-      border: 1px solid var(--border);
-      padding: 32px;
-      border-radius: 16px;
+      border: 1px solid var(--card-border);
+      padding: 34px 28px;
+      border-radius: 20px;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .feature-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(255, 56, 92, 0.4);
+    }
+    .feature-card .icon {
+      font-size: 2.2rem;
+      margin-bottom: 16px;
+      display: inline-block;
     }
     .feature-card h3 {
-      color: #fff;
-      font-size: 1.3rem;
-      margin-bottom: 8px;
+      color: #FFF;
+      font-size: 1.35rem;
+      font-weight: 800;
+      margin-bottom: 10px;
+      letter-spacing: -0.3px;
     }
     .feature-card p {
       color: var(--muted);
-      font-size: 0.95rem;
-      margin: 0;
+      font-size: 0.98rem;
+      line-height: 1.6;
     }
     footer {
-      border-top: 1px solid var(--border);
-      padding: 40px 20px;
+      border-top: 1px solid var(--card-border);
+      padding: 50px 24px 40px;
       text-align: center;
       color: var(--muted);
-      font-size: 0.9rem;
+      font-size: 0.92rem;
+    }
+    footer .legal-links {
+      margin-top: 14px;
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
     }
     footer a {
       color: var(--muted);
       text-decoration: none;
-      margin: 0 12px;
+      transition: color 0.2s;
     }
     footer a:hover {
-      color: var(--accent);
+      color: var(--coral);
+    }
+    @media (max-width: 640px) {
+      .hero h1 {
+        font-size: 2.4rem;
+      }
+      header {
+        padding: 16px 20px;
+      }
+      .hero {
+        padding: 60px 16px 40px;
+      }
     }
   </style>
 </head>
 <body>
   <header>
-    <div class="logo">🔥 Blunderr<span>Dating</span></div>
+    <a href="/" class="brand-wordmark">Blunder<span class="accent-r">R</span></a>
+    <div class="nav-links">
+      <a href="/safety" class="nav-link">🛡️ Trust & Safety</a>
+      <a href="/privacy" class="nav-link">Privacy</a>
+    </div>
   </header>
 
   <section class="hero">
-    <h1>Real Connections, <span>Zero Catfish</span></h1>
-    <p>The next-generation dating app powered by 3D Biometric Liveness Verification, Encrypted Virtual Chai calls, and AI Cosmic Chemistry matching.</p>
+    <div class="hero-badge">⚡ Real Connections • Zero Catfish</div>
+    <h1>Cut Through The Noise. Meet On Your <span class="gradient-text">True Wavelength.</span></h1>
+    <p>The next-generation Indian connection network powered by 3D Biometric Liveness Verification, Micro-Community Circles, and Encrypted Virtual Chai calls.</p>
     <div class="buttons">
-      <a href="#" class="btn btn-primary">📱 Download for Android</a>
-      <a href="#" class="btn">🍏 Download for iOS</a>
+      <a href="https://expo.dev/artifacts/eas/lqRn8OTy04GClnBl_Nqc494ToA7pj-DKNu4z-yleBjg.apk" class="btn btn-primary">📱 Download Android APK</a>
+      <a href="#features" class="btn btn-secondary">✨ Explore Features</a>
     </div>
   </section>
 
-  <section class="features">
+  <section class="features" id="features">
     <div class="feature-card">
-      <h3>🛡️ 3D Liveness Verification</h3>
-      <p>Eliminates catfish profiles and AI deepfakes so you only date 100% real verified people.</p>
+      <div class="icon">🛡️</div>
+      <h3>3D Biometric Liveness</h3>
+      <p>Eliminates catfish profiles, bots, and AI deepfakes. Face-match verification ensures 100% genuine humans on every card.</p>
     </div>
     <div class="feature-card">
-      <h3>☕ Virtual Chai Calling</h3>
-      <p>Encrypted audio notes & calling before meeting in person to ensure authentic vibes.</p>
+      <div class="icon">🏙️</div>
+      <h3>Micro-Community Circles</h3>
+      <p>Discover matches inside your actual neighborhood tribes — from Koramangala Founders to Bandra Creatives and Cyber Hub Consultants.</p>
     </div>
     <div class="feature-card">
-      <h3>✨ Safe Date Shield</h3>
-      <p>Verified meet-up spots and emergency contact safety check-ins for real-world dates.</p>
+      <div class="icon">☕</div>
+      <h3>Virtual Chai Calling</h3>
+      <p>Break the ice with 15-second voice notes and encrypted in-app audio dates before meeting in person.</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">✨</div>
+      <h3>Vedic Cosmic Kundali</h3>
+      <p>Ancient Vedic synastry meets modern psychological desire blueprints for authentic emotional wavelength alignment.</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">🎯</div>
+      <h3>Desire Blueprint AI</h3>
+      <p>Tell AI your ideal partner vibe, lifestyle, and values in natural language to curate high-resonance candidates.</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">🚨</div>
+      <h3>Safe Date Shield</h3>
+      <p>Built-in safety check-ins, verified public date spots, and instant emergency SOS triggers for peaceful real-world meetings.</p>
     </div>
   </section>
 
   <footer>
-    <p>&copy; 2026 Blunderr Dating. All rights reserved.</p>
-    <p>
-      <a href="/privacy">Privacy Policy</a> | 
-      <a href="/terms">Terms of Service</a> | 
+    <p>&copy; 2026 BlunderR. All rights reserved.</p>
+    <div class="legal-links">
+      <a href="/privacy">Privacy Policy</a>
+      <a href="/terms">Terms of Service</a>
+      <a href="/safety">Trust & Safety Guidelines</a>
       <a href="/delete-account">Delete Account</a>
-    </p>
+    </div>
   </footer>
 </body>
 </html>
