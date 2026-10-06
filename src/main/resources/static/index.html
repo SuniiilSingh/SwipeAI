@@ -988,6 +988,7 @@
     <div class="nav-right">
       <a href="/safety" class="nav-link">🛡️ Safety</a>
       <a href="/privacy" class="nav-link">Privacy</a>
+      <button onclick="openContactModal()" class="nav-link" style="background:none;border:none;cursor:pointer;font-family:inherit;font-size:inherit;">Contact</button>
       <a href="/app" class="btn-nav-web">🚀 Open Web View</a>
       
       <!-- Android & Apple Download Buttons -->
@@ -1280,10 +1281,54 @@
     </div>
   </div>
 
+  <!-- Contact & Grievance Redressal Modal -->
+  <div class="apple-modal-backdrop" id="contact-modal" onclick="if(event.target === this) closeContactModal()">
+    <div class="apple-modal-card">
+      <button class="apple-modal-close" onclick="closeContactModal()">✕</button>
+      <div class="apple-logo-badge">✉️</div>
+      <div class="apple-modal-title">Contact & Grievance Desk</div>
+      <div class="apple-modal-desc">Official support, compliance, and regulatory correspondence for BlunderR.</div>
+
+      <div class="apple-options-list">
+        <a href="mailto:admin@blunderr.in" class="apple-opt-btn">
+          <div class="apple-opt-icon">📧</div>
+          <div>
+            <div class="apple-opt-title">admin@blunderr.in</div>
+            <div class="apple-opt-sub">General user support, verification & billing queries</div>
+          </div>
+        </a>
+
+        <a href="mailto:admin@blunderr.in?subject=Grievance%20Redressal" class="apple-opt-btn">
+          <div class="apple-opt-icon">⚖️</div>
+          <div>
+            <div class="apple-opt-title">Grievance Officer (IT Rules 2021)</div>
+            <div class="apple-opt-sub">Mandated 24h SLA acknowledgment • Resolution within 15 days</div>
+          </div>
+        </a>
+
+        <div class="apple-opt-btn" style="cursor: default;">
+          <div class="apple-opt-icon">📍</div>
+          <div>
+            <div class="apple-opt-title">New Delhi, India</div>
+            <div class="apple-opt-sub">Registered operating headquarters & legal jurisdiction</div>
+          </div>
+        </div>
+
+        <a href="/contact" class="apple-opt-btn" style="justify-content: center; background: rgba(255, 56, 92, 0.15); border-color: rgba(255, 56, 92, 0.4);">
+          <div style="font-weight: 800; color: #FFF; font-size: 0.95rem;">Open Full Contact Page ➔</div>
+        </a>
+      </div>
+    </div>
+  </div>
+
   <!-- Footer -->
   <footer>
     <p>&copy; 2026 BlunderR. All rights reserved.</p>
+    <p style="margin-top: 10px; font-size: 0.88rem; color: #94A3B8;">
+      📍 Headquartered in <strong>New Delhi, India</strong> &nbsp;•&nbsp; ✉️ Official Desk: <a href="mailto:admin@blunderr.in" style="color:var(--coral); font-weight:700;">admin@blunderr.in</a>
+    </p>
     <div class="legal-links">
+      <a href="/contact">Contact Us & Grievance</a>
       <a href="/privacy">Privacy Policy</a>
       <a href="/terms">Terms of Service</a>
       <a href="/safety">Trust & Safety Guidelines</a>
@@ -1298,14 +1343,26 @@
     function closeAppleModal() {
       document.getElementById('apple-download-modal').style.display = 'none';
     }
+    function openContactModal() {
+      document.getElementById('contact-modal').style.display = 'flex';
+    }
+    function closeContactModal() {
+      document.getElementById('contact-modal').style.display = 'none';
+    }
     function toggleFaq(el) {
       el.classList.toggle('active');
     }
     window.addEventListener('keydown', function(e) {
-      if (e.key === 'Escape') closeAppleModal();
+      if (e.key === 'Escape') {
+        closeAppleModal();
+        closeContactModal();
+      }
     });
     if (window.location.hash === '#download-apple') {
       openAppleModal();
+    }
+    if (window.location.hash === '#contact') {
+      openContactModal();
     }
   </script>
 </body>
