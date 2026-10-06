@@ -633,64 +633,14 @@
       100% { transform: translateY(-3px); }
     }
 
-    /* Top Features Carousel (3D, Live, Genuine, etc.) */
+    /* Top Features Auto-Gliding Carousel (3D, Live, Genuine, etc.) */
     .top-carousel-wrapper {
       position: relative;
       z-index: 15;
       background: rgba(10, 12, 20, 0.75);
       border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-      padding: 12px 0 14px;
+      padding: 7px 0 8px;
       backdrop-filter: blur(14px);
-    }
-    .top-carousel-header {
-      max-width: 1240px;
-      margin: 0 auto 10px;
-      padding: 0 24px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .carousel-pill-badge {
-      font-size: 0.74rem;
-      font-weight: 800;
-      color: #94A3B8;
-      letter-spacing: 0.8px;
-      display: inline-flex;
-      align-items: center;
-      gap: 7px;
-    }
-    .carousel-dot-live {
-      width: 7px;
-      height: 7px;
-      background: var(--coral);
-      border-radius: 50%;
-      box-shadow: 0 0 10px var(--coral);
-      animation: pulseLiveDot 2s infinite;
-    }
-    .carousel-controls {
-      display: flex;
-      gap: 8px;
-    }
-    .carousel-nav-btn {
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      background: #181C2E;
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      color: #FFF;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      cursor: pointer;
-      font-size: 1.15rem;
-      line-height: 1;
-      padding: 0 0 2px 0;
-      transition: all 0.2s;
-    }
-    .carousel-nav-btn:hover {
-      background: var(--coral);
-      border-color: var(--coral);
-      transform: scale(1.08);
     }
     .top-carousel-container {
       overflow-x: auto;
@@ -718,25 +668,25 @@
     .feature-carousel-card {
       background: rgba(18, 22, 38, 0.85);
       border: 1px solid rgba(255, 255, 255, 0.12);
-      border-radius: 16px;
-      padding: 10px 16px;
+      border-radius: 14px;
+      padding: 7px 14px;
       display: inline-flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
       text-decoration: none;
       white-space: nowrap;
       transition: all 0.25s ease;
-      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
       flex-shrink: 0;
     }
     .feature-carousel-card:hover {
-      transform: translateY(-3px);
+      transform: translateY(-2px);
       background: #1B2136;
       border-color: rgba(255, 56, 92, 0.55);
-      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55), 0 0 20px rgba(255, 56, 92, 0.2);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55), 0 0 16px rgba(255, 56, 92, 0.2);
     }
     .fcard-icon {
-      font-size: 1.5rem;
+      font-size: 1.35rem;
       flex-shrink: 0;
     }
     .fcard-content {
@@ -1146,11 +1096,8 @@
         max-width: 340px;
         padding: 9px 14px;
       }
-      .top-carousel-header {
-        padding: 0 16px;
-      }
       .top-carousel-wrapper {
-        padding: 10px 0 12px;
+        padding: 6px 0 7px;
       }
       .feature-carousel-card {
         padding: 8px 14px;
@@ -1192,17 +1139,6 @@
 
   <!-- Top Features Carousel (3D, Live, Genuine, Chai, Circles, Kundali, Memes, Safety) -->
   <div class="top-carousel-wrapper">
-    <div class="top-carousel-header">
-      <span class="carousel-pill-badge">
-        <span class="carousel-dot-live"></span>
-        TOP INNOVATION HIGHLIGHTS
-      </span>
-      <div class="carousel-controls">
-        <button class="carousel-nav-btn prev" onclick="scrollFeatureCarousel(-1)" title="Previous feature">‹</button>
-        <button class="carousel-nav-btn next" onclick="scrollFeatureCarousel(1)" title="Next feature">›</button>
-      </div>
-    </div>
-    
     <div class="top-carousel-container" id="topFeatureCarousel">
       <div class="top-carousel-track">
         <!-- Set 1 -->
