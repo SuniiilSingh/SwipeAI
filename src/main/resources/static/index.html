@@ -1830,12 +1830,12 @@
       <a href="/app" class="btn-nav-web">🚀 Open Web View</a>
       
       <!-- Android & Apple Download Buttons -->
-      <a href="https://expo.dev/artifacts/eas/1VbdICRgtwwG-knj2ouL9qq7aWufivcxiNRdc75npCM.apk" class="btn-apk-top" title="Download Android APK">
+      <a href="https://expo.dev/artifacts/eas/1VbdICRgtwwG-knj2ouL9qq7aWufivcxiNRdc75npCM.apk" class="btn-apk-top" title="Download Android APK" download>
         🤖 Android APK
       </a>
-      <button onclick="openAppleModal()" class="btn-apple-top" title="Download Apple iOS Build">
+      <a href="/downloads/BlunderR.ipa" class="btn-apple-top" title="Download Apple iOS Build" download>
          Apple iOS
-      </button>
+      </a>
     </div>
   </header>
 
@@ -2009,12 +2009,12 @@
         <a href="/app" class="btn-cta-primary">
           <span>🚀 Open Web View</span> ➔
         </a>
-        <a href="https://expo.dev/artifacts/eas/1VbdICRgtwwG-knj2ouL9qq7aWufivcxiNRdc75npCM.apk" class="btn-cta-secondary">
+        <a href="https://expo.dev/artifacts/eas/1VbdICRgtwwG-knj2ouL9qq7aWufivcxiNRdc75npCM.apk" class="btn-cta-secondary" download>
           <span>🤖 Android APK</span>
         </a>
-        <button onclick="openAppleModal()" class="btn-cta-apple">
+        <a href="/downloads/BlunderR.ipa" class="btn-cta-apple" download>
           <span> Apple iOS Build</span>
-        </button>
+        </a>
       </div>
 
       <!-- Live Social Proof Spark (Moved into Left Column so Discovery Deck is 100% unblocked & elevated) -->
@@ -2423,48 +2423,12 @@
       <a href="/app" class="btn-cta-primary">
         <span>🚀 Open Web View</span> ➔
       </a>
-      <a href="https://expo.dev/artifacts/eas/1VbdICRgtwwG-knj2ouL9qq7aWufivcxiNRdc75npCM.apk" class="btn-cta-secondary">
+      <a href="https://expo.dev/artifacts/eas/1VbdICRgtwwG-knj2ouL9qq7aWufivcxiNRdc75npCM.apk" class="btn-cta-secondary" download>
         <span>🤖 Download Android APK</span>
       </a>
-      <button onclick="openAppleModal()" class="btn-cta-apple">
+      <a href="/downloads/BlunderR.ipa" class="btn-cta-apple" download>
         <span> Download Apple iOS Build</span>
-      </button>
-    </div>
-  </div>
-
-  <!-- Apple iOS Download Modal -->
-  <div class="apple-modal-backdrop" id="apple-download-modal" onclick="if(event.target === this) closeAppleModal()">
-    <div class="apple-modal-card">
-      <button class="apple-modal-close" onclick="closeAppleModal()">✕</button>
-      <div class="apple-logo-badge"></div>
-      <div class="apple-modal-title">BlunderR for Apple iOS</div>
-      <div class="apple-modal-desc">Get the full BlunderR experience on your iPhone with 3D Biometric Liveness, Micro-Circles, and Encrypted Chai calling.</div>
-
-      <div class="apple-options-list">
-        <a href="https://testflight.apple.com" target="_blank" class="apple-opt-btn">
-          <div class="apple-opt-icon">✈️</div>
-          <div>
-            <div class="apple-opt-title">Install via Apple TestFlight</div>
-            <div class="apple-opt-sub">Official Apple public beta testing link for iOS users</div>
-          </div>
-        </a>
-
-        <a href="/app" class="apple-opt-btn">
-          <div class="apple-opt-icon">⚡</div>
-          <div>
-            <div class="apple-opt-title">Launch Web View on iPhone (Safari)</div>
-            <div class="apple-opt-sub">Instant zero-install web app. Tap Share ➔ "Add to Home Screen"</div>
-          </div>
-        </a>
-
-        <a href="https://expo.dev/accounts/blunderr/projects/blunderr-dating" target="_blank" class="apple-opt-btn">
-          <div class="apple-opt-icon">📦</div>
-          <div>
-            <div class="apple-opt-title">Direct iOS EAS Build / IPA</div>
-            <div class="apple-opt-sub">Download IPA archive for sideloading / AltStore / Xcode</div>
-          </div>
-        </a>
-      </div>
+      </a>
     </div>
   </div>
 
@@ -2564,8 +2528,8 @@
     </div>
     <div class="sticky-actions-right">
       <a href="/app" class="btn-sticky-launch"><span>🚀 Open Web App</span></a>
-      <button onclick="openAppleModal()" class="btn-sticky-mini" title="iOS"></button>
-      <a href="https://expo.dev/artifacts/eas/1VbdICRgtwwG-knj2ouL9qq7aWufivcxiNRdc75npCM.apk" class="btn-sticky-mini" title="Android">🤖</a>
+      <a href="/downloads/BlunderR.ipa" class="btn-sticky-mini" title="Download Apple iOS Build" download></a>
+      <a href="https://expo.dev/artifacts/eas/1VbdICRgtwwG-knj2ouL9qq7aWufivcxiNRdc75npCM.apk" class="btn-sticky-mini" title="Download Android APK" download>🤖</a>
     </div>
   </div>
 
@@ -2854,12 +2818,6 @@
     }
 
     /* Standard Modals & FAQ */
-    function openAppleModal() {
-      document.getElementById('apple-download-modal').style.display = 'flex';
-    }
-    function closeAppleModal() {
-      document.getElementById('apple-download-modal').style.display = 'none';
-    }
     function openContactModal() {
       document.getElementById('contact-modal').style.display = 'flex';
     }
@@ -2898,15 +2856,11 @@
 
     window.addEventListener('keydown', function(e) {
       if (e.key === 'Escape') {
-        closeAppleModal();
         closeContactModal();
         closeMatchModal();
       }
     });
 
-    if (window.location.hash === '#download-apple') {
-      openAppleModal();
-    }
     if (window.location.hash === '#contact') {
       openContactModal();
     }
