@@ -1115,7 +1115,662 @@
       color: var(--coral);
     }
 
+    /* Ambient Cursor Spotlight Glow */
+    .cursor-glow {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 650px;
+      height: 650px;
+      background: radial-gradient(circle, rgba(255, 56, 92, 0.09) 0%, rgba(139, 92, 246, 0.04) 45%, transparent 70%);
+      pointer-events: none;
+      z-index: 1;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      transition: opacity 0.3s ease;
+      will-change: transform;
+    }
+
+    /* Dynamic Discovery Deck Transitions & States */
+    .phone-photo-frame {
+      transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.32s ease;
+    }
+    .phone-photo-frame.swipe-left {
+      transform: translateX(-160px) rotate(-14deg);
+      opacity: 0;
+    }
+    .phone-photo-frame.swipe-right {
+      transform: translateX(160px) rotate(14deg);
+      opacity: 0;
+    }
+    .phone-photo-frame.card-bounce {
+      animation: cardSpring 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    @keyframes cardSpring {
+      0% { transform: scale(0.92); opacity: 0.7; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    /* 15s Virtual Chai Voice Bar */
+    .chai-voice-player {
+      background: rgba(14, 18, 32, 0.92);
+      border: 1px solid rgba(255, 56, 92, 0.45);
+      border-radius: 14px;
+      padding: 6px 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 8px;
+      cursor: pointer;
+      backdrop-filter: blur(12px);
+      transition: all 0.25s ease;
+    }
+    .chai-voice-player:hover {
+      background: rgba(24, 30, 52, 0.98);
+      border-color: var(--coral);
+      box-shadow: 0 4px 16px rgba(255, 56, 92, 0.35);
+    }
+    .voice-play-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--coral), var(--coral-hover));
+      border: none;
+      color: #FFF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.72rem;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: transform 0.2s;
+    }
+    .voice-play-btn:hover {
+      transform: scale(1.12);
+    }
+    .voice-wave-container {
+      display: flex;
+      align-items: center;
+      gap: 2.5px;
+      height: 18px;
+      flex: 1;
+    }
+    .wave-bar {
+      width: 3px;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.35);
+      border-radius: 3px;
+      transition: height 0.2s ease, background 0.2s ease;
+    }
+    .chai-voice-player.playing .wave-bar {
+      background: #6EE7B7;
+      animation: waveDance 0.8s ease-in-out infinite alternate;
+    }
+    .chai-voice-player.playing .wave-bar:nth-child(2n) { animation-delay: 0.15s; }
+    .chai-voice-player.playing .wave-bar:nth-child(3n) { animation-delay: 0.3s; }
+    .chai-voice-player.playing .wave-bar:nth-child(4n) { animation-delay: 0.45s; }
+    @keyframes waveDance {
+      0% { height: 4px; }
+      100% { height: 18px; }
+    }
+    .voice-prompt-text {
+      font-size: 0.73rem;
+      color: #E2E8F0;
+      font-style: italic;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 150px;
+    }
+    .voice-timer {
+      font-size: 0.68rem;
+      font-weight: 800;
+      color: var(--amber);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Floating Particles */
+    .floating-spark {
+      position: absolute;
+      pointer-events: none;
+      z-index: 100;
+      animation: floatSparkUp 0.85s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    @keyframes floatSparkUp {
+      0% { transform: translate(0, 0) scale(0.6); opacity: 1; }
+      100% { transform: translate(var(--tx), var(--ty)) scale(1.4); opacity: 0; }
+    }
+
+    /* Phone Toast */
+    .card-toast {
+      position: absolute;
+      bottom: 74px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: rgba(14, 18, 32, 0.96);
+      border: 1px solid var(--amber);
+      color: #FFF;
+      font-size: 0.8rem;
+      font-weight: 800;
+      padding: 8px 16px;
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6), 0 0 20px rgba(245, 158, 11, 0.3);
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 50;
+      white-space: nowrap;
+    }
+    .card-toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    /* Match Modal */
+    .match-modal-backdrop {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(4, 6, 14, 0.88);
+      backdrop-filter: blur(14px);
+      z-index: 99999;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+    .match-modal-card {
+      background: linear-gradient(145deg, #12162A 0%, #0B0E1A 100%);
+      border: 1.5px solid rgba(255, 56, 92, 0.5);
+      box-shadow: 0 25px 80px rgba(0, 0, 0, 0.9), 0 0 60px rgba(255, 56, 92, 0.35);
+      border-radius: 32px;
+      max-width: 440px;
+      width: 100%;
+      padding: 36px 28px 30px;
+      text-align: center;
+      position: relative;
+      animation: matchZoom 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    @keyframes matchZoom {
+      0% { transform: scale(0.7); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .match-avatars-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 20px;
+      position: relative;
+    }
+    .match-avatar-ring {
+      width: 86px;
+      height: 86px;
+      border-radius: 50%;
+      padding: 3px;
+      background: linear-gradient(135deg, var(--coral), var(--amber));
+      box-shadow: 0 0 25px rgba(255, 56, 92, 0.5);
+    }
+    .match-avatar-ring img {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+    .match-avatar-ring.right {
+      margin-left: -22px;
+    }
+    .match-heart-center {
+      position: absolute;
+      width: 36px;
+      height: 36px;
+      background: var(--coral);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      box-shadow: 0 0 15px rgba(255, 56, 92, 0.8);
+      z-index: 2;
+      animation: pulseHeart 1.5s infinite;
+    }
+    @keyframes pulseHeart {
+      0% { transform: scale(0.9); }
+      50% { transform: scale(1.15); }
+      100% { transform: scale(0.9); }
+    }
+    .match-modal-title {
+      font-size: 2.1rem;
+      font-weight: 900;
+      color: #FFF;
+      margin-bottom: 8px;
+      letter-spacing: -0.5px;
+    }
+    .match-modal-title .highlight {
+      background: linear-gradient(135deg, var(--coral), var(--amber));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .match-modal-desc {
+      font-size: 0.98rem;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-bottom: 20px;
+    }
+    .match-resonance-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid rgba(245, 158, 11, 0.45);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 800;
+      color: #FCD34D;
+      margin-bottom: 22px;
+    }
+    .match-modal-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .btn-match-start {
+      background: linear-gradient(135deg, var(--coral), var(--coral-hover));
+      color: #FFF;
+      padding: 14px;
+      border-radius: 20px;
+      font-weight: 800;
+      font-size: 1.05rem;
+      text-decoration: none;
+      box-shadow: 0 6px 25px rgba(255, 56, 92, 0.5);
+      transition: transform 0.2s;
+    }
+    .btn-match-start:hover {
+      transform: translateY(-2px);
+    }
+    .btn-match-dismiss {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      padding: 8px;
+      transition: color 0.2s;
+    }
+    .btn-match-dismiss:hover {
+      color: #FFF;
+    }
+
+    /* Trust Stats Strip */
+    .trust-stats-section {
+      position: relative;
+      z-index: 10;
+      padding: 0 24px;
+      max-width: 1260px;
+      margin: 10px auto 26px;
+    }
+    .trust-stats-container {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+      background: rgba(15, 18, 30, 0.72);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 24px;
+      padding: 22px 28px;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+    }
+    .trust-stat-card {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      border-right: 1px solid rgba(255, 255, 255, 0.08);
+      padding-right: 18px;
+    }
+    .trust-stat-card:last-child {
+      border-right: none;
+      padding-right: 0;
+    }
+    .stat-number-row {
+      display: flex;
+      align-items: baseline;
+      font-size: 2.1rem;
+      font-weight: 900;
+      color: #FFF;
+      letter-spacing: -0.8px;
+      line-height: 1.1;
+      margin-bottom: 6px;
+    }
+    .stat-plus {
+      color: var(--coral);
+      font-size: 1.6rem;
+      margin-left: 2px;
+    }
+    .stat-unit {
+      color: #6EE7B7;
+      font-size: 1.4rem;
+      margin-left: 2px;
+    }
+    .stat-label-text {
+      color: var(--amber);
+      font-size: 1.3rem;
+      margin-left: 6px;
+      font-weight: 800;
+    }
+    .stat-title {
+      font-size: 0.92rem;
+      font-weight: 800;
+      color: #E2E8F0;
+      margin-bottom: 2px;
+    }
+    .stat-desc {
+      font-size: 0.78rem;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+
+    /* Interactive Cosmic Kundali Section */
+    .kundali-calc-section {
+      max-width: 1100px;
+      margin: 60px auto 40px;
+      padding: 0 24px;
+      position: relative;
+      z-index: 10;
+    }
+    .kundali-calc-card {
+      background: linear-gradient(145deg, rgba(20, 24, 42, 0.95), rgba(12, 15, 26, 0.95));
+      border: 1.5px solid rgba(139, 92, 246, 0.35);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), 0 0 50px rgba(139, 92, 246, 0.15);
+      border-radius: 32px;
+      padding: 40px 36px;
+      backdrop-filter: blur(16px);
+    }
+    .kundali-inputs-grid {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 20px;
+      align-items: center;
+      margin: 32px 0 28px;
+    }
+    .kundali-picker-box {
+      background: rgba(14, 18, 32, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 20px;
+      padding: 20px;
+    }
+    .kundali-picker-box label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 800;
+      color: #A5B4FC;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+    .kundali-select {
+      width: 100%;
+      background: #181C2E;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #FFF;
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: 700;
+      padding: 12px 16px;
+      border-radius: 14px;
+      outline: none;
+      cursor: pointer;
+    }
+    .kundali-select:focus {
+      border-color: var(--coral);
+    }
+    .kundali-plus-icon {
+      font-size: 1.8rem;
+      color: var(--amber);
+      background: rgba(245, 158, 11, 0.15);
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(245, 158, 11, 0.35);
+    }
+    .btn-calculate-synergy {
+      width: 100%;
+      background: linear-gradient(135deg, #8B5CF6, var(--coral));
+      color: #FFF;
+      border: none;
+      font-family: inherit;
+      font-size: 1.08rem;
+      font-weight: 800;
+      padding: 16px;
+      border-radius: 20px;
+      cursor: pointer;
+      box-shadow: 0 8px 30px rgba(139, 92, 246, 0.4);
+      transition: all 0.25s ease;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+    }
+    .btn-calculate-synergy:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 36px rgba(139, 92, 246, 0.6);
+    }
+    .kundali-result-card {
+      display: none;
+      margin-top: 28px;
+      background: rgba(14, 18, 32, 0.95);
+      border: 1.5px solid rgba(245, 158, 11, 0.5);
+      border-radius: 24px;
+      padding: 28px;
+      text-align: center;
+      animation: fadeInResult 0.4s ease;
+    }
+    @keyframes fadeInResult {
+      0% { opacity: 0; transform: translateY(12px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+    .kundali-score-banner {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(245, 158, 11, 0.18);
+      border: 1px solid rgba(245, 158, 11, 0.5);
+      padding: 10px 22px;
+      border-radius: 30px;
+      color: #FDE68A;
+      font-size: 1.25rem;
+      font-weight: 900;
+      margin-bottom: 18px;
+    }
+    .kundali-traits-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin: 20px 0 24px;
+      text-align: left;
+    }
+    .kundali-trait-box {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 14px;
+      border-radius: 16px;
+    }
+    .kundali-trait-label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #94A3B8;
+      margin-bottom: 4px;
+    }
+    .kundali-trait-val {
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: #FFF;
+    }
+
+    /* Real Love Stories Testimonials Section */
+    .stories-section {
+      max-width: 1260px;
+      margin: 60px auto 40px;
+      padding: 0 24px;
+      position: relative;
+      z-index: 10;
+    }
+    .stories-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin-top: 36px;
+    }
+    .story-card {
+      background: rgba(18, 22, 38, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 26px;
+      padding: 28px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      backdrop-filter: blur(14px);
+      transition: transform 0.25s ease, border-color 0.25s ease;
+    }
+    .story-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(255, 56, 92, 0.5);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+    }
+    .story-quote {
+      font-size: 1.02rem;
+      line-height: 1.6;
+      color: #E2E8F0;
+      margin-bottom: 22px;
+      font-style: italic;
+    }
+    .story-author {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .story-avatar {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid var(--coral);
+    }
+    .story-author-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .story-name {
+      font-size: 0.96rem;
+      font-weight: 800;
+      color: #FFF;
+    }
+    .story-meta {
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+    .story-tag {
+      align-self: flex-start;
+      margin-top: 14px;
+      font-size: 0.74rem;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 12px;
+      background: rgba(255, 56, 92, 0.15);
+      color: #FFA4B6;
+      border: 1px solid rgba(255, 56, 92, 0.35);
+    }
+
+    /* Mobile Sticky Bottom Launch Bar */
+    .mobile-sticky-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(11, 13, 21, 0.94);
+      border-top: 1px solid rgba(255, 56, 92, 0.4);
+      box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(16px);
+      padding: 10px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 999;
+      transform: translateY(120%);
+      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .mobile-sticky-bar.visible {
+      transform: translateY(0);
+    }
+    .sticky-brand-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .sticky-logo {
+      font-size: 1.15rem;
+      font-weight: 900;
+      color: #FFF;
+    }
+    .sticky-sub {
+      font-size: 0.72rem;
+      color: #6EE7B7;
+      font-weight: 700;
+    }
+    .sticky-actions-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-sticky-launch {
+      background: linear-gradient(135deg, var(--coral), var(--coral-hover));
+      color: #FFF;
+      font-weight: 800;
+      font-size: 0.88rem;
+      padding: 9px 16px;
+      border-radius: 20px;
+      text-decoration: none;
+      box-shadow: 0 4px 14px rgba(255, 56, 92, 0.5);
+    }
+    .btn-sticky-mini {
+      background: #181C2E;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #FFF;
+      font-weight: 800;
+      font-size: 0.85rem;
+      padding: 8px 12px;
+      border-radius: 16px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+    }
+
     @media (max-width: 960px) {
+      .trust-stats-container {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+        padding: 20px;
+      }
+      .trust-stat-card {
+        border-right: none;
+      }
+      .kundali-inputs-grid {
+        grid-template-columns: 1fr;
+        gap: 14px;
+      }
+      .kundali-plus-icon {
+        margin: 0 auto;
+      }
+      .kundali-traits-grid {
+        grid-template-columns: 1fr;
+      }
+      .stories-grid {
+        grid-template-columns: 1fr;
+      }
       .hero-container {
         grid-template-columns: 1fr;
         padding: 24px 18px 40px;
@@ -1157,6 +1812,9 @@
   </style>
 </head>
 <body>
+  <!-- Ambient Cursor Glow Effect -->
+  <div class="cursor-glow" id="cursorGlow"></div>
+
   <!-- Ambient Lighting Effects -->
   <div class="ambient-glow-1"></div>
   <div class="ambient-glow-2"></div>
@@ -1380,16 +2038,17 @@
     <!-- Right: Interactive Device Showcase (Cleanly anchored at top, zero blocking overhead) -->
     <div class="hero-showcase-wrapper">
       <!-- Phone Shell (100% Unobstructed, starts right at top) -->
-      <div class="phone-device-card">
+      <div class="phone-device-card" id="phoneDeviceCard">
         <div class="phone-top-bar">
           <span style="font-size:0.85rem; font-weight:800; color:#FFF;">🔥 Discovery Deck</span>
           <span class="phone-pill-live">● Live in Browser</span>
         </div>
 
-        <div class="phone-photo-frame">
-          <picture>
-            <source srcset="/images/hero-profile.webp" type="image/webp" />
-            <img src="/images/hero-profile.jpg"
+        <div class="phone-photo-frame" id="phonePhotoFrame">
+          <picture id="heroPhotoPicture">
+            <source id="heroPhotoSource" srcset="/images/hero-profile.webp" type="image/webp" />
+            <img id="heroPhotoImg"
+                 src="/images/hero-profile.jpg"
                  alt="BlunderR Verified Profile"
                  class="phone-photo-img"
                  loading="eager"
@@ -1400,17 +2059,30 @@
           <div class="phone-photo-gradient"></div>
 
           <div class="phone-overlay-badges">
-            <span class="glass-badge verified">🛡️ 100% Face Verified</span>
-            <span class="glass-badge cosmic">✨ 28/36 Cosmic Chemistry</span>
+            <span class="glass-badge verified" id="heroVerifiedBadge">🛡️ 100% Face Verified</span>
+            <span class="glass-badge cosmic" id="heroCosmicBadge">✨ 28/36 Cosmic Chemistry</span>
           </div>
 
           <div class="phone-info-content">
             <div class="phone-name-row">
-              <span class="phone-name">Aaradhya</span>
-              <span class="phone-age">24</span>
+              <span class="phone-name" id="heroName">Aaradhya</span>
+              <span class="phone-age" id="heroAge">24</span>
             </div>
-            <div class="phone-subtitle">📍 Koramangala, Bengaluru • 3.5 km away</div>
-            <div class="phone-tags-row">
+            <div class="phone-subtitle" id="heroSubtitle">📍 Koramangala, Bengaluru • 3.5 km away</div>
+
+            <!-- Playable 15s Virtual Chai Voice Note -->
+            <div class="chai-voice-player" id="chaiVoicePlayer" onclick="toggleVirtualChaiAudio(event)">
+              <button class="voice-play-btn" id="voicePlayBtn" type="button" aria-label="Play Virtual Chai">▶</button>
+              <div class="voice-wave-container">
+                <span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span>
+                <span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span>
+                <span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span>
+              </div>
+              <span class="voice-timer" id="voiceTimer">0:15</span>
+              <span class="voice-prompt-text" id="voicePromptText">"Filter coffee > Americano ☕"</span>
+            </div>
+
+            <div class="phone-tags-row" id="heroTagsRow" style="margin-top: 8px;">
               <span class="phone-tag">🏙️ Tech Founders</span>
               <span class="phone-tag">🥗 Pure Veg</span>
               <span class="phone-tag">🎯 88% Match</span>
@@ -1418,11 +2090,13 @@
           </div>
         </div>
 
+        <div class="card-toast" id="cardToast">⚡ 15s Super Chai Sent!</div>
+
         <div class="phone-action-footer">
           <div class="phone-mini-buttons">
-            <button class="mini-btn pass" title="Pass">✕</button>
-            <button class="mini-btn super" title="Super Spark">⚡</button>
-            <button class="mini-btn like" title="Like">❤️</button>
+            <button class="mini-btn pass" title="Pass" onclick="handleHeroAction('pass', event)">✕</button>
+            <button class="mini-btn super" title="Super Spark" onclick="handleHeroAction('super', event)">⚡</button>
+            <button class="mini-btn like" title="Like" onclick="handleHeroAction('like', event)">❤️</button>
           </div>
           <a href="/app" class="btn-launch-preview">
             <span>🚀 Open Web View</span> ➔
@@ -1441,6 +2115,43 @@
       </div>
     </div>
   </main>
+
+  <!-- Live Traction & Trust Stats Bar -->
+  <section class="trust-stats-section">
+    <div class="trust-stats-container">
+      <div class="trust-stat-card">
+        <div class="stat-number-row">
+          <span>48,250</span><span class="stat-plus">+</span>
+        </div>
+        <div class="stat-title">🛡️ 100% Verified Humans</div>
+        <div class="stat-desc">Zero catfish, bots or stolen profiles allowed</div>
+      </div>
+
+      <div class="trust-stat-card">
+        <div class="stat-number-row">
+          <span>99.4</span><span class="stat-unit">%</span>
+        </div>
+        <div class="stat-title">⚡ Real Liveness Precision</div>
+        <div class="stat-desc">Proprietary 3D anti-spoof biometric checks</div>
+      </div>
+
+      <div class="trust-stat-card">
+        <div class="stat-number-row">
+          <span>18,600</span><span class="stat-plus">+</span>
+        </div>
+        <div class="stat-title">☕ 15s Chai Sparks Sent</div>
+        <div class="stat-desc">Encrypted voice icebreakers before numbers</div>
+      </div>
+
+      <div class="trust-stat-card">
+        <div class="stat-number-row">
+          <span>4</span><span class="stat-label-text">Metros</span>
+        </div>
+        <div class="stat-title">🏙️ Active Neighborhood Tribes</div>
+        <div class="stat-desc">Delhi-NCR • Bengaluru • Mumbai • Pune</div>
+      </div>
+    </div>
+  </section>
 
   <!-- Neighborhood Circles Marquee Ticker -->
   <div class="ticker-section">
@@ -1508,6 +2219,87 @@
     </table>
   </section>
 
+  <!-- Interactive Cosmic Kundali / Chemistry Calculator -->
+  <section class="kundali-calc-section" id="cosmic-calculator">
+    <div class="kundali-calc-card">
+      <div class="section-header" style="padding-top:0;">
+        <div class="section-badge">🔮 Interactive Cosmic Chemistry</div>
+        <h2 class="section-title">Discover Your Cosmic Resonance Score</h2>
+        <p class="section-subtitle">Blend ancient Vedic 36-Guna Milan synastry with modern psychological wavelength alignment. Pick two signs or vibes to test your magnetic spark.</p>
+      </div>
+
+      <div class="kundali-inputs-grid">
+        <div class="kundali-picker-box">
+          <label for="kundaliSign1">✨ Your Sign & Tribe</label>
+          <select id="kundaliSign1" class="kundali-select">
+            <option value="Aries">♈ Aries • Bold Visionary</option>
+            <option value="Taurus" selected>♉ Taurus • Grounded & Aesthetic</option>
+            <option value="Gemini">♊ Gemini • Quick-Witted Banter</option>
+            <option value="Cancer">♋ Cancer • Deep Empath & Loyal</option>
+            <option value="Leo">♌ Leo • Radiant & Warmhearted</option>
+            <option value="Virgo">♍ Virgo • Mindful & Passionate</option>
+            <option value="Libra">♎ Libra • Romantic & Harmonious</option>
+            <option value="Scorpio">♏ Scorpio • Magnetic & Intense</option>
+            <option value="Sagittarius">♐ Sagittarius • Free-Spirited Explorer</option>
+            <option value="Capricorn">♑ Capricorn • Driven & Ambitious</option>
+            <option value="Aquarius">♒ Aquarius • Maverick Thinker</option>
+            <option value="Pisces">♓ Pisces • Dreamer & Poet</option>
+          </select>
+        </div>
+
+        <div class="kundali-plus-icon">+</div>
+
+        <div class="kundali-picker-box">
+          <label for="kundaliSign2">⚡ Match's Sign & Tribe</label>
+          <select id="kundaliSign2" class="kundali-select">
+            <option value="Aries">♈ Aries • Bold Visionary</option>
+            <option value="Taurus">♉ Taurus • Grounded & Aesthetic</option>
+            <option value="Gemini">♊ Gemini • Quick-Witted Banter</option>
+            <option value="Cancer">♋ Cancer • Deep Empath & Loyal</option>
+            <option value="Leo">♌ Leo • Radiant & Warmhearted</option>
+            <option value="Virgo" selected>♍ Virgo • Mindful & Passionate</option>
+            <option value="Libra">♎ Libra • Romantic & Harmonious</option>
+            <option value="Scorpio">♏ Scorpio • Magnetic & Intense</option>
+            <option value="Sagittarius">♐ Sagittarius • Free-Spirited Explorer</option>
+            <option value="Capricorn">♑ Capricorn • Driven & Ambitious</option>
+            <option value="Aquarius">♒ Aquarius • Maverick Thinker</option>
+            <option value="Pisces">♓ Pisces • Dreamer & Poet</option>
+          </select>
+        </div>
+      </div>
+
+      <button type="button" class="btn-calculate-synergy" onclick="calculateCosmicSynergy()">
+        <span>✨ Calculate Cosmic Synergy</span> ➔
+      </button>
+
+      <div class="kundali-result-card" id="kundaliResultCard">
+        <div class="kundali-score-banner" id="kundaliScoreBanner">
+          <span>✨ 33 / 36 Guna Alignment</span> &bull; <span>92% Magnetic Chemistry</span>
+        </div>
+        <p id="kundaliVibeText" style="color: #E2E8F0; font-size: 1.05rem; line-height: 1.5; margin-bottom: 20px;">
+          "High intellectual resonance with effortless comfort. Spontaneous weekend cafe hopping and deep 2 AM conversations."
+        </p>
+        <div class="kundali-traits-grid">
+          <div class="kundali-trait-box">
+            <div class="kundali-trait-label">🗣️ Banter & Humor Sync</div>
+            <div class="kundali-trait-val" id="traitSync1">5.0 / 5.0 • Natural Rhythm</div>
+          </div>
+          <div class="kundali-trait-box">
+            <div class="kundali-trait-label">☕ Lifestyle & Pacing</div>
+            <div class="kundali-trait-val" id="traitSync2">4.8 / 5.0 • Harmonious</div>
+          </div>
+          <div class="kundali-trait-box">
+            <div class="kundali-trait-label">🛡️ Emotional Resonance</div>
+            <div class="kundali-trait-val" id="traitSync3">4.9 / 5.0 • Unconditional Trust</div>
+          </div>
+        </div>
+        <a href="/app" class="btn-cta-primary" style="display:inline-flex; margin-top:10px;">
+          <span>🚀 Find Matches With This Synergy In Your City</span> ➔
+        </a>
+      </div>
+    </div>
+  </section>
+
   <!-- Features Grid -->
   <section class="features">
     <div class="feature-card">
@@ -1539,6 +2331,59 @@
       <div class="icon">🚨</div>
       <h3>Safe Date Shield</h3>
       <p>Built-in safety check-ins, verified public date spots, and instant emergency SOS triggers for peaceful real-world meetings.</p>
+    </div>
+  </section>
+
+  <!-- Real Match Love Stories / Testimonials -->
+  <section class="stories-section">
+    <div class="section-header" style="padding-top:0;">
+      <div class="section-badge">❤️ Real BlunderR Love Stories</div>
+      <h2 class="section-title">Proof That True Wavelength Exists</h2>
+      <p class="section-subtitle">Real verified couples who skipped small talk and met their match across India's top cities.</p>
+    </div>
+
+    <div class="stories-grid">
+      <div class="story-card">
+        <p class="story-quote">"We matched over her 15-second Virtual Chai audio note debating artisanal filter coffee vs aeropress. Met at Third Wave Coffee in Koramangala 3 days later, and we've been inseparable for 8 months. Best dating app experience ever."</p>
+        <div>
+          <div class="story-author">
+            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80" alt="Ananya" class="story-avatar" />
+            <div class="story-author-info">
+              <span class="story-name">Rohan (27) &amp; Ananya (25)</span>
+              <span class="story-meta">📍 Koramangala, Bengaluru</span>
+            </div>
+          </div>
+          <div class="story-tag">☕ Met via 15s Virtual Chai</div>
+        </div>
+      </div>
+
+      <div class="story-card">
+        <p class="story-quote">"As a woman dating in Mumbai, knowing every guy had completed a real 3D face scan made me feel completely safe. No fake photos, no catfish. The neighborhood circle feature helped me meet someone who actually lives 10 mins away in Bandra."</p>
+        <div>
+          <div class="story-author">
+            <img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?w=120&auto=format&fit=crop&q=80" alt="Simran" class="story-avatar" />
+            <div class="story-author-info">
+              <span class="story-name">Dev (28) &amp; Simran (26)</span>
+              <span class="story-meta">📍 Bandra West, Mumbai</span>
+            </div>
+          </div>
+          <div class="story-tag">🛡️ 100% Face Verified Match</div>
+        </div>
+      </div>
+
+      <div class="story-card">
+        <p class="story-quote">"Our Vedic Kundali score was 34/36, and it was uncanny how accurately it matched our communication styles and career ambitions. We share the same work ethic and chaotic humor. We got engaged last month in Delhi!"</p>
+        <div>
+          <div class="story-author">
+            <img src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=120&auto=format&fit=crop&q=80" alt="Aditya" class="story-avatar" />
+            <div class="story-author-info">
+              <span class="story-name">Aditya (29) &amp; Meera (27)</span>
+              <span class="story-meta">📍 Cyber Hub, Gurgaon</span>
+            </div>
+          </div>
+          <div class="story-tag">✨ 34/36 Kundali Synergy</div>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -1678,7 +2523,337 @@
     </div>
   </footer>
 
+  <!-- "It's a Match!" Interactive Celebration Modal -->
+  <div class="match-modal-backdrop" id="match-modal" onclick="if(event.target === this) closeMatchModal()">
+    <div class="match-modal-card">
+      <div class="match-avatars-row">
+        <div class="match-avatar-ring">
+          <img src="/images/hero-profile.jpg" alt="You" />
+        </div>
+        <div class="match-heart-center">❤️</div>
+        <div class="match-avatar-ring right">
+          <img id="matchPartnerAvatar" src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=160&auto=format&fit=crop&q=80" alt="Partner" />
+        </div>
+      </div>
+
+      <div class="match-modal-title">It's a <span class="highlight">Mutual Match!</span></div>
+      <div class="match-resonance-pill" id="matchResonancePill">✨ 34/36 Cosmic Kundali Synergy</div>
+      <p class="match-modal-desc" id="matchModalDesc">
+        You and <strong id="matchPartnerName" style="color:#FFF;">Kabir</strong> swiped right! Break the ice with a 15-second Virtual Chai before sharing your number.
+      </p>
+
+      <div class="match-modal-actions">
+        <a href="/app" class="btn-match-start">
+          <span>☕ Send 15s Virtual Chai (Launch Web App)</span> ➔
+        </a>
+        <button type="button" class="btn-match-dismiss" onclick="closeMatchModal()">
+          Keep Browsing Discovery Deck
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile Sticky Bottom Launch Bar -->
+  <div class="mobile-sticky-bar" id="mobileStickyBar">
+    <div class="sticky-brand-left">
+      <span style="font-size: 1.25rem;">🔥</span>
+      <div>
+        <div class="sticky-logo">Blunder<span style="color:var(--coral);">R</span></div>
+        <div class="sticky-sub">Live in Browser</div>
+      </div>
+    </div>
+    <div class="sticky-actions-right">
+      <a href="/app" class="btn-sticky-launch"><span>🚀 Open Web App</span></a>
+      <button onclick="openAppleModal()" class="btn-sticky-mini" title="iOS"></button>
+      <a href="https://expo.dev/artifacts/eas/1VbdICRgtwwG-knj2ouL9qq7aWufivcxiNRdc75npCM.apk" class="btn-sticky-mini" title="Android">🤖</a>
+    </div>
+  </div>
+
   <script>
+    /* Audio Synthesis (Web Audio API - Zero External Lag) */
+    let audioCtx = null;
+    function getAudioContext() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      return audioCtx;
+    }
+
+    function playTone(freq, type, duration, delay = 0) {
+      try {
+        const ctx = getAudioContext();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = type || 'sine';
+        osc.frequency.setValueAtTime(freq, ctx.currentTime + delay);
+        gain.gain.setValueAtTime(0.09, ctx.currentTime + delay);
+        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + delay + duration);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(ctx.currentTime + delay);
+        osc.stop(ctx.currentTime + delay + duration);
+      } catch (e) {
+        // Audio fallback
+      }
+    }
+
+    function playChaiChime() {
+      playTone(523.25, 'sine', 0.35, 0);
+      playTone(659.25, 'sine', 0.4, 0.08);
+      playTone(783.99, 'sine', 0.5, 0.16);
+      playTone(1046.50, 'sine', 0.65, 0.26);
+    }
+
+    function playMatchCelebration() {
+      [523.25, 659.25, 783.99, 987.77, 1046.50, 1318.51].forEach((f, i) => {
+        playTone(f, 'triangle', 0.7, i * 0.07);
+      });
+    }
+
+    /* Multi-Profile Discovery Deck Demo */
+    const HERO_PROFILES = [
+      {
+        name: "Aaradhya",
+        age: 24,
+        subtitle: "📍 Koramangala, Bengaluru • 3.5 km away",
+        imgJpg: "/images/hero-profile.jpg",
+        imgWebp: "/images/hero-profile.webp",
+        verifiedBadge: "🛡️ 100% Face Verified",
+        cosmicBadge: "✨ 28/36 Cosmic Chemistry",
+        voicePrompt: "Filter coffee > Americano ☕",
+        tags: ["🏙️ Tech Founders", "🥗 Pure Veg", "🎯 88% Match"]
+      },
+      {
+        name: "Kabir",
+        age: 26,
+        subtitle: "📍 Bandra West, Mumbai • 2.1 km away",
+        imgJpg: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&auto=format&fit=crop&q=80",
+        imgWebp: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&auto=format&fit=crop&q=80",
+        verifiedBadge: "🛡️ 100% Face Verified",
+        cosmicBadge: "✨ 34/36 Cosmic Chemistry",
+        voicePrompt: "Bandstand sunset runs & cutting chai 🚲",
+        tags: ["🎨 Creatives & Media", "☕ Specialty Coffee", "⚡ 95% Match"]
+      },
+      {
+        name: "Tanya",
+        age: 23,
+        subtitle: "📍 Cyber Hub, Gurgaon • 4.8 km away",
+        imgJpg: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&auto=format&fit=crop&q=80",
+        imgWebp: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&auto=format&fit=crop&q=80",
+        verifiedBadge: "🛡️ 100% Face Verified",
+        cosmicBadge: "✨ 32/36 Cosmic Chemistry",
+        voicePrompt: "Old Delhi food trails or terrace stargazing? 🌌",
+        tags: ["🏛️ Cyber Hub Execs", "📚 Book Lovers", "🎯 92% Match"]
+      }
+    ];
+
+    let currentProfileIdx = 0;
+    let likeCount = 0;
+    let chaiAudioInterval = null;
+    let isChaiPlaying = false;
+
+    function showToast(msg) {
+      const toast = document.getElementById('cardToast');
+      if (toast) {
+        toast.textContent = msg;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2200);
+      }
+    }
+
+    function createParticles(x, y, icon, count = 6) {
+      for (let i = 0; i < count; i++) {
+        const p = document.createElement('div');
+        p.className = 'floating-spark';
+        p.textContent = icon;
+        p.style.left = x + 'px';
+        p.style.top = y + 'px';
+        const angle = (Math.PI * 2 * i) / count;
+        const distance = 40 + Math.random() * 45;
+        p.style.setProperty('--tx', (Math.cos(angle) * distance) + 'px');
+        p.style.setProperty('--ty', (Math.sin(angle) * distance - 35) + 'px');
+        document.body.appendChild(p);
+        setTimeout(() => p.remove(), 850);
+      }
+    }
+
+    function handleHeroAction(action, e) {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      const rect = e && e.target ? e.target.getBoundingClientRect() : { left: window.innerWidth / 2, top: window.innerHeight / 2, width: 0, height: 0 };
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+
+      const frame = document.getElementById('phonePhotoFrame');
+
+      if (action === 'like') {
+        createParticles(cx, cy, '❤️', 8);
+        playTone(659.25, 'sine', 0.25);
+        likeCount++;
+        if (frame) frame.classList.add('swipe-right');
+        setTimeout(() => {
+          nextProfile();
+          if (likeCount >= 2) {
+            openMatchModal();
+          }
+        }, 260);
+      } else if (action === 'pass') {
+        playTone(261.63, 'sine', 0.2);
+        if (frame) frame.classList.add('swipe-left');
+        setTimeout(() => {
+          nextProfile();
+        }, 260);
+      } else if (action === 'super') {
+        createParticles(cx, cy, '⚡', 8);
+        playChaiChime();
+        showToast('⚡ Super Chai Spark Delivered to ' + HERO_PROFILES[currentProfileIdx].name + '!');
+      }
+    }
+
+    function nextProfile() {
+      currentProfileIdx = (currentProfileIdx + 1) % HERO_PROFILES.length;
+      renderProfile(currentProfileIdx);
+      const frame = document.getElementById('phonePhotoFrame');
+      if (frame) {
+        frame.classList.remove('swipe-left', 'swipe-right');
+        frame.classList.add('card-bounce');
+        setTimeout(() => frame.classList.remove('card-bounce'), 450);
+      }
+    }
+
+    function renderProfile(idx) {
+      const p = HERO_PROFILES[idx];
+      const nameEl = document.getElementById('heroName');
+      const ageEl = document.getElementById('heroAge');
+      const subEl = document.getElementById('heroSubtitle');
+      const imgEl = document.getElementById('heroPhotoImg');
+      const srcEl = document.getElementById('heroPhotoSource');
+      const vBadge = document.getElementById('heroVerifiedBadge');
+      const cBadge = document.getElementById('heroCosmicBadge');
+      const voiceTxt = document.getElementById('voicePromptText');
+      const tagsRow = document.getElementById('heroTagsRow');
+
+      if (nameEl) nameEl.textContent = p.name;
+      if (ageEl) ageEl.textContent = p.age;
+      if (subEl) subEl.textContent = p.subtitle;
+      if (imgEl) imgEl.src = p.imgJpg;
+      if (srcEl) srcEl.srcset = p.imgWebp;
+      if (vBadge) vBadge.textContent = p.verifiedBadge;
+      if (cBadge) cBadge.textContent = p.cosmicBadge;
+      if (voiceTxt) voiceTxt.textContent = '"' + p.voicePrompt + '"';
+
+      if (tagsRow) {
+        tagsRow.innerHTML = p.tags.map(t => `<span class="phone-tag">${t}</span>`).join('');
+      }
+
+      stopVirtualChaiAudio();
+    }
+
+    function toggleVirtualChaiAudio(e) {
+      if (e) e.stopPropagation();
+      if (isChaiPlaying) {
+        stopVirtualChaiAudio();
+      } else {
+        startVirtualChaiAudio();
+      }
+    }
+
+    function startVirtualChaiAudio() {
+      isChaiPlaying = true;
+      playChaiChime();
+      const player = document.getElementById('chaiVoicePlayer');
+      const playBtn = document.getElementById('voicePlayBtn');
+      const timer = document.getElementById('voiceTimer');
+      if (player) player.classList.add('playing');
+      if (playBtn) playBtn.textContent = '❚❚';
+
+      let secondsLeft = 15;
+      if (timer) timer.textContent = '0:15';
+
+      chaiAudioInterval = setInterval(() => {
+        secondsLeft--;
+        if (timer) {
+          timer.textContent = '0:' + (secondsLeft < 10 ? '0' : '') + secondsLeft;
+        }
+        if (secondsLeft % 3 === 0) {
+          playTone(480 + Math.random() * 200, 'sine', 0.12);
+        }
+        if (secondsLeft <= 0) {
+          stopVirtualChaiAudio();
+        }
+      }, 1000);
+    }
+
+    function stopVirtualChaiAudio() {
+      isChaiPlaying = false;
+      clearInterval(chaiAudioInterval);
+      const player = document.getElementById('chaiVoicePlayer');
+      const playBtn = document.getElementById('voicePlayBtn');
+      const timer = document.getElementById('voiceTimer');
+      if (player) player.classList.remove('playing');
+      if (playBtn) playBtn.textContent = '▶';
+      if (timer) timer.textContent = '0:15';
+    }
+
+    function openMatchModal() {
+      const current = HERO_PROFILES[currentProfileIdx];
+      const partnerName = document.getElementById('matchPartnerName');
+      const partnerAvatar = document.getElementById('matchPartnerAvatar');
+      const resPill = document.getElementById('matchResonancePill');
+      const matchModal = document.getElementById('match-modal');
+
+      if (partnerName) partnerName.textContent = current.name;
+      if (partnerAvatar) partnerAvatar.src = current.imgJpg;
+      if (resPill) resPill.textContent = current.cosmicBadge;
+      if (matchModal) matchModal.style.display = 'flex';
+      playMatchCelebration();
+    }
+
+    function closeMatchModal() {
+      const matchModal = document.getElementById('match-modal');
+      if (matchModal) matchModal.style.display = 'none';
+    }
+
+    /* Cosmic Kundali Synergy Calculator */
+    const KUNDALI_SYNERGIES = [
+      { score: 34, pct: "95%", vibe: "Unstoppable electric spark. Effortless humor, shared values, and immediate wavelength resonance.", b: "5.0 / 5.0", l: "4.9 / 5.0", e: "4.9 / 5.0" },
+      { score: 32, pct: "89%", vibe: "High emotional resonance & deep grounding. Comfort in silence and spontaneous weekend adventures.", b: "4.8 / 5.0", l: "4.7 / 5.0", e: "4.8 / 5.0" },
+      { score: 35, pct: "97%", vibe: "Twin flame cosmic harmony. Uncanny synchronization in communication style and lifestyle ambitions.", b: "5.0 / 5.0", l: "5.0 / 5.0", e: "4.9 / 5.0" },
+      { score: 31, pct: "86%", vibe: "Complementary magnetic balance. Where one creates, the other grounds with thoughtful warmth.", b: "4.7 / 5.0", l: "4.6 / 5.0", e: "4.8 / 5.0" }
+    ];
+
+    function calculateCosmicSynergy() {
+      playChaiChime();
+      const btn = document.querySelector('.btn-calculate-synergy');
+      if (btn) btn.innerHTML = '<span>🔮 Aligning Cosmic Orbit...</span>';
+
+      setTimeout(() => {
+        if (btn) btn.innerHTML = '<span>✨ Calculate Cosmic Synergy</span> ➔';
+        const s1 = document.getElementById('kundaliSign1').value;
+        const s2 = document.getElementById('kundaliSign2').value;
+        const idx = Math.abs((s1.length * 3 + s2.length * 7) % KUNDALI_SYNERGIES.length);
+        const data = KUNDALI_SYNERGIES[idx];
+
+        document.getElementById('kundaliScoreBanner').innerHTML = `<span>✨ ${data.score} / 36 Guna Alignment</span> &bull; <span>${data.pct} Magnetic Chemistry</span>`;
+        document.getElementById('kundaliVibeText').textContent = `"${data.vibe}"`;
+        document.getElementById('traitSync1').textContent = `${data.b} • Natural Rhythm`;
+        document.getElementById('traitSync2').textContent = `${data.l} • Harmonious`;
+        document.getElementById('traitSync3').textContent = `${data.e} • Unconditional Trust`;
+
+        const card = document.getElementById('kundaliResultCard');
+        if (card) {
+          card.style.display = 'block';
+          card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+      }, 420);
+    }
+
+    /* Standard Modals & FAQ */
     function openAppleModal() {
       document.getElementById('apple-download-modal').style.display = 'flex';
     }
@@ -1700,12 +2875,35 @@
         container.scrollBy({ left: direction * 320, behavior: 'smooth' });
       }
     }
+
+    /* Ambient Cursor Glow & Scroll Listeners */
+    const cursorGlow = document.getElementById('cursorGlow');
+    if (cursorGlow && window.matchMedia('(pointer: fine)').matches) {
+      window.addEventListener('mousemove', (e) => {
+        cursorGlow.style.left = e.clientX + 'px';
+        cursorGlow.style.top = e.clientY + 'px';
+      }, { passive: true });
+    }
+
+    const mobileStickyBar = document.getElementById('mobileStickyBar');
+    if (mobileStickyBar) {
+      window.addEventListener('scroll', () => {
+        if (window.scrollY > 380) {
+          mobileStickyBar.classList.add('visible');
+        } else {
+          mobileStickyBar.classList.remove('visible');
+        }
+      }, { passive: true });
+    }
+
     window.addEventListener('keydown', function(e) {
       if (e.key === 'Escape') {
         closeAppleModal();
         closeContactModal();
+        closeMatchModal();
       }
     });
+
     if (window.location.hash === '#download-apple') {
       openAppleModal();
     }
