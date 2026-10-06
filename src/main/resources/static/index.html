@@ -209,11 +209,11 @@
     .hero-container {
       max-width: 1260px;
       margin: 0 auto;
-      padding: 32px 30px 60px;
+      padding: 16px 24px 40px;
       display: grid;
       grid-template-columns: 1.15fr 0.85fr;
-      gap: 50px;
-      align-items: center;
+      gap: 40px;
+      align-items: flex-start;
       position: relative;
       z-index: 10;
     }
@@ -223,12 +223,12 @@
       gap: 8px;
       background: rgba(16, 185, 129, 0.12);
       border: 1px solid rgba(16, 185, 129, 0.45);
-      padding: 6px 14px;
+      padding: 5px 12px;
       border-radius: 20px;
       color: #6EE7B7;
-      font-size: 0.82rem;
+      font-size: 0.78rem;
       font-weight: 800;
-      margin-bottom: 24px;
+      margin-bottom: 12px;
       text-transform: uppercase;
       letter-spacing: 0.6px;
     }
@@ -246,10 +246,10 @@
       100% { transform: scale(0.9); opacity: 0.8; }
     }
     .hero-text h1 {
-      font-size: 3.8rem;
+      font-size: 3.4rem;
       font-weight: 900;
       color: #FFF;
-      margin-bottom: 22px;
+      margin-bottom: 14px;
       line-height: 1.12;
       letter-spacing: -1.2px;
     }
@@ -259,18 +259,53 @@
       -webkit-text-fill-color: transparent;
     }
     .hero-text p {
-      font-size: 1.22rem;
+      font-size: 1.14rem;
       color: var(--muted);
-      margin-bottom: 36px;
-      line-height: 1.65;
+      margin-bottom: 22px;
+      line-height: 1.6;
     }
 
     /* Hero CTA Group */
     .hero-cta-group {
       display: flex;
       flex-wrap: wrap;
-      gap: 16px;
-      margin-bottom: 40px;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    /* Hero Spark Callout (Social Proof in Left Column) */
+    .hero-spark-callout {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(18, 22, 38, 0.9);
+      border: 1px solid rgba(255, 56, 92, 0.4);
+      border-radius: 14px;
+      padding: 7px 16px;
+      margin-bottom: 20px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(14px);
+    }
+    .hero-spark-callout .spark-icon {
+      font-size: 1.3rem;
+      flex-shrink: 0;
+    }
+    .hero-spark-callout .spark-info {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+    .hero-spark-callout .spark-title {
+      font-size: 0.84rem;
+      font-weight: 800;
+      color: #FFF;
+      line-height: 1.25;
+    }
+    .hero-spark-callout .spark-meta {
+      font-size: 0.7rem;
+      color: var(--cyan);
+      font-weight: 600;
+      line-height: 1.25;
     }
     .btn-cta-primary {
       background: linear-gradient(135deg, var(--coral), var(--coral-hover));
@@ -392,7 +427,7 @@
     }
     .phone-photo-frame {
       position: relative;
-      height: 420px;
+      height: 380px;
       overflow: hidden;
     }
     .phone-photo-img {
@@ -484,26 +519,26 @@
       color: #F1F5F9;
     }
     .phone-action-footer {
-      padding: 16px 22px 20px;
+      padding: 12px 18px 16px;
       background: #0B0D15;
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 10px;
     }
     .phone-mini-buttons {
       display: flex;
       justify-content: center;
-      gap: 20px;
+      gap: 18px;
       align-items: center;
     }
     .mini-btn {
-      width: 52px;
-      height: 52px;
+      width: 46px;
+      height: 46px;
       border-radius: 50%;
       display: flex;
       justify-content: center;
       align-items: center;
-      font-size: 1.45rem;
+      font-size: 1.35rem;
       border: none;
       cursor: pointer;
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
@@ -532,10 +567,10 @@
       color: #FFF;
       text-decoration: none;
       text-align: center;
-      padding: 13px;
-      border-radius: 18px;
+      padding: 11px;
+      border-radius: 16px;
       font-weight: 800;
-      font-size: 1rem;
+      font-size: 0.96rem;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -1324,6 +1359,16 @@
         </button>
       </div>
 
+      <!-- Live Social Proof Spark (Moved into Left Column so Discovery Deck is 100% unblocked & elevated) -->
+      <div class="hero-spark-callout">
+        <span class="spark-icon">☕</span>
+        <div class="spark-info">
+          <span class="spark-title">"Love your chai prompt ☕"</span>
+          <span class="spark-meta">Priya matched in Koramangala • Just now</span>
+        </div>
+        <span class="satellite-tag chai">⚡ Match Spark</span>
+      </div>
+
       <div class="hero-badges-row">
         <div class="hero-tag">🛡️ 100% Real Faces</div>
         <div class="hero-tag">🏙️ Neighborhood Circles</div>
@@ -1332,19 +1377,9 @@
       </div>
     </div>
 
-    <!-- Right: Interactive Device Showcase (Apart from screen, zero overlap) -->
+    <!-- Right: Interactive Device Showcase (Cleanly anchored at top, zero blocking overhead) -->
     <div class="hero-showcase-wrapper">
-      <!-- Top Satellite Feature: Cleanly above phone screen (Zero overlap) -->
-      <div class="satellite-badge top">
-        <span class="satellite-icon">☕</span>
-        <div class="satellite-info">
-          <div class="satellite-title">"Love your chai prompt ☕"</div>
-          <div class="satellite-sub cyan">Priya matched in Koramangala • Just now</div>
-        </div>
-        <span class="satellite-tag chai">⚡ Match Spark</span>
-      </div>
-
-      <!-- Phone Shell (100% Unobstructed, every screen feature visible) -->
+      <!-- Phone Shell (100% Unobstructed, starts right at top) -->
       <div class="phone-device-card">
         <div class="phone-top-bar">
           <span style="font-size:0.85rem; font-weight:800; color:#FFF;">🔥 Discovery Deck</span>
