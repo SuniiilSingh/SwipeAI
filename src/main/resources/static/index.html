@@ -92,7 +92,7 @@
     .nav-right {
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 12px;
     }
     .nav-link {
       color: var(--muted);
@@ -110,7 +110,7 @@
       color: #FFF;
       font-weight: 800;
       font-size: 0.88rem;
-      padding: 8px 18px;
+      padding: 7px 16px;
       border-radius: 20px;
       text-decoration: none;
       display: inline-flex;
@@ -129,7 +129,7 @@
       color: #FFF;
       font-weight: 800;
       font-size: 0.88rem;
-      padding: 9px 18px;
+      padding: 8px 15px;
       border-radius: 20px;
       text-decoration: none;
       display: inline-flex;
@@ -143,6 +143,28 @@
     .btn-apk-top:hover {
       transform: translateY(-2px);
       box-shadow: 0 6px 20px rgba(255, 56, 92, 0.55);
+    }
+    .btn-apple-top {
+      background: #151826;
+      border: 1.5px solid rgba(255, 255, 255, 0.28);
+      color: #FFF;
+      font-weight: 800;
+      font-size: 0.88rem;
+      padding: 8px 15px;
+      border-radius: 20px;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .btn-apple-top:hover {
+      background: #202438;
+      border-color: #FFF;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(255, 255, 255, 0.2);
     }
 
     /* Hero Section */
@@ -194,20 +216,20 @@
     .hero-cta-group {
       display: flex;
       flex-wrap: wrap;
-      gap: 16px;
+      gap: 14px;
       margin-bottom: 36px;
     }
     .btn-cta-primary {
       background: linear-gradient(135deg, var(--coral), var(--coral-hover));
       color: #FFF;
       font-weight: 900;
-      font-size: 1.05rem;
-      padding: 15px 30px;
+      font-size: 1.02rem;
+      padding: 14px 26px;
       border-radius: 30px;
       text-decoration: none;
       display: inline-flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       box-shadow: 0 10px 28px rgba(255, 56, 92, 0.45);
       transition: all 0.2s ease;
       border: 1px solid rgba(255, 56, 92, 0.5);
@@ -221,19 +243,41 @@
       border: 1.5px solid var(--card-border-light);
       color: #FFF;
       font-weight: 800;
-      font-size: 1.05rem;
-      padding: 15px 28px;
+      font-size: 1.02rem;
+      padding: 14px 22px;
       border-radius: 30px;
       text-decoration: none;
       display: inline-flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       transition: all 0.2s ease;
+      cursor: pointer;
     }
     .btn-cta-secondary:hover {
       background: #1B1E30;
       border-color: var(--coral);
       transform: translateY(-2px);
+    }
+    .btn-cta-apple {
+      background: #101320;
+      border: 1.5px solid rgba(255, 255, 255, 0.25);
+      color: #FFF;
+      font-weight: 800;
+      font-size: 1.02rem;
+      padding: 14px 22px;
+      border-radius: 30px;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+    .btn-cta-apple:hover {
+      background: #1E2235;
+      border-color: #FFF;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 20px rgba(255, 255, 255, 0.2);
     }
 
     .hero-badges-row {
@@ -541,8 +585,102 @@
     .cta-buttons-row {
       display: flex;
       justify-content: center;
-      gap: 16px;
+      gap: 14px;
       flex-wrap: wrap;
+    }
+
+    /* ========================================================
+       APPLE IOS DOWNLOAD MODAL
+       ======================================================== */
+    .apple-modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(14px);
+      z-index: 200;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+    .apple-modal-card {
+      background: #121420;
+      border: 1.5px solid rgba(255, 255, 255, 0.25);
+      border-radius: 28px;
+      padding: 34px 28px;
+      max-width: 440px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+      position: relative;
+    }
+    .apple-modal-close {
+      position: absolute;
+      top: 18px;
+      right: 20px;
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 1.4rem;
+      cursor: pointer;
+    }
+    .apple-modal-close:hover {
+      color: #FFF;
+    }
+    .apple-logo-badge {
+      font-size: 3rem;
+      margin-bottom: 8px;
+      display: inline-block;
+    }
+    .apple-modal-title {
+      font-size: 1.8rem;
+      font-weight: 900;
+      color: #FFF;
+      margin-bottom: 6px;
+    }
+    .apple-modal-desc {
+      color: var(--muted);
+      font-size: 0.92rem;
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+    .apple-options-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      text-align: left;
+    }
+    .apple-opt-btn {
+      background: #181B2B;
+      border: 1px solid var(--card-border-light);
+      border-radius: 16px;
+      padding: 14px 16px;
+      text-decoration: none;
+      color: #FFF;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      transition: all 0.2s;
+    }
+    .apple-opt-btn:hover {
+      background: #22263C;
+      border-color: var(--coral);
+      transform: translateY(-1px);
+    }
+    .apple-opt-icon {
+      font-size: 1.8rem;
+      flex-shrink: 0;
+    }
+    .apple-opt-title {
+      font-weight: 800;
+      font-size: 0.96rem;
+      color: #FFF;
+      margin-bottom: 2px;
+    }
+    .apple-opt-sub {
+      font-size: 0.78rem;
+      color: var(--muted);
+      line-height: 1.35;
     }
 
     /* Footer */
@@ -579,10 +717,18 @@
         font-size: 2.6rem;
       }
       header {
-        padding: 0 20px;
+        padding: 0 16px;
       }
       .btn-nav-web {
         display: none;
+      }
+      .btn-apple-top {
+        padding: 7px 12px;
+        font-size: 0.82rem;
+      }
+      .btn-apk-top {
+        padding: 7px 12px;
+        font-size: 0.82rem;
       }
     }
   </style>
@@ -596,9 +742,14 @@
       <a href="/safety" class="nav-link">🛡️ Safety</a>
       <a href="/privacy" class="nav-link">Privacy</a>
       <a href="/app" class="btn-nav-web">🚀 Open Web View</a>
-      <a href="https://expo.dev/artifacts/eas/1VbdICRgtwwG-knj2ouL9qq7aWufivcxiNRdc75npCM.apk" class="btn-apk-top">
-        📱 Download APK
+      
+      <!-- Android & Apple Download Buttons -->
+      <a href="https://expo.dev/artifacts/eas/1VbdICRgtwwG-knj2ouL9qq7aWufivcxiNRdc75npCM.apk" class="btn-apk-top" title="Download Android APK">
+        🤖 Android APK
       </a>
+      <button onclick="openAppleModal()" class="btn-apple-top" title="Download Apple iOS Build">
+         Apple iOS
+      </button>
     </div>
   </header>
 
@@ -615,8 +766,11 @@
           <span>🚀 Open Web View</span> ➔
         </a>
         <a href="https://expo.dev/artifacts/eas/1VbdICRgtwwG-knj2ouL9qq7aWufivcxiNRdc75npCM.apk" class="btn-cta-secondary">
-          <span>📱 Download Android APK</span>
+          <span>🤖 Android APK</span>
         </a>
+        <button onclick="openAppleModal()" class="btn-cta-apple">
+          <span> Apple iOS Build</span>
+        </button>
       </div>
 
       <div class="hero-badges-row">
@@ -715,14 +869,53 @@
   <!-- Bottom CTA -->
   <div class="cta-banner">
     <h2>Ready to meet your true wavelength?</h2>
-    <p>Jump right into the app in your browser or download the official Android APK for offline notifications & biometric lock.</p>
+    <p>Jump right into the app in your browser or download the official app for Android or iOS.</p>
     <div class="cta-buttons-row">
       <a href="/app" class="btn-cta-primary">
         <span>🚀 Open Web View</span> ➔
       </a>
       <a href="https://expo.dev/artifacts/eas/1VbdICRgtwwG-knj2ouL9qq7aWufivcxiNRdc75npCM.apk" class="btn-cta-secondary">
-        <span>📱 Download Android APK</span>
+        <span>🤖 Download Android APK</span>
       </a>
+      <button onclick="openAppleModal()" class="btn-cta-apple">
+        <span> Download Apple iOS Build</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Apple iOS Download Modal -->
+  <div class="apple-modal-backdrop" id="apple-download-modal" onclick="if(event.target === this) closeAppleModal()">
+    <div class="apple-modal-card">
+      <button class="apple-modal-close" onclick="closeAppleModal()">✕</button>
+      <div class="apple-logo-badge"></div>
+      <div class="apple-modal-title">BlunderR for Apple iOS</div>
+      <div class="apple-modal-desc">Get the full BlunderR experience on your iPhone with 3D Biometric Liveness, Micro-Circles, and Encrypted Chai calling.</div>
+
+      <div class="apple-options-list">
+        <a href="https://testflight.apple.com" target="_blank" class="apple-opt-btn">
+          <div class="apple-opt-icon">✈️</div>
+          <div>
+            <div class="apple-opt-title">Install via Apple TestFlight</div>
+            <div class="apple-opt-sub">Official Apple public beta testing link for iOS users</div>
+          </div>
+        </a>
+
+        <a href="/app" class="apple-opt-btn">
+          <div class="apple-opt-icon">⚡</div>
+          <div>
+            <div class="apple-opt-title">Launch Web View on iPhone (Safari)</div>
+            <div class="apple-opt-sub">Instant zero-install web app. Tap Share ➔ "Add to Home Screen"</div>
+          </div>
+        </a>
+
+        <a href="https://expo.dev/accounts/blunderr/projects/blunderr-dating" target="_blank" class="apple-opt-btn">
+          <div class="apple-opt-icon">📦</div>
+          <div>
+            <div class="apple-opt-title">Direct iOS EAS Build / IPA</div>
+            <div class="apple-opt-sub">Download IPA archive for sideloading / AltStore / Xcode</div>
+          </div>
+        </a>
+      </div>
     </div>
   </div>
 
@@ -736,5 +929,20 @@
       <a href="/delete-account">Delete Account</a>
     </div>
   </footer>
+
+  <script>
+    function openAppleModal() {
+      document.getElementById('apple-download-modal').style.display = 'flex';
+    }
+    function closeAppleModal() {
+      document.getElementById('apple-download-modal').style.display = 'none';
+    }
+    window.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') closeAppleModal();
+    });
+    if (window.location.hash === '#download-apple') {
+      openAppleModal();
+    }
+  </script>
 </body>
 </html>
