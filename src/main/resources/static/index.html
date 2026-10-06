@@ -4,9 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>BlunderR — Real Connections, Zero Catfish ⚡</title>
+  <meta name="description" content="BlunderR is India's premier connection network powered by 3D Biometric Liveness Verification, Micro-Community Circles, and Encrypted Virtual Chai calls.">
   <link rel="icon" type="image/png" href="https://img.icons8.com/color/96/flame.png">
+  
+  <!-- Security: Disable Inspect & DevTools -->
   <script>
-    // Disable right-click inspect and DevTools shortcuts
     document.addEventListener('contextmenu', function(e) {
       e.preventDefault();
       return false;
@@ -23,22 +25,24 @@
       }
     });
   </script>
+
   <style>
     :root {
-      --bg: #08080E;
-      --card: #12131C;
-      --card-inner: #181A26;
-      --card-border: #1E212E;
-      --card-border-light: #2C3042;
-      --text: #F1F5F9;
-      --muted: #8E94A5;
+      --bg: #07080D;
+      --card: #11131E;
+      --card-glass: rgba(18, 20, 32, 0.75);
+      --card-border: #1E2235;
+      --card-border-light: rgba(255, 255, 255, 0.1);
+      --text: #F8FAFC;
+      --muted: #94A3B8;
       --coral: #FF385C;
       --coral-hover: #E0264B;
       --rose: #FF758C;
       --amber: #F59E0B;
       --cyan: #00E5FF;
+      --purple: #8B5CF6;
       --success: #10B981;
-      --header-h: 70px;
+      --header-h: 76px;
     }
     * {
       box-sizing: border-box;
@@ -50,30 +54,63 @@
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       background-color: var(--bg);
       color: var(--text);
-      line-height: 1.5;
+      line-height: 1.6;
       min-height: 100vh;
       overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Ambient Background Glow Orbs */
+    .ambient-glow-1 {
+      position: absolute;
+      top: -150px;
+      left: 15%;
+      width: 650px;
+      height: 650px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 56, 92, 0.18) 0%, rgba(245, 158, 11, 0.08) 50%, transparent 70%);
+      filter: blur(90px);
+      z-index: 0;
+      pointer-events: none;
+      animation: floatGlow 14s ease-in-out infinite alternate;
+    }
+    .ambient-glow-2 {
+      position: absolute;
+      top: 400px;
+      right: 5%;
+      width: 750px;
+      height: 750px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(139, 92, 246, 0.16) 0%, rgba(0, 229, 255, 0.08) 50%, transparent 70%);
+      filter: blur(110px);
+      z-index: 0;
+      pointer-events: none;
+      animation: floatGlow 18s ease-in-out infinite alternate-reverse;
+    }
+    @keyframes floatGlow {
+      0% { transform: translate(0, 0) scale(1); }
+      100% { transform: translate(40px, 30px) scale(1.1); }
     }
 
     /* Header */
     header {
       height: var(--header-h);
-      padding: 0 32px;
+      padding: 0 40px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       border-bottom: 1px solid var(--card-border);
-      background: rgba(8, 8, 14, 0.95);
-      backdrop-filter: blur(16px);
+      background: rgba(7, 8, 13, 0.88);
+      backdrop-filter: blur(20px);
       position: sticky;
       top: 0;
       z-index: 100;
     }
     .brand-wordmark {
-      font-size: 1.85rem;
+      font-size: 2rem;
       font-weight: 900;
       font-style: italic;
-      letter-spacing: -0.5px;
+      letter-spacing: -0.6px;
       background: linear-gradient(135deg, var(--coral) 0%, var(--rose) 55%, var(--amber) 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
@@ -84,20 +121,20 @@
       user-select: none;
     }
     .brand-wordmark .accent-r {
-      font-size: 2.2rem;
+      font-size: 2.35rem;
       color: var(--amber);
       -webkit-text-fill-color: var(--amber);
-      text-shadow: 0 0 16px rgba(245, 158, 11, 0.5);
+      text-shadow: 0 0 18px rgba(245, 158, 11, 0.55);
     }
     .nav-right {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 14px;
     }
     .nav-link {
       color: var(--muted);
       text-decoration: none;
-      font-size: 0.92rem;
+      font-size: 0.95rem;
       font-weight: 600;
       transition: color 0.2s;
     }
@@ -109,366 +146,374 @@
       border: 1.5px solid var(--coral);
       color: #FFF;
       font-weight: 800;
-      font-size: 0.88rem;
-      padding: 7px 16px;
+      font-size: 0.9rem;
+      padding: 8px 18px;
       border-radius: 20px;
       text-decoration: none;
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      transition: all 0.2s ease;
+      transition: all 0.25s ease;
       white-space: nowrap;
     }
     .btn-nav-web:hover {
       background: var(--coral);
       transform: translateY(-2px);
-      box-shadow: 0 4px 16px rgba(255, 56, 92, 0.4);
+      box-shadow: 0 4px 18px rgba(255, 56, 92, 0.45);
     }
     .btn-apk-top {
       background: linear-gradient(135deg, var(--coral), var(--coral-hover));
       color: #FFF;
       font-weight: 800;
-      font-size: 0.88rem;
-      padding: 8px 15px;
+      font-size: 0.9rem;
+      padding: 9px 18px;
       border-radius: 20px;
       text-decoration: none;
       display: inline-flex;
       align-items: center;
       gap: 6px;
       box-shadow: 0 4px 16px rgba(255, 56, 92, 0.35);
-      transition: all 0.2s ease;
+      transition: all 0.25s ease;
       border: 1px solid rgba(255, 56, 92, 0.5);
       white-space: nowrap;
     }
     .btn-apk-top:hover {
       transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(255, 56, 92, 0.55);
+      box-shadow: 0 6px 22px rgba(255, 56, 92, 0.6);
     }
     .btn-apple-top {
-      background: #151826;
-      border: 1.5px solid rgba(255, 255, 255, 0.28);
+      background: #141726;
+      border: 1.5px solid rgba(255, 255, 255, 0.25);
       color: #FFF;
       font-weight: 800;
-      font-size: 0.88rem;
-      padding: 8px 15px;
+      font-size: 0.9rem;
+      padding: 9px 16px;
       border-radius: 20px;
       text-decoration: none;
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      transition: all 0.2s ease;
+      transition: all 0.25s ease;
       white-space: nowrap;
       cursor: pointer;
     }
     .btn-apple-top:hover {
-      background: #202438;
+      background: #20253C;
       border-color: #FFF;
       transform: translateY(-2px);
-      box-shadow: 0 4px 16px rgba(255, 255, 255, 0.2);
+      box-shadow: 0 4px 18px rgba(255, 255, 255, 0.22);
     }
 
     /* Hero Section */
     .hero-container {
-      max-width: 1200px;
+      max-width: 1260px;
       margin: 0 auto;
-      padding: 60px 24px 70px;
+      padding: 70px 30px 80px;
       display: grid;
       grid-template-columns: 1.15fr 0.85fr;
-      gap: 50px;
+      gap: 60px;
       align-items: center;
+      position: relative;
+      z-index: 10;
     }
-    .hero-badge {
+    .hero-badge-live {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      background: rgba(255, 56, 92, 0.12);
-      border: 1px solid rgba(255, 56, 92, 0.35);
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.45);
       padding: 6px 14px;
       border-radius: 20px;
-      color: var(--coral);
+      color: #6EE7B7;
       font-size: 0.82rem;
       font-weight: 800;
-      margin-bottom: 22px;
+      margin-bottom: 24px;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.6px;
+    }
+    .live-dot-pulse {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #10B981;
+      box-shadow: 0 0 10px #10B981;
+      animation: pulseDot 2s infinite;
+    }
+    @keyframes pulseDot {
+      0% { transform: scale(0.9); opacity: 0.8; }
+      50% { transform: scale(1.3); opacity: 1; }
+      100% { transform: scale(0.9); opacity: 0.8; }
     }
     .hero-text h1 {
-      font-size: 3.4rem;
+      font-size: 3.8rem;
       font-weight: 900;
       color: #FFF;
-      margin-bottom: 20px;
-      line-height: 1.15;
-      letter-spacing: -0.8px;
+      margin-bottom: 22px;
+      line-height: 1.12;
+      letter-spacing: -1.2px;
     }
     .hero-text h1 .gradient-text {
-      background: linear-gradient(135deg, var(--coral) 0%, var(--rose) 50%, var(--amber) 100%);
+      background: linear-gradient(135deg, var(--coral) 0%, var(--rose) 45%, var(--amber) 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
     .hero-text p {
-      font-size: 1.18rem;
+      font-size: 1.22rem;
       color: var(--muted);
-      margin-bottom: 32px;
-      line-height: 1.6;
+      margin-bottom: 36px;
+      line-height: 1.65;
     }
 
-    /* Hero Actions Row */
+    /* Hero CTA Group */
     .hero-cta-group {
       display: flex;
       flex-wrap: wrap;
-      gap: 14px;
-      margin-bottom: 36px;
+      gap: 16px;
+      margin-bottom: 40px;
     }
     .btn-cta-primary {
       background: linear-gradient(135deg, var(--coral), var(--coral-hover));
       color: #FFF;
       font-weight: 900;
-      font-size: 1.02rem;
-      padding: 14px 26px;
+      font-size: 1.08rem;
+      padding: 16px 32px;
       border-radius: 30px;
       text-decoration: none;
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      box-shadow: 0 10px 28px rgba(255, 56, 92, 0.45);
-      transition: all 0.2s ease;
-      border: 1px solid rgba(255, 56, 92, 0.5);
+      gap: 10px;
+      box-shadow: 0 12px 32px rgba(255, 56, 92, 0.45);
+      transition: all 0.25s ease;
+      border: 1px solid rgba(255, 56, 92, 0.6);
+      position: relative;
+      overflow: hidden;
     }
     .btn-cta-primary:hover {
       transform: translateY(-2px);
-      box-shadow: 0 14px 34px rgba(255, 56, 92, 0.6);
+      box-shadow: 0 16px 40px rgba(255, 56, 92, 0.65);
     }
     .btn-cta-secondary {
-      background: #141724;
+      background: #121524;
       border: 1.5px solid var(--card-border-light);
       color: #FFF;
       font-weight: 800;
-      font-size: 1.02rem;
-      padding: 14px 22px;
+      font-size: 1.05rem;
+      padding: 15px 24px;
       border-radius: 30px;
       text-decoration: none;
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      transition: all 0.2s ease;
+      transition: all 0.25s ease;
       cursor: pointer;
     }
     .btn-cta-secondary:hover {
-      background: #1B1E30;
+      background: #1C2034;
       border-color: var(--coral);
       transform: translateY(-2px);
     }
     .btn-cta-apple {
-      background: #101320;
-      border: 1.5px solid rgba(255, 255, 255, 0.25);
+      background: #0E111E;
+      border: 1.5px solid rgba(255, 255, 255, 0.28);
       color: #FFF;
       font-weight: 800;
-      font-size: 1.02rem;
-      padding: 14px 22px;
+      font-size: 1.05rem;
+      padding: 15px 24px;
       border-radius: 30px;
       text-decoration: none;
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      transition: all 0.2s ease;
+      transition: all 0.25s ease;
       cursor: pointer;
     }
     .btn-cta-apple:hover {
-      background: #1E2235;
+      background: #1B2036;
       border-color: #FFF;
       transform: translateY(-2px);
-      box-shadow: 0 4px 20px rgba(255, 255, 255, 0.2);
+      box-shadow: 0 6px 24px rgba(255, 255, 255, 0.22);
     }
 
     .hero-badges-row {
       display: flex;
       flex-wrap: wrap;
-      gap: 10px;
+      gap: 12px;
     }
     .hero-tag {
-      background: #141624;
+      background: rgba(18, 21, 34, 0.85);
       border: 1px solid var(--card-border);
-      padding: 8px 14px;
-      border-radius: 12px;
-      font-size: 0.88rem;
-      color: #CAD0DE;
+      padding: 9px 16px;
+      border-radius: 14px;
+      font-size: 0.9rem;
+      color: #E2E8F0;
       font-weight: 600;
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
+      backdrop-filter: blur(8px);
     }
 
-    /* Right: App Preview Card Showcase */
-    .preview-card-wrapper {
+    /* Right: Interactive 3D Card Showcase */
+    .hero-showcase-wrapper {
       position: relative;
-      max-width: 420px;
+      max-width: 440px;
       margin: 0 auto;
     }
-    .preview-card-wrapper::before {
-      content: "";
-      position: absolute;
-      inset: -12px;
-      border-radius: 36px;
-      background: radial-gradient(circle, rgba(255, 56, 92, 0.25) 0%, rgba(245, 158, 11, 0.1) 60%, transparent 80%);
-      z-index: 0;
-      filter: blur(20px);
-    }
-    .preview-phone-card {
-      position: relative;
-      z-index: 1;
-      background: #0E1019;
-      border: 2px solid var(--card-border-light);
-      border-radius: 32px;
+    .phone-device-card {
+      background: #0B0D15;
+      border: 2px solid rgba(255, 255, 255, 0.14);
+      border-radius: 38px;
       overflow: hidden;
-      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8);
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.85), 0 0 50px rgba(255, 56, 92, 0.25);
+      position: relative;
+      z-index: 10;
     }
-    .preview-card-header {
-      padding: 14px 20px;
+    .phone-top-bar {
+      padding: 14px 22px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: #141724;
+      background: #121524;
       border-bottom: 1px solid var(--card-border);
     }
-    .preview-pill-live {
-      font-size: 0.76rem;
+    .phone-pill-live {
+      font-size: 0.78rem;
       font-weight: 800;
       color: #6EE7B7;
       background: rgba(16, 185, 129, 0.2);
       border: 1px solid rgba(16, 185, 129, 0.5);
       padding: 3px 10px;
       border-radius: 12px;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
     }
-    .preview-photo-frame {
+    .phone-photo-frame {
       position: relative;
-      height: 380px;
+      height: 420px;
       overflow: hidden;
     }
-    .preview-photo {
+    .phone-photo-img {
       width: 100%;
       height: 100%;
       object-fit: cover;
       object-position: top center;
     }
-    .preview-photo-gradient {
+    .phone-photo-gradient {
       position: absolute;
       inset: 0;
       background: linear-gradient(
         180deg,
-        rgba(14, 16, 25, 0.2) 0%,
-        rgba(14, 16, 25, 0) 35%,
-        rgba(14, 16, 25, 0.7) 70%,
-        rgba(14, 16, 25, 0.98) 95%
+        rgba(11, 13, 21, 0.25) 0%,
+        rgba(11, 13, 21, 0) 35%,
+        rgba(11, 13, 21, 0.7) 68%,
+        rgba(11, 13, 21, 0.98) 96%
       );
     }
-    .preview-overlay-badges {
+    .phone-overlay-badges {
       position: absolute;
-      top: 14px;
-      left: 14px;
+      top: 16px;
+      left: 16px;
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 7px;
       z-index: 5;
     }
-    .overlay-badge {
-      backdrop-filter: blur(8px);
-      font-size: 0.74rem;
+    .glass-badge {
+      backdrop-filter: blur(10px);
+      font-size: 0.76rem;
       font-weight: 800;
-      padding: 4px 10px;
-      border-radius: 12px;
+      padding: 5px 12px;
+      border-radius: 14px;
       display: inline-flex;
       align-items: center;
-      gap: 4px;
+      gap: 5px;
     }
-    .overlay-badge.verified {
-      background: rgba(16, 185, 129, 0.25);
-      border: 1px solid rgba(16, 185, 129, 0.6);
+    .glass-badge.verified {
+      background: rgba(16, 185, 129, 0.28);
+      border: 1px solid rgba(16, 185, 129, 0.65);
       color: #6EE7B7;
     }
-    .overlay-badge.cosmic {
-      background: rgba(245, 158, 11, 0.25);
-      border: 1px solid rgba(245, 158, 11, 0.6);
+    .glass-badge.cosmic {
+      background: rgba(245, 158, 11, 0.28);
+      border: 1px solid rgba(245, 158, 11, 0.65);
       color: #FCD34D;
     }
-    .preview-info-box {
+    .phone-info-content {
       position: absolute;
-      bottom: 14px;
-      left: 16px;
-      right: 16px;
+      bottom: 16px;
+      left: 18px;
+      right: 18px;
       z-index: 5;
     }
-    .preview-name-row {
+    .phone-name-row {
       display: flex;
       align-items: baseline;
       gap: 8px;
     }
-    .preview-name {
-      font-size: 1.6rem;
+    .phone-name {
+      font-size: 1.75rem;
       font-weight: 900;
       color: #FFF;
     }
-    .preview-age {
-      font-size: 1.3rem;
+    .phone-age {
+      font-size: 1.35rem;
       font-weight: 700;
       color: #CBD5E1;
     }
-    .preview-subtitle {
-      font-size: 0.88rem;
+    .phone-subtitle {
+      font-size: 0.9rem;
       color: #94A3B8;
       font-weight: 600;
-      margin-bottom: 6px;
+      margin-bottom: 8px;
     }
-    .preview-tags-row {
+    .phone-tags-row {
       display: flex;
       gap: 6px;
       flex-wrap: wrap;
     }
-    .preview-tag {
+    .phone-tag {
       background: rgba(255, 255, 255, 0.12);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      padding: 3px 8px;
-      border-radius: 10px;
-      font-size: 0.74rem;
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 0.76rem;
       font-weight: 700;
       color: #F1F5F9;
     }
-
-    /* Preview Card Footer Action Buttons */
-    .preview-controls-row {
-      padding: 14px 20px 18px;
-      background: #0E1019;
+    .phone-action-footer {
+      padding: 16px 22px 20px;
+      background: #0B0D15;
       display: flex;
       flex-direction: column;
       gap: 14px;
     }
-    .preview-buttons-mini {
+    .phone-mini-buttons {
       display: flex;
       justify-content: center;
-      gap: 18px;
+      gap: 20px;
       align-items: center;
     }
     .mini-btn {
-      width: 48px;
-      height: 48px;
+      width: 52px;
+      height: 52px;
       border-radius: 50%;
       display: flex;
       justify-content: center;
       align-items: center;
-      font-size: 1.35rem;
+      font-size: 1.45rem;
       border: none;
       cursor: pointer;
-      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+      transition: transform 0.2s;
+    }
+    .mini-btn:hover {
+      transform: scale(1.08);
     }
     .mini-btn.pass {
-      background: #181926;
+      background: #181B2B;
       border: 1.5px solid rgba(239, 68, 68, 0.4);
       color: #EF4444;
     }
     .mini-btn.super {
-      background: #181926;
+      background: #181B2B;
       border: 1.5px solid rgba(245, 158, 11, 0.4);
       color: var(--amber);
     }
@@ -482,136 +527,289 @@
       color: #FFF;
       text-decoration: none;
       text-align: center;
-      padding: 12px;
-      border-radius: 16px;
+      padding: 13px;
+      border-radius: 18px;
       font-weight: 800;
-      font-size: 0.95rem;
+      font-size: 1rem;
       display: flex;
       justify-content: center;
       align-items: center;
       gap: 8px;
-      box-shadow: 0 4px 18px rgba(255, 56, 92, 0.35);
-      transition: all 0.2s;
+      box-shadow: 0 6px 20px rgba(255, 56, 92, 0.4);
+      transition: all 0.25s;
     }
     .btn-launch-preview:hover {
       transform: translateY(-2px);
-      box-shadow: 0 8px 24px rgba(255, 56, 92, 0.55);
+      box-shadow: 0 10px 28px rgba(255, 56, 92, 0.6);
     }
 
-    /* Features Section */
+    /* Floating Glass Social Proof Badges */
+    .float-badge-1 {
+      position: absolute;
+      top: -24px;
+      left: -30px;
+      background: rgba(20, 24, 38, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 18px;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 14px 34px rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(14px);
+      z-index: 20;
+      animation: floatBadge 6s ease-in-out infinite alternate;
+    }
+    .float-badge-2 {
+      position: absolute;
+      bottom: 70px;
+      right: -35px;
+      background: rgba(20, 24, 38, 0.9);
+      border: 1px solid rgba(16, 185, 129, 0.5);
+      border-radius: 18px;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 14px 34px rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(14px);
+      z-index: 20;
+      animation: floatBadge 7s ease-in-out infinite alternate-reverse;
+    }
+    @keyframes floatBadge {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(-10px); }
+    }
+
+    /* Neighborhood Ticker Marquee */
+    .ticker-section {
+      border-top: 1px solid var(--card-border);
+      border-bottom: 1px solid var(--card-border);
+      background: rgba(14, 16, 26, 0.6);
+      padding: 18px 0;
+      overflow: hidden;
+      white-space: nowrap;
+      position: relative;
+      z-index: 10;
+    }
+    .ticker-track {
+      display: inline-flex;
+      gap: 20px;
+      animation: scrollTicker 30s linear infinite;
+    }
+    @keyframes scrollTicker {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+    .ticker-pill {
+      background: #151828;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 7px 18px;
+      border-radius: 20px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: #CAD0DE;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Comparison Table Section */
+    .compare-section {
+      max-width: 1080px;
+      margin: 80px auto;
+      padding: 0 24px;
+      position: relative;
+      z-index: 10;
+    }
+    .compare-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      overflow: hidden;
+      background: #0F121E;
+      margin-top: 30px;
+    }
+    .compare-table th, .compare-table td {
+      padding: 18px 24px;
+      text-align: left;
+      border-bottom: 1px solid #1C2032;
+    }
+    .compare-table th {
+      background: #141728;
+      font-size: 1rem;
+      font-weight: 800;
+      color: #FFF;
+    }
+    .compare-table th.highlight-col, .compare-table td.highlight-col {
+      background: rgba(255, 56, 92, 0.08);
+      border-left: 1px solid rgba(255, 56, 92, 0.3);
+      border-right: 1px solid rgba(255, 56, 92, 0.3);
+      color: #FFF;
+      font-weight: 700;
+    }
+    .compare-table td.muted-col {
+      color: #64748B;
+    }
+
+    /* Features Section Below */
     .section-header {
       text-align: center;
-      padding: 60px 24px 20px;
-      max-width: 800px;
+      padding: 70px 24px 20px;
+      max-width: 840px;
       margin: 0 auto;
+      position: relative;
+      z-index: 10;
     }
     .section-badge {
       color: var(--cyan);
-      font-size: 0.85rem;
+      font-size: 0.88rem;
       font-weight: 800;
       text-transform: uppercase;
-      letter-spacing: 0.8px;
-      margin-bottom: 8px;
+      letter-spacing: 0.9px;
+      margin-bottom: 10px;
     }
     .section-title {
-      font-size: 2.4rem;
+      font-size: 2.6rem;
       font-weight: 900;
       color: #FFF;
-      letter-spacing: -0.6px;
-      margin-bottom: 12px;
+      letter-spacing: -0.8px;
+      margin-bottom: 14px;
     }
     .section-subtitle {
       color: var(--muted);
-      font-size: 1.1rem;
+      font-size: 1.15rem;
     }
     .features {
-      max-width: 1140px;
-      margin: 30px auto 90px;
+      max-width: 1180px;
+      margin: 40px auto 90px;
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-      gap: 24px;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 26px;
       padding: 0 24px;
+      position: relative;
+      z-index: 10;
     }
     .feature-card {
       background: var(--card);
       border: 1px solid var(--card-border);
-      padding: 34px 28px;
-      border-radius: 20px;
-      transition: transform 0.2s, border-color 0.2s;
+      padding: 36px 30px;
+      border-radius: 24px;
+      transition: transform 0.25s, border-color 0.25s;
     }
     .feature-card:hover {
-      transform: translateY(-4px);
-      border-color: rgba(255, 56, 92, 0.45);
+      transform: translateY(-5px);
+      border-color: rgba(255, 56, 92, 0.55);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
     }
     .feature-card .icon {
-      font-size: 2.4rem;
-      margin-bottom: 16px;
+      font-size: 2.6rem;
+      margin-bottom: 18px;
       display: inline-block;
     }
     .feature-card h3 {
       color: #FFF;
-      font-size: 1.35rem;
+      font-size: 1.4rem;
       font-weight: 800;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
     }
     .feature-card p {
       color: var(--muted);
-      font-size: 0.98rem;
-      line-height: 1.6;
+      font-size: 1rem;
+      line-height: 1.65;
     }
 
-    /* Trust & CTA Banner */
-    .cta-banner {
-      max-width: 1060px;
+    /* FAQ Section */
+    .faq-section {
+      max-width: 860px;
       margin: 0 auto 90px;
-      background: linear-gradient(135deg, #1A121E, #141624);
-      border: 1px solid #2B2538;
-      border-radius: 28px;
-      padding: 50px 36px;
+      padding: 0 24px;
+      position: relative;
+      z-index: 10;
+    }
+    .faq-item {
+      background: #111422;
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      margin-bottom: 14px;
+      overflow: hidden;
+      cursor: pointer;
+    }
+    .faq-q {
+      padding: 20px 24px;
+      font-weight: 800;
+      font-size: 1.08rem;
+      color: #FFF;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .faq-a {
+      padding: 0 24px 20px;
+      color: var(--muted);
+      font-size: 0.98rem;
+      line-height: 1.6;
+      display: none;
+    }
+    .faq-item.active .faq-a {
+      display: block;
+    }
+
+    /* Bottom Grand CTA Banner */
+    .cta-banner {
+      max-width: 1100px;
+      margin: 0 auto 100px;
+      background: linear-gradient(135deg, #1C1222, #14182B);
+      border: 1.5px solid rgba(255, 56, 92, 0.35);
+      border-radius: 32px;
+      padding: 56px 40px;
       text-align: center;
+      position: relative;
+      z-index: 10;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
     }
     .cta-banner h2 {
-      font-size: 2.3rem;
+      font-size: 2.6rem;
       font-weight: 900;
       color: #FFF;
-      margin-bottom: 14px;
+      margin-bottom: 16px;
     }
     .cta-banner p {
       color: var(--muted);
-      font-size: 1.1rem;
-      max-width: 600px;
-      margin: 0 auto 28px;
+      font-size: 1.15rem;
+      max-width: 640px;
+      margin: 0 auto 32px;
     }
     .cta-buttons-row {
       display: flex;
       justify-content: center;
-      gap: 14px;
+      gap: 16px;
       flex-wrap: wrap;
     }
 
-    /* ========================================================
-       APPLE IOS DOWNLOAD MODAL
-       ======================================================== */
+    /* Apple Modal */
     .apple-modal-backdrop {
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.85);
-      backdrop-filter: blur(14px);
+      background: rgba(0, 0, 0, 0.88);
+      backdrop-filter: blur(16px);
       z-index: 200;
       justify-content: center;
       align-items: center;
       padding: 20px;
     }
     .apple-modal-card {
-      background: #121420;
+      background: #111422;
       border: 1.5px solid rgba(255, 255, 255, 0.25);
       border-radius: 28px;
-      padding: 34px 28px;
+      padding: 36px 30px;
       max-width: 440px;
       width: 100%;
       text-align: center;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+      box-shadow: 0 25px 70px rgba(0, 0, 0, 0.9);
       position: relative;
     }
     .apple-modal-close {
@@ -624,23 +822,19 @@
       font-size: 1.4rem;
       cursor: pointer;
     }
-    .apple-modal-close:hover {
-      color: #FFF;
-    }
     .apple-logo-badge {
-      font-size: 3rem;
-      margin-bottom: 8px;
-      display: inline-block;
+      font-size: 3.2rem;
+      margin-bottom: 10px;
     }
     .apple-modal-title {
-      font-size: 1.8rem;
+      font-size: 1.85rem;
       font-weight: 900;
       color: #FFF;
       margin-bottom: 6px;
     }
     .apple-modal-desc {
       color: var(--muted);
-      font-size: 0.92rem;
+      font-size: 0.94rem;
       margin-bottom: 24px;
       line-height: 1.5;
     }
@@ -651,10 +845,10 @@
       text-align: left;
     }
     .apple-opt-btn {
-      background: #181B2B;
+      background: #181C2E;
       border: 1px solid var(--card-border-light);
       border-radius: 16px;
-      padding: 14px 16px;
+      padding: 14px 18px;
       text-decoration: none;
       color: #FFF;
       display: flex;
@@ -663,22 +857,22 @@
       transition: all 0.2s;
     }
     .apple-opt-btn:hover {
-      background: #22263C;
+      background: #232840;
       border-color: var(--coral);
-      transform: translateY(-1px);
+      transform: translateY(-2px);
     }
     .apple-opt-icon {
-      font-size: 1.8rem;
+      font-size: 1.9rem;
       flex-shrink: 0;
     }
     .apple-opt-title {
       font-weight: 800;
-      font-size: 0.96rem;
+      font-size: 0.98rem;
       color: #FFF;
       margin-bottom: 2px;
     }
     .apple-opt-sub {
-      font-size: 0.78rem;
+      font-size: 0.8rem;
       color: var(--muted);
       line-height: 1.35;
     }
@@ -686,16 +880,18 @@
     /* Footer */
     footer {
       border-top: 1px solid var(--card-border);
-      padding: 48px 24px 38px;
+      padding: 50px 24px 40px;
       text-align: center;
       color: var(--muted);
-      font-size: 0.92rem;
+      font-size: 0.94rem;
+      position: relative;
+      z-index: 10;
     }
     footer .legal-links {
-      margin-top: 14px;
+      margin-top: 16px;
       display: flex;
       justify-content: center;
-      gap: 20px;
+      gap: 24px;
       flex-wrap: wrap;
     }
     footer a {
@@ -707,33 +903,32 @@
       color: var(--coral);
     }
 
-    @media (max-width: 900px) {
+    @media (max-width: 960px) {
       .hero-container {
         grid-template-columns: 1fr;
         padding: 40px 20px;
-        gap: 40px;
+        gap: 50px;
       }
       .hero-text h1 {
-        font-size: 2.6rem;
+        font-size: 2.8rem;
       }
       header {
-        padding: 0 16px;
+        padding: 0 18px;
       }
       .btn-nav-web {
         display: none;
       }
-      .btn-apple-top {
-        padding: 7px 12px;
-        font-size: 0.82rem;
-      }
-      .btn-apk-top {
-        padding: 7px 12px;
-        font-size: 0.82rem;
+      .float-badge-1, .float-badge-2 {
+        display: none;
       }
     }
   </style>
 </head>
 <body>
+  <!-- Ambient Lighting Effects -->
+  <div class="ambient-glow-1"></div>
+  <div class="ambient-glow-2"></div>
+
   <!-- Header -->
   <header>
     <a href="/" class="brand-wordmark">Blunder<span class="accent-r">R</span></a>
@@ -756,11 +951,16 @@
   <!-- Hero Section -->
   <main class="hero-container">
     <div class="hero-text">
-      <div class="hero-badge">⚡ Real Connections • Zero Catfish</div>
+      <div class="hero-badge-live">
+        <div class="live-dot-pulse"></div>
+        <span>LIVE IN BROWSER • ZERO CATFISH GUARANTEE</span>
+      </div>
+
       <h1>Meet On Your <span class="gradient-text">True Wavelength.</span></h1>
-      <p>India's high-intent connection network powered by 3D Biometric Liveness Verification, Micro-Community Circles, and Encrypted Virtual Chai calls.</p>
       
-      <!-- Call to Action Buttons -->
+      <p>India’s premier connection network. 3D Biometric Liveness eliminates catfish profiles, Micro-Community Circles connect your neighborhood tribes, and Vedic Cosmic Kundali reveals genuine emotional resonance.</p>
+      
+      <!-- High-Impact Action Buttons -->
       <div class="hero-cta-group">
         <a href="/app" class="btn-cta-primary">
           <span>🚀 Open Web View</span> ➔
@@ -776,44 +976,62 @@
       <div class="hero-badges-row">
         <div class="hero-tag">🛡️ 100% Real Faces</div>
         <div class="hero-tag">🏙️ Neighborhood Circles</div>
-        <div class="hero-tag">☕ 15s Chai Notes</div>
+        <div class="hero-tag">☕ 15s Virtual Chai</div>
         <div class="hero-tag">✨ Vedic Synergy</div>
       </div>
     </div>
 
-    <!-- Right: App Discovery Preview Card -->
-    <div class="preview-card-wrapper">
-      <div class="preview-phone-card">
-        <div class="preview-card-header">
+    <!-- Right: 3D Interactive Card Showcase -->
+    <div class="hero-showcase-wrapper">
+      <!-- Floating Glass Social Proof Badges -->
+      <div class="float-badge-1">
+        <span style="font-size:1.4rem;">💬</span>
+        <div style="font-size:0.8rem; font-weight:700;">
+          <div style="color:#FFF;">"Love your chai prompt ☕"</div>
+          <div style="color:var(--cyan); font-size:0.7rem;">Priya matched just now</div>
+        </div>
+      </div>
+
+      <div class="float-badge-2">
+        <span style="font-size:1.4rem;">🛡️</span>
+        <div style="font-size:0.8rem; font-weight:700;">
+          <div style="color:#FFF;">3D Biometric Liveness Passed</div>
+          <div style="color:#6EE7B7; font-size:0.7rem;">100% Genuine Human Verified</div>
+        </div>
+      </div>
+
+      <!-- Phone Shell -->
+      <div class="phone-device-card">
+        <div class="phone-top-bar">
           <span style="font-size:0.85rem; font-weight:800; color:#FFF;">🔥 Discovery Deck</span>
-          <span class="preview-pill-live">● Live in Browser</span>
+          <span class="phone-pill-live">● Live in Browser</span>
         </div>
 
-        <div class="preview-photo-frame">
-          <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800" alt="Profile" class="preview-photo" />
-          <div class="preview-photo-gradient"></div>
+        <div class="phone-photo-frame">
+          <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800" alt="Profile" class="phone-photo-img" />
+          <div class="phone-photo-gradient"></div>
 
-          <div class="preview-overlay-badges">
-            <span class="overlay-badge verified">🛡️ 100% Face Verified</span>
-            <span class="overlay-badge cosmic">✨ 28/36 Cosmic Chemistry</span>
+          <div class="phone-overlay-badges">
+            <span class="glass-badge verified">🛡️ 100% Face Verified</span>
+            <span class="glass-badge cosmic">✨ 28/36 Cosmic Chemistry</span>
           </div>
 
-          <div class="preview-info-box">
-            <div class="preview-name-row">
-              <span class="preview-name">Aaradhya</span>
-              <span class="preview-age">24</span>
+          <div class="phone-info-content">
+            <div class="phone-name-row">
+              <span class="phone-name">Aaradhya</span>
+              <span class="phone-age">24</span>
             </div>
-            <div class="preview-subtitle">📍 Koramangala, Bengaluru • 3.5 km away</div>
-            <div class="preview-tags-row">
-              <span class="preview-tag">🏙️ Tech Founders</span>
-              <span class="preview-tag">🥗 Pure Veg</span>
-              <span class="preview-tag">🎯 88% Match</span>
+            <div class="phone-subtitle">📍 Koramangala, Bengaluru • 3.5 km away</div>
+            <div class="phone-tags-row">
+              <span class="phone-tag">🏙️ Tech Founders</span>
+              <span class="phone-tag">🥗 Pure Veg</span>
+              <span class="phone-tag">🎯 88% Match</span>
             </div>
           </div>
         </div>
 
-        <div class="preview-controls-row">
-          <div class="preview-buttons-mini">
+        <div class="phone-action-footer">
+          <div class="phone-mini-buttons">
             <button class="mini-btn pass" title="Pass">✕</button>
             <button class="mini-btn super" title="Super Spark">⚡</button>
             <button class="mini-btn like" title="Like">❤️</button>
@@ -826,13 +1044,73 @@
     </div>
   </main>
 
-  <!-- Features Section Below -->
-  <div class="section-header">
-    <div class="section-badge">✨ Groundbreaking Architecture</div>
-    <h2 class="section-title">Built Different for Real Resonance</h2>
-    <p class="section-subtitle">Dating in India shouldn't feel like an endless swipe casino. Here is how BlunderR changes everything.</p>
+  <!-- Neighborhood Circles Marquee Ticker -->
+  <div class="ticker-section">
+    <div class="ticker-track">
+      <div class="ticker-pill">💻 Koramangala Tech Founders</div>
+      <div class="ticker-pill">🎨 Bandra Creatives & Designers</div>
+      <div class="ticker-pill">⚡ HSR Unicorn Coders</div>
+      <div class="ticker-pill">☕ Indiranagar Cafe Hoppers</div>
+      <div class="ticker-pill">🏛️ Cyber Hub Execs</div>
+      <div class="ticker-pill">📚 Church Street Book Lovers</div>
+      <div class="ticker-pill">🏔️ Powai Lake Runners</div>
+      <div class="ticker-pill">💻 Koramangala Tech Founders</div>
+      <div class="ticker-pill">🎨 Bandra Creatives & Designers</div>
+      <div class="ticker-pill">⚡ HSR Unicorn Coders</div>
+      <div class="ticker-pill">☕ Indiranagar Cafe Hoppers</div>
+      <div class="ticker-pill">🏛️ Cyber Hub Execs</div>
+      <div class="ticker-pill">📚 Church Street Book Lovers</div>
+      <div class="ticker-pill">🏔️ Powai Lake Runners</div>
+    </div>
   </div>
 
+  <!-- Comparison Section: Why BlunderR vs Others -->
+  <section class="compare-section">
+    <div class="section-header" style="padding-top:0;">
+      <div class="section-badge">✨ Groundbreaking Difference</div>
+      <h2 class="section-title">Built Different for Real Resonance</h2>
+      <p class="section-subtitle">Dating in India shouldn't feel like an endless swipe casino. Here is why BlunderR wins.</p>
+    </div>
+
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>Key Experience</th>
+          <th class="highlight-col">⚡ BlunderR</th>
+          <th>Traditional Dating Apps</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Catfish & Bot Protection</td>
+          <td class="highlight-col">🛡️ 100% 3D Biometric Liveness Face Verified</td>
+          <td class="muted-col">40%+ fake bots, catfish & stolen photos</td>
+        </tr>
+        <tr>
+          <td>Daily Swipe Fatigue</td>
+          <td class="highlight-col">🎯 25 High-Intent Daily Cap (Quality First)</td>
+          <td class="muted-col">Endless mindless swipe casino addiction</td>
+        </tr>
+        <tr>
+          <td>Icebreakers & Spark</td>
+          <td class="highlight-col">☕ 15s Encrypted Virtual Chai Voice Notes</td>
+          <td class="muted-col">Dead conversations and ghosted "Hey" messages</td>
+        </tr>
+        <tr>
+          <td>Emotional Synergy</td>
+          <td class="highlight-col">✨ Vedic Cosmic Synastry + Psychological Desires</td>
+          <td class="muted-col">Surface-level photos with zero wavelength match</td>
+        </tr>
+        <tr>
+          <td>Neighborhood Tribes</td>
+          <td class="highlight-col">🏙️ Filter by Koramangala, Indiranagar, Bandra, etc.</td>
+          <td class="muted-col">Random city-wide radius noise</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Features Grid -->
   <section class="features">
     <div class="feature-card">
       <div class="icon">🛡️</div>
@@ -866,7 +1144,35 @@
     </div>
   </section>
 
-  <!-- Bottom CTA -->
+  <!-- Interactive FAQ Section -->
+  <section class="faq-section">
+    <div class="section-header" style="padding-top:0;">
+      <div class="section-badge">💬 Frequently Asked Questions</div>
+      <h2 class="section-title">Everything You Need to Know</h2>
+    </div>
+
+    <div class="faq-item active" onclick="toggleFaq(this)">
+      <div class="faq-q">Can I use BlunderR directly on the web without installing an app? <span>▾</span></div>
+      <div class="faq-a">Yes! Click <strong>"Open Web View"</strong> anywhere on this page to launch the complete interactive experience directly in Chrome, Safari, or Edge. You can swipe profiles, join Micro-Circles, match, and chat instantly.</div>
+    </div>
+
+    <div class="faq-item" onclick="toggleFaq(this)">
+      <div class="faq-q">How does 3D Biometric Liveness prevent catfish profiles? <span>▾</span></div>
+      <div class="faq-a">During onboarding, BlunderR conducts a fast 3-second 3D liveness scan to verify that the person behind the camera is genuine and matches their uploaded photos. Zero AI deepfakes, bots, or stolen Instagram photos are permitted.</div>
+    </div>
+
+    <div class="faq-item" onclick="toggleFaq(this)">
+      <div class="faq-q">What are Micro-Community Circles? <span>▾</span></div>
+      <div class="faq-a">Circles allow you to filter candidates by your actual hyper-local lifestyle—such as Bengaluru Tech Founders, Bandra Creatives, or DMRC Yellow Line commuters—ensuring you meet people who share your daily wavelength.</div>
+    </div>
+
+    <div class="faq-item" onclick="toggleFaq(this)">
+      <div class="faq-q">How do I download the Android and iOS builds? <span>▾</span></div>
+      <div class="faq-a">You can tap <strong>"Android APK"</strong> to download the official Android build directly, or tap <strong>"Apple iOS"</strong> to join the TestFlight beta or install BlunderR as an iPhone home screen web app.</div>
+    </div>
+  </section>
+
+  <!-- Bottom CTA Banner -->
   <div class="cta-banner">
     <h2>Ready to meet your true wavelength?</h2>
     <p>Jump right into the app in your browser or download the official app for Android or iOS.</p>
@@ -936,6 +1242,9 @@
     }
     function closeAppleModal() {
       document.getElementById('apple-download-modal').style.display = 'none';
+    }
+    function toggleFaq(el) {
+      el.classList.toggle('active');
     }
     window.addEventListener('keydown', function(e) {
       if (e.key === 'Escape') closeAppleModal();
