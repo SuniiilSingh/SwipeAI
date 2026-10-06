@@ -1773,27 +1773,55 @@
       }
       .hero-container {
         grid-template-columns: 1fr;
-        padding: 24px 18px 40px;
-        gap: 36px;
+        padding: 20px 16px 36px;
+        gap: 28px;
+        align-items: center;
+      }
+      .hero-text {
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .hero-badge-live {
+        margin-left: auto;
+        margin-right: auto;
       }
       .hero-text h1 {
-        font-size: 2.8rem;
+        font-size: 2.35rem;
+        letter-spacing: -0.8px;
+        line-height: 1.15;
+      }
+      .hero-text p {
+        font-size: 1rem;
+        line-height: 1.5;
+        max-width: 540px;
+      }
+      .hero-cta-group {
+        justify-content: center;
+        width: 100%;
+      }
+      .hero-spark-callout {
+        margin-left: auto;
+        margin-right: auto;
+        max-width: 100%;
+      }
+      .hero-badges-row {
+        justify-content: center;
       }
       header {
-        padding: 0 18px;
+        padding: 0 16px;
+      }
+      .nav-right .nav-link {
+        display: none;
       }
       .btn-nav-web {
         display: none;
       }
-      .satellite-badge.top {
-        max-width: 300px;
-        padding: 5px 12px;
-        margin-bottom: 6px;
-      }
-      .satellite-badge.bottom {
-        max-width: 310px;
+      .btn-apk-top, .btn-apple-top {
         padding: 6px 12px;
-        margin-top: 8px;
+        font-size: 0.8rem;
+        border-radius: 16px;
       }
       .top-carousel-wrapper {
         padding: 6px 0 7px;
@@ -1807,6 +1835,140 @@
       }
       .fcard-sub {
         font-size: 0.68rem;
+      }
+      .hero-showcase-wrapper {
+        max-width: 360px;
+        width: 100%;
+        margin: 0 auto;
+      }
+    }
+
+    /* Targeted Mobile View for Phones (iPhone SE, 13/14/15/16 Pro, Galaxy S, Pixel) */
+    @media (max-width: 600px) {
+      :root {
+        --header-h: 64px;
+      }
+      header {
+        padding: 0 12px;
+      }
+      .brand-wordmark {
+        font-size: 1.65rem;
+      }
+      .brand-wordmark .accent-r {
+        font-size: 1.95rem;
+      }
+      .nav-right {
+        gap: 6px;
+      }
+      .btn-apk-top, .btn-apple-top {
+        padding: 5px 10px;
+        font-size: 0.75rem;
+        gap: 4px;
+      }
+      .hero-container {
+        padding: 14px 12px 30px;
+        gap: 22px;
+      }
+      .hero-text h1 {
+        font-size: 1.95rem;
+        letter-spacing: -0.5px;
+      }
+      .hero-text p {
+        font-size: 0.92rem;
+        line-height: 1.48;
+      }
+      .hero-cta-group {
+        flex-direction: column;
+        width: 100%;
+        gap: 10px;
+      }
+      .btn-cta-primary, .btn-cta-secondary, .btn-cta-apple {
+        width: 100%;
+        justify-content: center;
+        padding: 12px 18px;
+        font-size: 0.95rem;
+      }
+      .hero-spark-callout {
+        padding: 6px 12px;
+        gap: 8px;
+        width: 100%;
+        box-sizing: border-box;
+      }
+      .hero-spark-callout .spark-title {
+        font-size: 0.78rem;
+      }
+      .hero-spark-callout .spark-meta {
+        font-size: 0.68rem;
+      }
+      .hero-showcase-wrapper {
+        max-width: 100%;
+        padding: 0 4px;
+      }
+      .phone-device-card {
+        border-radius: 28px;
+        width: 100%;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.85);
+      }
+      .phone-photo-frame {
+        height: 330px;
+      }
+      .phone-name {
+        font-size: 1.5rem;
+      }
+      .phone-age {
+        font-size: 1.2rem;
+      }
+      .phone-subtitle {
+        font-size: 0.82rem;
+      }
+      .chai-voice-player {
+        padding: 6px 10px;
+        gap: 8px;
+      }
+      .voice-prompt-text {
+        font-size: 0.75rem;
+      }
+      .satellite-badge.bottom {
+        max-width: 100%;
+        padding: 6px 10px;
+        margin-top: 8px;
+      }
+      .trust-stats-container {
+        grid-template-columns: 1fr;
+        padding: 16px;
+      }
+      .calc-display-score {
+        font-size: 2.8rem;
+      }
+      .cta-banner {
+        padding: 30px 16px;
+      }
+      .cta-banner h2 {
+        font-size: 1.7rem;
+      }
+      .cta-buttons-row {
+        flex-direction: column;
+        width: 100%;
+      }
+      .cta-buttons-row .btn-cta-primary,
+      .cta-buttons-row .btn-cta-secondary,
+      .cta-buttons-row .btn-cta-apple {
+        width: 100%;
+      }
+      /* Extra bottom padding to avoid overlapping the fixed mobile sticky bar */
+      body {
+        padding-bottom: 74px;
+      }
+      .mobile-sticky-bar {
+        padding: 8px 12px;
+      }
+      .btn-sticky-launch {
+        padding: 7px 12px;
+        font-size: 0.8rem;
+      }
+      .btn-sticky-mini {
+        padding: 6px 10px;
+        font-size: 0.8rem;
       }
     }
   </style>
