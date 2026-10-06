@@ -6,6 +6,7 @@
   <title>BlunderR — Real Connections, Zero Catfish ⚡</title>
   <meta name="description" content="BlunderR is India's premier connection network powered by 3D Biometric Liveness Verification, Micro-Community Circles, and Encrypted Virtual Chai calls.">
   <link rel="icon" type="image/png" href="https://img.icons8.com/color/96/flame.png">
+  <link rel="preload" as="image" href="/images/hero-profile.webp" type="image/webp" fetchpriority="high">
   
   <!-- Security: Disable Inspect & DevTools -->
   <script>
@@ -1054,7 +1055,16 @@
         </div>
 
         <div class="phone-photo-frame">
-          <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800" alt="Profile" class="phone-photo-img" />
+          <picture>
+            <source srcset="/images/hero-profile.webp" type="image/webp" />
+            <img src="/images/hero-profile.jpg"
+                 alt="BlunderR Verified Profile"
+                 class="phone-photo-img"
+                 loading="eager"
+                 fetchpriority="high"
+                 decoding="async"
+                 onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&auto=format&fit=crop&q=75';" />
+          </picture>
           <div class="phone-photo-gradient"></div>
 
           <div class="phone-overlay-badges">
