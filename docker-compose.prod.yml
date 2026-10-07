@@ -69,6 +69,7 @@ services:
     container_name: swipeai-facematch
     restart: unless-stopped
     volumes:
+      - ./website:/var/www/website:ro
       - uploads_data:/app/uploads:ro
     networks:
       - swipeai-network
@@ -91,6 +92,7 @@ services:
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
       - ./certbot/conf:/etc/letsencrypt:ro
       - ./certbot/www:/var/www/certbot:ro
+      - ./website:/var/www/website:ro
       - uploads_data:/app/uploads:ro
     networks:
       - swipeai-network
