@@ -51,6 +51,8 @@ public class KycDto {
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class LivenessRequest {
         private String selfieFrameBase64;
+        private String rightFrameBase64;
+        private String leftFrameBase64;
         private int headTurnDurationMs;
 
         @JsonProperty("simulatePass")

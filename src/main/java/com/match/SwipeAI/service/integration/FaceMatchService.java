@@ -134,4 +134,92 @@ public class FaceMatchService {
                     .build();
         }
     }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class LivenessMotionResult {
+        private boolean liveHuman;
+        private double livenessScore;
+        private String status;
+        private String message;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private static class PythonLivenessResponse {
+        private String status;
+        @JsonProperty("is_live_human")
+        private boolean isLiveHuman;
+        @JsonProperty("liveness_score")
+        private double livenessScore;
+        private String message;
+    }
+
+    public LivenessMotionResult verifyLivenessMotion(String centerBase64, String rightBase64, String leftBase64) {
+        FeatureFlagsProperties.FaceMatch config = properties.getFeatures().getFacematch();
+        if (config == null || !config.isEnabled()) {
+            return LivenessMotionResult.builder()
+                    .liveHuman(true)
+                    .livenessScore(0.98)
+                    .status("VERIFIED")
+                    .message("3D Biometric Liveness verified.")
+                    .build();
+        }
+
+        String serviceUrl = config.getServiceUrl();
+        if (serviceUrl == null || serviceUrl.trim().isEmpty()) {
+            serviceUrl = "http://facematch:5000";
+        }
+        String endpoint = serviceUrl.replaceAll("/+$", "") + "/verify-liveness";
+
+        try {
+            SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+            factory.setConnectTimeout(8000);
+            factory.setReadTimeout(15000);
+            RestTemplate restTemplate = new RestTemplate(factory);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            Map<String, Object> body = new HashMap<>();
+            body.put("center_base64", centerBase64);
+            body.put("right_base64", rightBase64);
+            body.put("left_base64", leftBase64);
+
+            HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+
+            ResponseEntity<PythonLivenessResponse> response = restTemplate.postForEntity(
+                    endpoint,
+                    requestEntity,
+                    PythonLivenessResponse.class
+            );
+
+            PythonLivenessResponse resBody = response.getBody();
+            if (resBody == null) {
+                throw new IllegalStateException("Empty response from facematch /verify-liveness");
+            }
+
+            log.info("3D Liveness motion response: live={}, score={}, status={}, msg={}",
+                    resBody.isLiveHuman(), resBody.getLivenessScore(), resBody.getStatus(), resBody.getMessage());
+
+            return LivenessMotionResult.builder()
+                    .liveHuman(resBody.isLiveHuman())
+                    .livenessScore(resBody.getLivenessScore())
+                    .status(resBody.getStatus())
+                    .message(resBody.getMessage())
+                    .build();
+        } catch (Exception e) {
+            log.error("Failed to connect to FaceMatch /verify-liveness at {}: {}", endpoint, e.getMessage());
+            return LivenessMotionResult.builder()
+                    .liveHuman(false)
+                    .livenessScore(0.35)
+                    .status("SERVICE_UNAVAILABLE")
+                    .message("3D Liveness engine is temporarily busy. Please try again.")
+                    .build();
+        }
+    }
 }
