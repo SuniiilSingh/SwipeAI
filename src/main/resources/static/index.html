@@ -2208,7 +2208,7 @@
         <span>LIVE IN BROWSER • ZERO CATFISH GUARANTEE</span>
       </div>
 
-      <h1>Meet On Your <span class="gradient-text">True Wavelength.</span></h1>
+      <h1>Meet On Your <span class="gradient-text" id="rotWord" style="display:inline-block;transition:opacity .35s,transform .35s;">True Wavelength.</span></h1>
       
       <p>India’s premier connection network. 3D Biometric Liveness eliminates catfish profiles, Micro-Community Circles connect your neighborhood tribes, and Vedic Cosmic Kundali reveals genuine emotional resonance.</p>
       
@@ -2425,6 +2425,25 @@
         </tr>
       </tbody>
     </table>
+  </section>
+
+
+  <!-- Catfish vs BlunderR slider -->
+  <section class="cf-section" style="max-width:760px;margin:0 auto 60px;padding:0 20px;">
+    <div class="section-header" style="padding-top:0;">
+      <div class="section-badge">🎣 Spot The Difference</div>
+      <h2 class="section-title">Catfish vs BlunderR</h2>
+      <p class="section-subtitle">Drag the handle to reveal what a verified profile looks like.</p>
+    </div>
+    <div id="cfSlider" style="position:relative;height:300px;border-radius:24px;overflow:hidden;user-select:none;touch-action:pan-y;cursor:ew-resize;border:1px solid rgba(255,255,255,.12);">
+      <div style="position:absolute;inset:0;background:linear-gradient(135deg,#10b981,#6366f1);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;text-align:center;padding:20px;">
+        <div style="font-size:3rem">🛡️</div><div style="font-size:1.4rem;font-weight:800">BlunderR Verified</div>
+        <div style="opacity:.9;margin-top:6px">3D liveness face check • Real human • Zero catfish</div></div>
+      <div id="cfTop" style="position:absolute;inset:0;background:linear-gradient(135deg,#334155,#0f172a);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#cbd5e1;text-align:center;padding:20px;clip-path:inset(0 50% 0 0);">
+        <div style="font-size:3rem">🎭</div><div style="font-size:1.4rem;font-weight:800">Typical Dating App</div>
+        <div style="opacity:.8;margin-top:6px">Stolen photos • Bots • 40%+ fake profiles</div></div>
+      <div id="cfHandle" style="position:absolute;top:0;bottom:0;left:50%;width:4px;background:#fff;transform:translateX(-50%);"><div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:44px;height:44px;border-radius:50%;background:#fff;color:#111;display:flex;align-items:center;justify-content:center;font-weight:800;box-shadow:0 4px 16px rgba(0,0,0,.4)">⇆</div></div>
+    </div>
   </section>
 
   <!-- Interactive Cosmic Kundali / Chemistry Calculator -->
@@ -3072,6 +3091,36 @@
     if (window.location.hash === '#contact') {
       openContactModal();
     }
+  </script>
+
+  <script>
+  (function(){
+    // Rotating headline word
+    var el=document.getElementById('rotWord');
+    if(el&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
+      var w=['True Wavelength.','Real Faces.','Your Tribe.','Cosmic Match.'],i=0;
+      setInterval(function(){el.style.opacity=0;el.style.transform='translateY(8px)';
+        setTimeout(function(){i=(i+1)%w.length;el.textContent=w[i];el.style.opacity=1;el.style.transform='none';},350);},2800);
+    }
+    // 3D tilt on phone card
+    var card=document.getElementById('phoneDeviceCard');
+    if(card&&matchMedia('(hover: hover)').matches&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
+      var wrap=card.parentElement;card.style.transition='transform .15s ease-out';
+      wrap.addEventListener('mousemove',function(e){var r=wrap.getBoundingClientRect();
+        var x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;
+        card.style.transform='perspective(900px) rotateY('+(x*10)+'deg) rotateX('+(-y*10)+'deg)';});
+      wrap.addEventListener('mouseleave',function(){card.style.transform='';});
+    }
+    // Catfish slider
+    var sl=document.getElementById('cfSlider'),top=document.getElementById('cfTop'),h=document.getElementById('cfHandle');
+    if(sl){var drag=false;
+      function set(x){var r=sl.getBoundingClientRect();var p=Math.max(0,Math.min(100,(x-r.left)/r.width*100));
+        top.style.clipPath='inset(0 '+(100-p)+'% 0 0)';h.style.left=p+'%';}
+      sl.addEventListener('pointerdown',function(e){drag=true;sl.setPointerCapture(e.pointerId);set(e.clientX);});
+      sl.addEventListener('pointermove',function(e){if(drag)set(e.clientX);});
+      sl.addEventListener('pointerup',function(){drag=false;});
+    }
+  })();
   </script>
 </body>
 </html>
