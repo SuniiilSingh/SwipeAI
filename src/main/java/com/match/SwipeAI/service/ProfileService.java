@@ -101,6 +101,13 @@ public class ProfileService {
         if (request.getProfilePromptAnswer() != null) profile.setProfilePromptAnswer(sanitize(request.getProfilePromptAnswer(), 500));
 
         boolean photosOrSelfieUpdated = false;
+        boolean anySlotExplicitlyUpdated =
+                request.getPhoto1() != null ||
+                request.getPhoto2() != null ||
+                request.getPhoto3() != null ||
+                request.getPhoto4() != null ||
+                request.getPhoto5() != null ||
+                request.getPhoto6() != null;
 
         if (request.getPhoto1() != null) {
             String newPhoto1 = sanitizePhotoUrl(request.getPhoto1());
@@ -147,35 +154,41 @@ public class ProfileService {
         if (request.getSelectedMemeUrl() != null) profile.setSelectedMemeUrl(request.getSelectedMemeUrl().trim().isEmpty() ? null : request.getSelectedMemeUrl().trim());
         if (request.getSelectedMemeTitle() != null) profile.setSelectedMemeTitle(sanitize(request.getSelectedMemeTitle(), 150));
 
-        if (request.getPhotos() != null) {
+        if (request.getPhotos() != null && !anySlotExplicitlyUpdated) {
             try {
                 List<String> cleanPhotos = request.getPhotos().stream()
                         .map(this::sanitizePhotoUrl)
                         .filter(p -> p != null && !p.trim().isEmpty())
                         .toList();
-                profile.setPhotosJson(objectMapper.writeValueAsString(cleanPhotos));
-                if (request.getPhoto1() == null) profile.setPhoto1(cleanPhotos.size() > 0 ? cleanPhotos.get(0) : null);
-                if (request.getPhoto2() == null) profile.setPhoto2(cleanPhotos.size() > 1 ? cleanPhotos.get(1) : null);
-                if (request.getPhoto3() == null) profile.setPhoto3(cleanPhotos.size() > 2 ? cleanPhotos.get(2) : null);
-                if (request.getPhoto4() == null) profile.setPhoto4(cleanPhotos.size() > 3 ? cleanPhotos.get(3) : null);
-                if (request.getPhoto5() == null) profile.setPhoto5(cleanPhotos.size() > 4 ? cleanPhotos.get(4) : null);
-                if (request.getPhoto6() == null) profile.setPhoto6(cleanPhotos.size() > 5 ? cleanPhotos.get(5) : null);
+                profile.setPhoto1(cleanPhotos.size() > 0 ? cleanPhotos.get(0) : null);
+                profile.setPhoto2(cleanPhotos.size() > 1 ? cleanPhotos.get(1) : null);
+                profile.setPhoto3(cleanPhotos.size() > 2 ? cleanPhotos.get(2) : null);
+                profile.setPhoto4(cleanPhotos.size() > 3 ? cleanPhotos.get(3) : null);
+                profile.setPhoto5(cleanPhotos.size() > 4 ? cleanPhotos.get(4) : null);
+                profile.setPhoto6(cleanPhotos.size() > 5 ? cleanPhotos.get(5) : null);
                 photosOrSelfieUpdated = true;
-            } catch (Exception e) {
-                profile.setPhotosJson("[]");
-            }
-        } else {
-            List<String> syncPhotos = new ArrayList<>();
-            if (profile.getPhoto1() != null && !profile.getPhoto1().isBlank()) syncPhotos.add(profile.getPhoto1());
-            if (profile.getPhoto2() != null && !profile.getPhoto2().isBlank()) syncPhotos.add(profile.getPhoto2());
-            if (profile.getPhoto3() != null && !profile.getPhoto3().isBlank()) syncPhotos.add(profile.getPhoto3());
-            if (profile.getPhoto4() != null && !profile.getPhoto4().isBlank()) syncPhotos.add(profile.getPhoto4());
-            if (profile.getPhoto5() != null && !profile.getPhoto5().isBlank()) syncPhotos.add(profile.getPhoto5());
-            if (profile.getPhoto6() != null && !profile.getPhoto6().isBlank()) syncPhotos.add(profile.getPhoto6());
-            try {
-                profile.setPhotosJson(objectMapper.writeValueAsString(syncPhotos));
             } catch (Exception ignored) {}
         }
+
+        // Always synchronize photosJson from all non-blank photo1..photo6 slots (plus any extra items in request.getPhotos())
+        List<String> syncPhotos = new ArrayList<>();
+        if (profile.getPhoto1() != null && !profile.getPhoto1().isBlank()) syncPhotos.add(profile.getPhoto1());
+        if (profile.getPhoto2() != null && !profile.getPhoto2().isBlank()) syncPhotos.add(profile.getPhoto2());
+        if (profile.getPhoto3() != null && !profile.getPhoto3().isBlank()) syncPhotos.add(profile.getPhoto3());
+        if (profile.getPhoto4() != null && !profile.getPhoto4().isBlank()) syncPhotos.add(profile.getPhoto4());
+        if (profile.getPhoto5() != null && !profile.getPhoto5().isBlank()) syncPhotos.add(profile.getPhoto5());
+        if (profile.getPhoto6() != null && !profile.getPhoto6().isBlank()) syncPhotos.add(profile.getPhoto6());
+        if (request.getPhotos() != null) {
+            for (String raw : request.getPhotos()) {
+                String clean = sanitizePhotoUrl(raw);
+                if (clean != null && !clean.isBlank() && !syncPhotos.contains(clean) && syncPhotos.size() < 6) {
+                    syncPhotos.add(clean);
+                }
+            }
+        }
+        try {
+            profile.setPhotosJson(objectMapper.writeValueAsString(syncPhotos));
+        } catch (Exception ignored) {}
 
         if (photosOrSelfieUpdated && profile.getSelfieUrl() != null && !profile.getSelfieUrl().isBlank()) {
             profile.setVerificationStatus("PENDING");
@@ -460,18 +473,21 @@ public class ProfileService {
         }
 
         List<String> photos = new ArrayList<>();
+        if (profile.getPhoto1() != null && !profile.getPhoto1().isBlank()) photos.add(profile.getPhoto1());
+        if (profile.getPhoto2() != null && !profile.getPhoto2().isBlank()) photos.add(profile.getPhoto2());
+        if (profile.getPhoto3() != null && !profile.getPhoto3().isBlank()) photos.add(profile.getPhoto3());
+        if (profile.getPhoto4() != null && !profile.getPhoto4().isBlank()) photos.add(profile.getPhoto4());
+        if (profile.getPhoto5() != null && !profile.getPhoto5().isBlank()) photos.add(profile.getPhoto5());
+        if (profile.getPhoto6() != null && !profile.getPhoto6().isBlank()) photos.add(profile.getPhoto6());
         if (profile.getPhotosJson() != null && !profile.getPhotosJson().isBlank()) {
             try {
-                photos = objectMapper.readValue(profile.getPhotosJson(), new TypeReference<>() {});
+                List<String> fromJson = objectMapper.readValue(profile.getPhotosJson(), new TypeReference<>() {});
+                for (String u : fromJson) {
+                    if (u != null && !u.isBlank() && !photos.contains(u) && photos.size() < 6) {
+                        photos.add(u);
+                    }
+                }
             } catch (Exception ignored) {}
-        }
-        if (photos.isEmpty()) {
-            if (profile.getPhoto1() != null && !profile.getPhoto1().isBlank()) photos.add(profile.getPhoto1());
-            if (profile.getPhoto2() != null && !profile.getPhoto2().isBlank()) photos.add(profile.getPhoto2());
-            if (profile.getPhoto3() != null && !profile.getPhoto3().isBlank()) photos.add(profile.getPhoto3());
-            if (profile.getPhoto4() != null && !profile.getPhoto4().isBlank()) photos.add(profile.getPhoto4());
-            if (profile.getPhoto5() != null && !profile.getPhoto5().isBlank()) photos.add(profile.getPhoto5());
-            if (profile.getPhoto6() != null && !profile.getPhoto6().isBlank()) photos.add(profile.getPhoto6());
         }
 
         int completionPct = calculateCompletionPercentage(user, profile);
@@ -590,20 +606,23 @@ public class ProfileService {
                 if (candidatePhotos.isEmpty()) {
                     // Verify selfie face quality in background via YuNet/SFace even before profile photos are uploaded
                     var selfCheck = faceMatchService.compareFaces(selfie, selfie);
+                    // Re-fetch fresh entities so we never overwrite photos uploaded while faceMatchService was running
+                    User freshUser = userRepository.findById(userId).orElse(u);
+                    Profile freshProfile = profileRepository.findById(userId).orElse(p);
                     if (selfCheck.isMatch() || selfCheck.getSelfieFacesDetected() >= 1) {
-                        u.setFaceVerified(true);
-                        if (u.getLivenessScore() == null || u.getLivenessScore() < 0.85) {
-                            u.setLivenessScore(0.95);
+                        freshUser.setFaceVerified(true);
+                        if (freshUser.getLivenessScore() == null || freshUser.getLivenessScore() < 0.85) {
+                            freshUser.setLivenessScore(0.95);
                         }
-                        userRepository.save(u);
-                        p.setVerificationStatus("VERIFIED");
-                        profileRepository.save(p);
+                        userRepository.save(freshUser);
+                        freshProfile.setVerificationStatus("VERIFIED");
+                        profileRepository.save(freshProfile);
                         log.info("Async selfie verification PASSED (selfie face check) for user {}", userId);
                     } else {
-                        u.setFaceVerified(false);
-                        userRepository.save(u);
-                        p.setVerificationStatus("REJECTED");
-                        profileRepository.save(p);
+                        freshUser.setFaceVerified(false);
+                        userRepository.save(freshUser);
+                        freshProfile.setVerificationStatus("REJECTED");
+                        profileRepository.save(freshProfile);
                         log.info("Async selfie verification REJECTED (no clear face in selfie) for user {}", userId);
                     }
                     return;
@@ -626,18 +645,21 @@ public class ProfileService {
                     }
                 }
 
+                // Re-fetch fresh entities so we never overwrite concurrent photo updates made while compareFaces ran
+                User freshUser = userRepository.findById(userId).orElse(u);
+                Profile freshProfile = profileRepository.findById(userId).orElse(p);
                 if (anyMatch) {
-                    u.setFaceVerified(true);
-                    u.setLivenessScore(Math.max(u.getLivenessScore() != null ? u.getLivenessScore() : 0.0, bestScore));
-                    userRepository.save(u);
-                    p.setVerificationStatus("VERIFIED");
-                    profileRepository.save(p);
+                    freshUser.setFaceVerified(true);
+                    freshUser.setLivenessScore(Math.max(freshUser.getLivenessScore() != null ? freshUser.getLivenessScore() : 0.0, bestScore));
+                    userRepository.save(freshUser);
+                    freshProfile.setVerificationStatus("VERIFIED");
+                    profileRepository.save(freshProfile);
                     log.info("Async selfie verification PASSED for user {} (score={})", userId, bestScore);
                 } else {
-                    u.setFaceVerified(false);
-                    userRepository.save(u);
-                    p.setVerificationStatus("REJECTED");
-                    profileRepository.save(p);
+                    freshUser.setFaceVerified(false);
+                    userRepository.save(freshUser);
+                    freshProfile.setVerificationStatus("REJECTED");
+                    profileRepository.save(freshProfile);
                     log.info("Async selfie verification REJECTED for user {} (bestScore={})", userId, bestScore);
                 }
             } catch (Exception e) {
