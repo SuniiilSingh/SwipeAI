@@ -565,15 +565,17 @@
       object-fit: cover;
     }
 
-    /* Right Slide-Over Inspector Drawer */
+    /* Full-Screen Centered 360° Profile Modal */
     .drawer-backdrop {
       position: fixed;
       inset: 0;
-      background: rgba(3, 4, 8, 0.72);
-      backdrop-filter: blur(4px);
+      background: rgba(3, 4, 8, 0.84);
+      backdrop-filter: blur(8px);
       z-index: 50;
       display: none;
-      justify-content: flex-end;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
     }
 
     .drawer-backdrop.open {
@@ -582,30 +584,45 @@
 
     .inspector-drawer {
       width: 100%;
-      max-width: 540px;
+      max-width: 1180px;
+      max-height: 92vh;
       background: var(--bg-surface);
-      border-left: 1px solid var(--border-strong);
-      height: 100vh;
+      border: 1px solid var(--border-strong);
+      border-radius: 24px;
+      box-shadow: 0 30px 90px rgba(0, 0, 0, 0.85);
       overflow-y: auto;
-      padding: 24px;
+      padding: 28px;
       display: flex;
       flex-direction: column;
-      gap: 18px;
+      gap: 22px;
+    }
+
+    .profile-360-grid {
+      display: grid;
+      grid-template-columns: 1.05fr 1.15fr;
+      gap: 22px;
+      align-items: start;
+    }
+
+    @media (max-width: 960px) {
+      .profile-360-grid {
+        grid-template-columns: 1fr;
+      }
     }
 
     .inspector-photo-strip {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
+      gap: 12px;
     }
 
     .inspector-photo-card {
       background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
+      border: 1px solid var(--border-strong);
+      border-radius: 14px;
       overflow: hidden;
       position: relative;
-      aspect-ratio: 0.8;
+      aspect-ratio: 0.78;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -615,6 +632,12 @@
       width: 100%;
       height: 100%;
       object-fit: cover;
+      cursor: zoom-in;
+      transition: transform 0.2s ease;
+    }
+
+    .inspector-photo-card img:hover {
+      transform: scale(1.03);
     }
 
     .inspector-photo-del {
@@ -629,6 +652,23 @@
       font-size: 10px;
       font-weight: 800;
       cursor: pointer;
+    }
+
+    .profile-badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .profile-chip {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border-strong);
+      border-radius: 99px;
+      padding: 5px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text);
     }
 
     .toast-box {
@@ -1458,7 +1498,7 @@
       }
     }
 
-    // ==================== 4. 360° USER INSPECTOR DRAWER ====================
+    // ==================== 4. FULL 360° USER PROFILE STUDIO ====================
     async function openInspector(userId) {
       try {
         const u = await apiCall('/users/' + userId);
@@ -1469,164 +1509,261 @@
         const userOrders = u.orders || [];
         const userLogs = u.paymentLogs || [];
         const userTickets = u.tickets || [];
+        const primaryPhoto = slots.find(Boolean) || (u.photos && u.photos[0]) || '';
 
         drawer.innerHTML = `
-          <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);padding-bottom:14px;">
-            <div>
-              <div style="font-size:18px;font-weight:900;">${escapeHtml(u.displayName)}</div>
-              <div style="font-size:11px;color:var(--text-dim);font-family:'JetBrains Mono',monospace;">${u.userId}</div>
-            </div>
-            <button class="btn btn-ghost btn-sm" onclick="closeInspector()">✕ Close</button>
-          </div>
-
-          <!-- Phone & Quick Identity -->
-          <div class="panel-card" style="margin-bottom:0;">
-            <div style="display:flex;justify-content:space-between;align-items:center;">
+          <!-- TOP FULL-PROFILE HEADER BANNER -->
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;background:var(--bg-card);border:1px solid var(--border-strong);border-radius:18px;padding:18px 22px;">
+            <div style="display:flex;align-items:center;gap:16px;">
+              <div style="width:68px;height:68px;border-radius:18px;overflow:hidden;border:2px solid var(--brand);background:#070912;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                ${primaryPhoto
+                  ? `<img src="${primaryPhoto}" style="width:100%;height:100%;object-fit:cover;" />`
+                  : `<span style="font-size:24px;font-weight:900;color:var(--brand);">${escapeHtml((u.displayName || 'U').charAt(0))}</span>`}
+              </div>
               <div>
-                <div class="form-label">REGISTERED PHONE (PII PROTECTED)</div>
-                <div id="insp-phone-val" style="font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:800;">${u.phoneMasked}</div>
+                <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                  <span style="font-size:22px;font-weight:900;">${escapeHtml(u.displayName)}</span>
+                  <span class="status-pill status-${u.verificationStatus}">${u.verificationStatus}</span>
+                  ${u.digilockerVerified ? '<span class="status-pill status-VERIFIED">🪪 DigiLocker ID</span>' : ''}
+                  ${u.hasActivePass ? '<span class="status-pill status-VERIFIED">👑 VIP PASS</span>' : ''}
+                  ${u.isShadowbanned ? '<span class="status-pill status-REJECTED">👻 SHADOWBANNED</span>' : ''}
+                </div>
+                <div style="font-size:13px;color:var(--text-muted);margin-top:4px;">
+                  📍 <b>${escapeHtml(u.city || 'Bengaluru')}</b> • Neighborhood Tribe: <b style="color:#FF6B8B;">${escapeHtml(u.microCircle || 'Unassigned')}</b> • Gender: <b>${escapeHtml(u.genderDisplay || u.gender || 'Not specified')}</b>
+                </div>
+                <div style="font-size:11px;color:var(--text-dim);font-family:'JetBrains Mono',monospace;margin-top:3px;">
+                  UUID: ${u.userId} • Joined: ${(u.createdAt || '').toString().slice(0, 16).replace('T', ' ')}
+                </div>
               </div>
-              <button class="btn btn-ghost btn-sm" onclick="revealPhone('${u.userId}')">🔓 Reveal Phone (Logged)</button>
             </div>
-            <div style="margin-top:10px;font-size:12px;color:var(--text-muted);line-height:1.6;">
-              📍 <b>${escapeHtml(u.city || 'Bengaluru')}</b> • Tribe: <b>${escapeHtml(u.microCircle || 'None')}</b><br/>
-              💼 ${escapeHtml(u.job || 'Not specified')} • 🎓 ${escapeHtml(u.institute || 'Not specified')}<br/>
-              ⚡ Sparks: <b style="color:#FFF;">${u.sparksBalance}</b> • 🚀 Boosts: <b style="color:#FFF;">${u.boostsBalance}</b> • 💬 Direct DMs: <b style="color:#FFF;">${u.directDmsBalance}</b> • 👑 VIP: <b style="color:#6EE7B7;">${u.hasActivePass ? 'ACTIVE' : 'No'}</b>
+
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+              <div style="background:var(--bg-surface);border:1px solid var(--border);border-radius:12px;padding:8px 14px;display:flex;align-items:center;gap:10px;">
+                <div>
+                  <div style="font-size:9px;font-weight:800;color:var(--text-dim);letter-spacing:0.6px;">REGISTERED PHONE</div>
+                  <div id="insp-phone-val" style="font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:800;">${u.phoneMasked}</div>
+                </div>
+                <button class="btn btn-ghost btn-sm" onclick="revealPhone('${u.userId}')">🔓 Reveal</button>
+              </div>
+              <button class="btn btn-ghost" onclick="closeInspector()">✕ Close Profile</button>
             </div>
           </div>
 
-          <!-- User Payment Orders & Execution Logs (Visible to Support & Super Admin) -->
-          <div class="panel-card" style="margin-bottom:0;">
-            <div class="panel-title">
-              <span>💳 User Payments & Orders (${userOrders.length})</span>
-              <span style="font-size:11px;color:var(--text-muted);">Logs: ${userLogs.length}</span>
+          <!-- 2-COLUMN FULL 360° PROFILE WORKSPACE -->
+          <div class="profile-360-grid">
+
+            <!-- LEFT COLUMN: FULL DATING PROFILE, PHOTOS, BIO & VEDIC KUNDALI -->
+            <div style="display:flex;flex-direction:column;gap:18px;">
+
+              <!-- 6-Photo Showcase Grid -->
+              <div class="panel-card" style="margin-bottom:0;">
+                <div class="panel-title">
+                  <span>📸 6-Photo Profile Showcase (${u.photoCount}/6 Uploaded)</span>
+                  <span style="font-size:11px;color:var(--text-muted);">Click any photo to view full size</span>
+                </div>
+
+                ${isSuperAdmin ? `
+                  <div style="display:flex;gap:14px;align-items:center;margin-bottom:14px;background:#070912;padding:12px;border-radius:14px;border:1px solid var(--border-strong);">
+                    <div style="width:76px;height:94px;border-radius:10px;overflow:hidden;border:2px solid var(--brand);background:#111;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                      ${u.selfieUrl ? `<img src="${u.selfieUrl}" style="width:100%;height:100%;object-fit:cover;cursor:zoom-in;" onclick="window.open('${u.selfieUrl}','_blank')" />` : '<span style="font-size:10px;color:#64748B;">No Selfie</span>'}
+                    </div>
+                    <div style="flex:1;">
+                      <div style="font-size:13px;font-weight:800;">🤳 Live Verification Selfie (Liveness: ${(Number(u.livenessScore || 0) * 100).toFixed(0)}%)</div>
+                      <div style="font-size:11px;color:var(--text-muted);margin:4px 0 8px;">Compare selfie with the 6 profile photos below (Super Admin only):</div>
+                      <div style="display:flex;gap:8px;">
+                        <button class="btn btn-emerald btn-sm" onclick="userAction('${u.userId}',{action:'VERIFY_SELFIE'})">✓ Mark Verified</button>
+                        <button class="btn btn-danger btn-sm" onclick="userAction('${u.userId}',{action:'REJECT_SELFIE'})">✕ Mark Rejected</button>
+                      </div>
+                    </div>
+                  </div>
+                ` : ''}
+
+                <div class="inspector-photo-strip">
+                  ${slots.map((url, i) => `
+                    <div class="inspector-photo-card">
+                      ${url ? `
+                        <img src="${url}" alt="Slot ${i+1}" onclick="window.open('${url}','_blank')" title="Click to open full photo #${i+1}" />
+                        <span style="position:absolute;bottom:6px;left:6px;background:rgba(5,6,10,0.8);color:#FFF;font-size:10px;font-weight:800;padding:2px 7px;border-radius:6px;">#${i+1}</span>
+                        ${isSuperAdmin ? `<button class="inspector-photo-del" onclick="userAction('${u.userId}',{action:'REMOVE_PHOTO',photoSlot:${i+1}})">🗑️ Delete</button>` : ''}
+                      ` : `<span style="font-size:11px;color:var(--text-dim);">Slot #${i+1} Empty</span>`}
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+
+              <!-- Full Bio, Career, Education & Lifestyle Details -->
+              <div class="panel-card" style="margin-bottom:0;">
+                <div class="panel-title">👤 Bio, Career & Lifestyle Details</div>
+                <div style="background:#070912;border:1px solid var(--border);border-radius:12px;padding:12px 14px;font-size:13px;line-height:1.6;color:var(--text);margin-bottom:14px;">
+                  ${u.bio ? escapeHtml(u.bio) : '<span style="color:var(--text-dim);font-style:italic;">No bio written yet.</span>'}
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:12px;">
+                  <div style="background:var(--bg-surface);padding:10px 12px;border-radius:10px;border:1px solid var(--border);">
+                    <div style="color:var(--text-dim);font-size:10px;font-weight:800;text-transform:uppercase;">💼 Work / Role</div>
+                    <div style="font-weight:700;margin-top:3px;">${escapeHtml(u.job || 'Not specified')}</div>
+                  </div>
+                  <div style="background:var(--bg-surface);padding:10px 12px;border-radius:10px;border:1px solid var(--border);">
+                    <div style="color:var(--text-dim);font-size:10px;font-weight:800;text-transform:uppercase;">🎓 Education / Alma Mater</div>
+                    <div style="font-weight:700;margin-top:3px;">${escapeHtml(u.institute || 'Not specified')}</div>
+                  </div>
+                  <div style="background:var(--bg-surface);padding:10px 12px;border-radius:10px;border:1px solid var(--border);">
+                    <div style="color:var(--text-dim);font-size:10px;font-weight:800;text-transform:uppercase;">💘 Relationship Intent</div>
+                    <div style="font-weight:700;margin-top:3px;">${escapeHtml(u.relationshipIntent || 'Serious / Vibe Check')}</div>
+                  </div>
+                  <div style="background:var(--bg-surface);padding:10px 12px;border-radius:10px;border:1px solid var(--border);">
+                    <div style="color:var(--text-dim);font-size:10px;font-weight:800;text-transform:uppercase;">🗣️ Languages Spoken</div>
+                    <div style="font-weight:700;margin-top:3px;">${escapeHtml(u.languagesSpoken || 'English, Hindi')}</div>
+                  </div>
+                </div>
+
+                <div class="profile-badge-row">
+                  ${u.height ? `<span class="profile-chip">📏 ${escapeHtml(u.height)}</span>` : ''}
+                  ${u.dietaryPref ? `<span class="profile-chip">🥗 ${escapeHtml(u.dietaryPref)}</span>` : ''}
+                  ${u.drinkingHabit ? `<span class="profile-chip">🍷 ${escapeHtml(u.drinkingHabit)}</span>` : ''}
+                  ${u.smokingHabit ? `<span class="profile-chip">🚬 ${escapeHtml(u.smokingHabit)}</span>` : ''}
+                  ${u.genderPreferenceDisplay ? `<span class="profile-chip">🎯 Interested in: ${escapeHtml(u.genderPreferenceDisplay)}</span>` : ''}
+                </div>
+              </div>
+
+              <!-- Vedic Janampatri & Kundali Summary -->
+              <div class="panel-card" style="margin-bottom:0;">
+                <div class="panel-title">🪐 36-Guna Vedic Janampatri & Kundali</div>
+                <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;font-size:12px;">
+                  <div style="background:#070912;padding:10px 12px;border-radius:10px;border:1px solid var(--border);">
+                    <span style="color:var(--text-dim);font-size:10px;font-weight:800;">🌙 MOON RASHI</span>
+                    <div style="font-weight:800;color:#FCD34D;margin-top:2px;">${escapeHtml(astro.chandraRashi || 'Taurus (वृषभ)')}</div>
+                  </div>
+                  <div style="background:#070912;padding:10px 12px;border-radius:10px;border:1px solid var(--border);">
+                    <span style="color:var(--text-dim);font-size:10px;font-weight:800;">⭐ NAKSHATRA</span>
+                    <div style="font-weight:800;color:#C4B5FD;margin-top:2px;">${escapeHtml(astro.nakshatraName || 'Rohini')} (Pada ${astro.nakshatraPada || 2})</div>
+                  </div>
+                  <div style="background:#070912;padding:10px 12px;border-radius:10px;border:1px solid var(--border);">
+                    <span style="color:var(--text-dim);font-size:10px;font-weight:800;">☀️ SUN SIGN & GANA</span>
+                    <div style="font-weight:800;color:#FFF;margin-top:2px;">${escapeHtml(astro.sunSign || 'Leo')} • ${escapeHtml(astro.gana || 'Manushya')}</div>
+                  </div>
+                  <div style="background:#070912;padding:10px 12px;border-radius:10px;border:1px solid var(--border);">
+                    <span style="color:var(--text-dim);font-size:10px;font-weight:800;">🛡️ SHADOWSHIELD HASHES</span>
+                    <div style="font-weight:800;color:#6EE7B7;margin-top:2px;">${u.shieldedContactsCount || 0} Contacts Shielded</div>
+                  </div>
+                </div>
+              </div>
             </div>
-            ${userOrders.length ? `
-              <div class="table-wrap" style="margin-bottom:10px;">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Order ID</th>
-                      <th>SKU</th>
-                      <th>Amount</th>
-                      <th>Status</th>
-                      <th>Date</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    ${userOrders.map(o => `
-                      <tr>
-                        <td style="font-family:'JetBrains Mono',monospace;font-size:11px;">${o.orderId}</td>
-                        <td><b>${escapeHtml(o.sku)}</b></td>
-                        <td>₹${((o.amountPaise || 0) / 100).toFixed(0)}</td>
-                        <td><span class="status-pill status-${o.status}">${o.status}</span></td>
-                        <td style="font-size:11px;color:var(--text-muted);">${(o.createdAt || '').toString().slice(0,16).replace('T',' ')}</td>
-                      </tr>
+
+            <!-- RIGHT COLUMN: WALLET, PAYMENTS, LOGS, TICKETS & SUPER ADMIN CONTROLS -->
+            <div style="display:flex;flex-direction:column;gap:18px;">
+
+              <!-- Account Balances & Karma Strip -->
+              <div class="panel-card" style="margin-bottom:0;">
+                <div class="panel-title">⚡ Account Wallet, Karma & Entitlements</div>
+                <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;text-align:center;">
+                  <div style="background:#070912;padding:12px 8px;border-radius:12px;border:1px solid var(--border);">
+                    <div style="font-size:10px;color:var(--text-muted);font-weight:800;">⚖️ KARMA</div>
+                    <div style="font-size:20px;font-weight:900;color:#6EE7B7;margin-top:4px;">${u.karmaScore}</div>
+                  </div>
+                  <div style="background:#070912;padding:12px 8px;border-radius:12px;border:1px solid var(--border);">
+                    <div style="font-size:10px;color:var(--text-muted);font-weight:800;">⚡ SPARKS</div>
+                    <div style="font-size:20px;font-weight:900;color:#FCD34D;margin-top:4px;">${u.sparksBalance}</div>
+                  </div>
+                  <div style="background:#070912;padding:12px 8px;border-radius:12px;border:1px solid var(--border);">
+                    <div style="font-size:10px;color:var(--text-muted);font-weight:800;">🚀 BOOSTS</div>
+                    <div style="font-size:20px;font-weight:900;color:#38BDF8;margin-top:4px;">${u.boostsBalance}</div>
+                  </div>
+                  <div style="background:#070912;padding:12px 8px;border-radius:12px;border:1px solid var(--border);">
+                    <div style="font-size:10px;color:var(--text-muted);font-weight:800;">💬 DIRECT DMs</div>
+                    <div style="font-size:20px;font-weight:900;color:#F472B6;margin-top:4px;">${u.directDmsBalance}</div>
+                  </div>
+                </div>
+
+                ${isSuperAdmin ? `
+                  <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:8px;">
+                    <button class="btn btn-ghost btn-sm" onclick="userAction('${u.userId}',{action:'TOGGLE_DIGILOCKER'})">
+                      🪪 ${u.digilockerVerified ? 'Revoke DigiLocker' : 'Grant DigiLocker Badge'}
+                    </button>
+                    <button class="btn ${u.isShadowbanned ? 'btn-emerald' : 'btn-danger'} btn-sm" onclick="userAction('${u.userId}',{action:'TOGGLE_SHADOWBAN'})">
+                      👻 ${u.isShadowbanned ? 'Remove Shadowban' : 'Shadowban User'}
+                    </button>
+                    <button class="btn btn-primary btn-sm" onclick="userAction('${u.userId}',{action:'GRANT_CREDITS',sparksDelta:5,boostsDelta:2,directDmsDelta:2,grantVipPass:true})">
+                      🎁 Gift +5 Sparks, +2 Boosts & 30d VIP
+                    </button>
+                  </div>
+                ` : ''}
+              </div>
+
+              <!-- User Payment Orders & Execution Logs (Visible to Support & Super Admin) -->
+              <div class="panel-card" style="margin-bottom:0;">
+                <div class="panel-title">
+                  <span>💳 User Payments & Orders (${userOrders.length})</span>
+                  <span style="font-size:11px;color:var(--text-muted);">Execution Logs: ${userLogs.length}</span>
+                </div>
+                ${userOrders.length ? `
+                  <div class="table-wrap" style="margin-bottom:12px;">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Order ID</th>
+                          <th>SKU</th>
+                          <th>Amount</th>
+                          <th>Provider</th>
+                          <th>Status</th>
+                          <th>Date</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${userOrders.map(o => `
+                          <tr>
+                            <td style="font-family:'JetBrains Mono',monospace;font-size:11px;">${o.orderId}</td>
+                            <td><b>${escapeHtml(o.sku)}</b></td>
+                            <td>₹${((o.amountPaise || 0) / 100).toFixed(0)}</td>
+                            <td>${escapeHtml(o.paymentProvider || 'UPI')}</td>
+                            <td><span class="status-pill status-${o.status}">${o.status}</span></td>
+                            <td style="font-size:11px;color:var(--text-muted);">${(o.createdAt || '').toString().slice(0,16).replace('T',' ')}</td>
+                          </tr>
+                        `).join('')}
+                      </tbody>
+                    </table>
+                  </div>
+                ` : `<div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">No payment orders found for this user.</div>`}
+
+                ${userLogs.length ? `
+                  <div style="font-size:11px;font-weight:800;color:var(--text-muted);margin:8px 0 6px;text-transform:uppercase;">AOP Payment Execution Logs</div>
+                  <div style="max-height:170px;overflow-y:auto;border:1px solid var(--border);border-radius:10px;padding:10px;background:#070912;">
+                    ${userLogs.map(l => `
+                      <div style="font-size:11px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+                        <span class="status-pill status-${l.status}" style="font-size:9px;padding:1px 5px;">${l.status}</span>
+                        <b>${escapeHtml(l.action)}</b> • <span style="font-family:'JetBrains Mono',monospace;">${escapeHtml(l.orderId || '—')}</span>
+                        <span style="color:var(--text-dim);float:right;">${(l.createdAt || '').toString().slice(0,19).replace('T',' ')}</span>
+                        <div style="color:var(--text-muted);margin-top:3px;">${escapeHtml(l.summary || '')}</div>
+                      </div>
                     `).join('')}
-                  </tbody>
-                </table>
-              </div>
-            ` : `<div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">No payment orders found for this user.</div>`}
-
-            ${userLogs.length ? `
-              <div style="font-size:11px;font-weight:800;color:var(--text-muted);margin:8px 0 6px;text-transform:uppercase;">Recent Payment Execution Logs</div>
-              <div style="max-height:140px;overflow-y:auto;border:1px solid var(--border);border-radius:10px;padding:8px;background:#070912;">
-                ${userLogs.map(l => `
-                  <div style="font-size:11px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
-                    <span class="status-pill status-${l.status}" style="font-size:9px;padding:1px 5px;">${l.status}</span>
-                    <b>${escapeHtml(l.action)}</b> • <span style="font-family:'JetBrains Mono',monospace;">${escapeHtml(l.orderId || '—')}</span>
-                    <div style="color:var(--text-muted);margin-top:2px;">${escapeHtml(l.summary || '')}</div>
                   </div>
-                `).join('')}
+                ` : ''}
               </div>
-            ` : ''}
-          </div>
 
-          <!-- User Support Tickets (Support & Super Admin can resolve directly) -->
-          <div class="panel-card" style="margin-bottom:0;">
-            <div class="panel-title">
-              <span>🎧 User Support Tickets (${userTickets.length})</span>
-            </div>
-            ${userTickets.length ? userTickets.map(t => `
-              <div style="padding:10px;border:1px solid var(--border);border-radius:10px;background:#070912;margin-bottom:8px;">
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                  <span style="font-family:'JetBrains Mono',monospace;font-weight:800;font-size:12px;">${t.ticketNumber}</span>
-                  <span class="status-pill status-${t.status}">${t.status}</span>
+              <!-- User Support Tickets (Support & Super Admin can resolve directly) -->
+              <div class="panel-card" style="margin-bottom:0;">
+                <div class="panel-title">
+                  <span>🎧 User Support Tickets (${userTickets.length})</span>
                 </div>
-                <div style="font-weight:800;font-size:12px;margin-top:4px;">${escapeHtml(t.subject)}</div>
-                <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${escapeHtml(t.description)}</div>
-                ${t.resolutionNotes ? `<div style="font-size:11px;color:#6EE7B7;margin-top:4px;">✓ Resolution: ${escapeHtml(t.resolutionNotes)}</div>` : ''}
-                <div style="margin-top:8px;">
-                  <button class="btn btn-emerald btn-sm" onclick="resolveTicketPrompt('${t.id}','${t.ticketNumber}','${u.userId}')">✓ Update / Resolve Ticket</button>
-                </div>
-              </div>
-            `).join('') : `<div style="font-size:12px;color:var(--text-dim);">No support tickets raised by this user.</div>`}
-          </div>
-
-          <!-- Live Selfie & 6 Profile Photo Slots (Read-Only for SUPPORT_AGENT, Editable for SUPER_ADMIN) -->
-          <div class="panel-card" style="margin-bottom:0;">
-            <div class="panel-title">
-              <span>📸 Profile Photos (${u.photoCount}/6)</span>
-              <span class="status-pill status-${u.verificationStatus}">${u.verificationStatus}</span>
-            </div>
-
-            ${isSuperAdmin ? `
-              <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px;background:#070912;padding:10px;border-radius:12px;border:1px solid var(--border);">
-                <div style="width:70px;height:86px;border-radius:10px;overflow:hidden;border:2px solid var(--brand);background:#111;display:flex;align-items:center;justify-content:center;">
-                  ${u.selfieUrl ? `<img src="${u.selfieUrl}" style="width:100%;height:100%;object-fit:cover;" />` : '<span style="font-size:10px;color:#64748B;">No Selfie</span>'}
-                </div>
-                <div style="flex:1;">
-                  <div style="font-size:12px;font-weight:800;">Verification Selfie</div>
-                  <div style="font-size:11px;color:var(--text-muted);margin:3px 0 8px;">Approve or reject background FaceMatch verification:</div>
-                  <div style="display:flex;gap:6px;">
-                    <button class="btn btn-emerald btn-sm" onclick="userAction('${u.userId}',{action:'VERIFY_SELFIE'})">✓ Mark Verified</button>
-                    <button class="btn btn-danger btn-sm" onclick="userAction('${u.userId}',{action:'REJECT_SELFIE'})">✕ Mark Rejected</button>
+                ${userTickets.length ? userTickets.map(t => `
+                  <div style="padding:12px;border:1px solid var(--border);border-radius:12px;background:#070912;margin-bottom:10px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                      <span style="font-family:'JetBrains Mono',monospace;font-weight:800;font-size:12px;color:#FCD34D;">${t.ticketNumber}</span>
+                      <span class="status-pill status-${t.status}">${t.status}</span>
+                    </div>
+                    <div style="font-weight:800;font-size:13px;margin-top:5px;">${escapeHtml(t.subject)}</div>
+                    <div style="font-size:12px;color:var(--text-muted);margin-top:3px;">${escapeHtml(t.description)}</div>
+                    ${t.resolutionNotes ? `<div style="font-size:11px;color:#6EE7B7;margin-top:5px;">✓ Resolution Note: ${escapeHtml(t.resolutionNotes)}</div>` : ''}
+                    <div style="margin-top:10px;display:flex;gap:8px;">
+                      <button class="btn btn-ghost btn-sm" onclick="markTicketInProgress('${t.id}','${t.ticketNumber}')">⏳ Mark In Progress</button>
+                      <button class="btn btn-emerald btn-sm" onclick="resolveTicketPrompt('${t.id}','${t.ticketNumber}','${u.userId}')">✓ Resolve Ticket</button>
+                    </div>
                   </div>
-                </div>
+                `).join('') : `<div style="font-size:12px;color:var(--text-dim);">No support tickets raised by this user.</div>`}
               </div>
-            ` : ''}
 
-            <div class="inspector-photo-strip">
-              ${slots.map((url, i) => `
-                <div class="inspector-photo-card">
-                  ${url ? `
-                    <img src="${url}" alt="Slot ${i+1}" />
-                    ${isSuperAdmin ? `<button class="inspector-photo-del" onclick="userAction('${u.userId}',{action:'REMOVE_PHOTO',photoSlot:${i+1}})">🗑️ #${i+1}</button>` : ''}
-                  ` : `<span style="font-size:11px;color:var(--text-dim);">Slot #${i+1} Empty</span>`}
-                </div>
-              `).join('')}
             </div>
           </div>
-
-          <!-- Vedic Kundali Summary -->
-          <div class="panel-card" style="margin-bottom:0;">
-            <div class="panel-title">🪐 Vedic Janampatri & Kundali</div>
-            <div style="font-size:12px;color:var(--text-muted);line-height:1.6;">
-              🌙 Moon (Rashi): <b style="color:#FFF;">${astro.chandraRashi || 'Taurus (वृषभ)'}</b> •
-              ⭐ Nakshatra: <b style="color:#FFF;">${astro.nakshatraName || 'Rohini'} (Pada ${astro.nakshatraPada || 2})</b><br/>
-              ☀️ Sun Sign: <b style="color:#FFF;">${astro.sunSign || 'Leo'}</b> •
-              🧬 Gana: <b style="color:#FFF;">${astro.gana || 'Manushya'}</b> •
-              🛡️ Shielded Contacts: <b style="color:#6EE7B7;">${u.shieldedContactsCount || 0}</b>
-            </div>
-          </div>
-
-          ${isSuperAdmin ? `
-            <!-- Moderation & Credits Controls (SUPER_ADMIN ONLY) -->
-            <div class="panel-card" style="margin-bottom:0;">
-              <div class="panel-title">⚡ Admin Controls & Entitlements (Super Admin Only)</div>
-              <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
-                <button class="btn btn-ghost btn-sm" onclick="userAction('${u.userId}',{action:'TOGGLE_DIGILOCKER'})">
-                  🪪 ${u.digilockerVerified ? 'Revoke DigiLocker' : 'Grant DigiLocker Badge'}
-                </button>
-                <button class="btn ${u.isShadowbanned ? 'btn-emerald' : 'btn-danger'} btn-sm" onclick="userAction('${u.userId}',{action:'TOGGLE_SHADOWBAN'})">
-                  👻 ${u.isShadowbanned ? 'Remove Shadowban' : 'Shadowban User'}
-                </button>
-                <button class="btn btn-primary btn-sm" onclick="userAction('${u.userId}',{action:'GRANT_CREDITS',sparksDelta:5,boostsDelta:2,directDmsDelta:2,grantVipPass:true})">
-                  🎁 Gift +5 Sparks, +2 Boosts & 30d VIP
-                </button>
-              </div>
-            </div>
-          ` : ''}
         `;
 
         document.getElementById('inspector-backdrop').classList.add('open');
