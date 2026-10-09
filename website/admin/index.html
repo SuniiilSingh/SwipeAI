@@ -1,0 +1,1870 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>BlunderR Command Center • Admin Panel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-base: #05060A;
+      --bg-surface: #0B0D16;
+      --bg-card: #111422;
+      --bg-elevated: #171B2E;
+      --border: rgba(255, 255, 255, 0.09);
+      --border-strong: rgba(255, 255, 255, 0.16);
+      --brand: #FF385C;
+      --brand-glow: rgba(255, 56, 92, 0.22);
+      --violet: #7C3AED;
+      --emerald: #10B981;
+      --amber: #F59E0B;
+      --danger: #EF4444;
+      --cyan: #38BDF8;
+      --text: #F8FAFC;
+      --text-muted: #94A3B8;
+      --text-dim: #64748B;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg-base);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ==================== LOGIN GATE ==================== */
+    #login-screen {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(255, 56, 92, 0.14), transparent 40%),
+        radial-gradient(circle at 80% 80%, rgba(124, 58, 237, 0.16), transparent 40%),
+        var(--bg-base);
+    }
+
+    .login-card {
+      width: 100%;
+      max-width: 440px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-strong);
+      border-radius: 24px;
+      padding: 32px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65);
+    }
+
+    .brand-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+
+    .brand-logo {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #FF385C, #7C3AED);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 22px;
+      color: #FFF;
+      box-shadow: 0 8px 20px rgba(255, 56, 92, 0.35);
+    }
+
+    .brand-title {
+      font-size: 20px;
+      font-weight: 900;
+      letter-spacing: -0.3px;
+    }
+
+    .brand-sub {
+      font-size: 11px;
+      font-weight: 700;
+      color: #FDA4AF;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+    }
+
+    .security-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.35);
+      color: #6EE7B7;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 6px 12px;
+      border-radius: 99px;
+      margin-bottom: 20px;
+    }
+
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--text-muted);
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .form-input, .form-select, .form-textarea {
+      width: 100%;
+      background: var(--bg-card);
+      border: 1px solid var(--border-strong);
+      border-radius: 12px;
+      padding: 11px 14px;
+      color: var(--text);
+      font-size: 13px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      border-color: var(--brand);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: none;
+      border-radius: 12px;
+      padding: 10px 16px;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      font-family: inherit;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #FF385C, #E11D48);
+      color: #FFF;
+      box-shadow: 0 6px 18px rgba(255, 56, 92, 0.3);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.08);
+    }
+
+    .btn-emerald {
+      background: rgba(16, 185, 129, 0.18);
+      border: 1px solid var(--emerald);
+      color: #6EE7B7;
+    }
+
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.16);
+      border: 1px solid var(--danger);
+      color: #FCA5A5;
+    }
+
+    .btn-ghost {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+    }
+
+    .btn-ghost:hover {
+      background: rgba(255, 255, 255, 0.12);
+      color: #FFF;
+    }
+
+    .btn-sm {
+      padding: 6px 11px;
+      font-size: 11px;
+      border-radius: 9px;
+    }
+
+    /* ==================== APP SHELL (3-PANE) ==================== */
+    #app-shell {
+      display: none;
+      min-height: 100vh;
+    }
+
+    .layout-grid {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      min-height: 100vh;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      background: var(--bg-surface);
+      border-right: 1px solid var(--border);
+      padding: 20px 14px;
+      display: flex;
+      flex-direction: column;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+    }
+
+    .nav-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-top: 12px;
+      flex: 1;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 11px 12px;
+      border-radius: 12px;
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.15s;
+    }
+
+    .nav-item:hover {
+      background: rgba(255, 255, 255, 0.04);
+      color: #FFF;
+    }
+
+    .nav-item.active {
+      background: var(--brand-glow);
+      border-color: rgba(255, 56, 92, 0.45);
+      color: #FFF;
+    }
+
+    .nav-badge {
+      background: var(--brand);
+      color: #FFF;
+      font-size: 10px;
+      font-weight: 900;
+      padding: 2px 7px;
+      border-radius: 99px;
+    }
+
+    .nav-badge.amber {
+      background: var(--amber);
+      color: #05060A;
+    }
+
+    /* Main Content Area */
+    .main-area {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .topbar {
+      height: 64px;
+      background: rgba(11, 13, 22, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+
+    .global-search {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-strong);
+      border-radius: 12px;
+      padding: 8px 14px;
+      width: 360px;
+    }
+
+    .global-search input {
+      background: transparent;
+      border: none;
+      color: #FFF;
+      font-size: 13px;
+      width: 100%;
+      outline: none;
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .role-pill {
+      background: rgba(124, 58, 237, 0.2);
+      border: 1px solid rgba(167, 139, 250, 0.45);
+      color: #DDD6FE;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 5px 10px;
+      border-radius: 8px;
+    }
+
+    .content-body {
+      padding: 24px;
+      max-width: 1440px;
+    }
+
+    .module-pane {
+      display: none;
+    }
+
+    .module-pane.active {
+      display: block;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .section-title {
+      font-size: 22px;
+      font-weight: 900;
+    }
+
+    .section-sub {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 3px;
+    }
+
+    /* KPI Grid */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+
+    .kpi-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 18px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .kpi-label {
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+
+    .kpi-value {
+      font-size: 28px;
+      font-weight: 900;
+      margin-top: 6px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .kpi-meta {
+      font-size: 11px;
+      color: var(--text-dim);
+      margin-top: 6px;
+      font-weight: 600;
+    }
+
+    /* Cards & Tables */
+    .panel-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 18px;
+      margin-bottom: 20px;
+    }
+
+    .panel-title {
+      font-size: 15px;
+      font-weight: 800;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .table-wrap {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    th {
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 11px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    td {
+      padding: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      font-size: 13px;
+      vertical-align: middle;
+    }
+
+    tr:hover td {
+      background: rgba(255, 255, 255, 0.025);
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 6px;
+      text-transform: uppercase;
+    }
+
+    .status-VERIFIED, .status-CAPTURED, .status-RESOLVED, .status-SUCCESS {
+      background: rgba(16, 185, 129, 0.16);
+      color: #6EE7B7;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+    }
+
+    .status-PENDING, .status-IN_PROGRESS {
+      background: rgba(245, 158, 11, 0.16);
+      color: #FCD34D;
+      border: 1px solid rgba(245, 158, 11, 0.4);
+    }
+
+    .status-REJECTED, .status-FAILED {
+      background: rgba(239, 68, 68, 0.16);
+      color: #FCA5A5;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+    }
+
+    .status-UNVERIFIED, .status-CLOSED {
+      background: rgba(148, 163, 184, 0.14);
+      color: #CBD5E1;
+      border: 1px solid rgba(148, 163, 184, 0.3);
+    }
+
+    /* Verification Moderation Cards */
+    .mod-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+      gap: 16px;
+    }
+
+    .mod-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-strong);
+      border-radius: 18px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .mod-photos-compare {
+      display: grid;
+      grid-template-columns: 125px 1fr;
+      gap: 10px;
+      align-items: stretch;
+    }
+
+    .selfie-box {
+      background: #070912;
+      border: 2px solid var(--brand);
+      border-radius: 12px;
+      overflow: hidden;
+      position: relative;
+      height: 155px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .selfie-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .selfie-tag {
+      position: absolute;
+      bottom: 6px;
+      left: 6px;
+      background: rgba(5, 6, 10, 0.85);
+      color: #FCD34D;
+      font-size: 9px;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 5px;
+    }
+
+    .profile-photos-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+    }
+
+    .profile-thumb {
+      background: #070912;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      height: 74px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-dim);
+      font-size: 10px;
+    }
+
+    .profile-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* Right Slide-Over Inspector Drawer */
+    .drawer-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(3, 4, 8, 0.72);
+      backdrop-filter: blur(4px);
+      z-index: 50;
+      display: none;
+      justify-content: flex-end;
+    }
+
+    .drawer-backdrop.open {
+      display: flex;
+    }
+
+    .inspector-drawer {
+      width: 100%;
+      max-width: 540px;
+      background: var(--bg-surface);
+      border-left: 1px solid var(--border-strong);
+      height: 100vh;
+      overflow-y: auto;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .inspector-photo-strip {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .inspector-photo-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      position: relative;
+      aspect-ratio: 0.8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .inspector-photo-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .inspector-photo-del {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      background: rgba(239, 68, 68, 0.9);
+      color: #FFF;
+      border: none;
+      border-radius: 6px;
+      padding: 3px 6px;
+      font-size: 10px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .toast-box {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #1E293B;
+      border: 1px solid var(--emerald);
+      color: #FFF;
+      padding: 12px 18px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 700;
+      z-index: 100;
+      display: none;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    @media (max-width: 900px) {
+      .layout-grid {
+        grid-template-columns: 1fr;
+      }
+      .sidebar {
+        height: auto;
+        position: relative;
+      }
+      .global-search {
+        width: 200px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ==================== 1. SECURE ADMIN LOGIN GATE ==================== -->
+  <div id="login-screen">
+    <div class="login-card">
+      <div class="brand-row">
+        <div class="brand-logo">B</div>
+        <div>
+          <div class="brand-title">BlunderR Command Center</div>
+          <div class="brand-sub">Internal Admin & Trust Portal</div>
+        </div>
+      </div>
+
+      <div class="security-pill">
+        🔒 HMAC-SHA256 Signed • Role-Based Access • Audit Logged
+      </div>
+
+      <form id="login-form" onsubmit="handleAdminLogin(event)">
+        <div class="form-group">
+          <label class="form-label">Admin Email</label>
+          <input type="email" id="login-email" class="form-input" value="admin@blunderr.in" required />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Master Password</label>
+          <input type="password" id="login-password" class="form-input" value="Blunderr@Admin2026" required />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">2FA Security PIN</label>
+          <input type="password" id="login-pin" class="form-input" placeholder="4-digit PIN (e.g. 2026)" value="2026" required />
+        </div>
+
+        <div id="login-error" style="color: #FCA5A5; font-size: 12px; font-weight: 700; margin-bottom: 12px; display: none;"></div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 13px;">
+          🚀 Authenticate & Enter Command Center
+        </button>
+      </form>
+
+      <div style="margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border); display: flex; gap: 6px; flex-wrap: wrap;">
+        <span style="font-size: 11px; color: var(--text-dim); width: 100%; margin-bottom: 4px;">Quick Role Switch (Demo Presets):</span>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="fillRole('admin@blunderr.in','Blunderr@Admin2026')">👑 Super Admin</button>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="fillRole('moderator@blunderr.in','Blunderr@Mod2026')">🛡️ Moderator</button>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="fillRole('growth@blunderr.in','Blunderr@Growth2026')">📈 Growth CMS</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 2. 3-PANE ADMIN COMMAND CENTER ==================== -->
+  <div id="app-shell">
+    <div class="layout-grid">
+      <!-- LEFT SIDEBAR -->
+      <aside class="sidebar">
+        <div class="brand-row" style="margin-bottom: 10px;">
+          <div class="brand-logo" style="width: 36px; height: 36px; font-size: 18px;">B</div>
+          <div>
+            <div style="font-size: 16px; font-weight: 900;">BlunderR</div>
+            <div style="font-size: 10px; color: #6EE7B7; font-weight: 800;">● PROD LIVE</div>
+          </div>
+        </div>
+
+        <nav class="nav-list">
+          <div class="nav-item active" data-tab="overview" onclick="switchTab('overview')">
+            <span>📊 Executive Pulse</span>
+          </div>
+          <div class="nav-item" data-tab="verification" onclick="switchTab('verification')">
+            <span>🪪 Selfie & KYC Queue</span>
+            <span class="nav-badge amber" id="badge-pending-selfie">0</span>
+          </div>
+          <div class="nav-item" data-tab="users" onclick="switchTab('users')">
+            <span>👥 360° User Directory</span>
+            <span class="nav-badge" id="badge-total-users" style="background: rgba(255,255,255,0.12);">0</span>
+          </div>
+          <div class="nav-item" data-tab="safety" onclick="switchTab('safety')">
+            <span>🛡️ Trust & ShadowShield</span>
+          </div>
+          <div class="nav-item" data-tab="payments" onclick="switchTab('payments')">
+            <span>💳 Payments & Revenue</span>
+          </div>
+          <div class="nav-item" data-tab="tickets" onclick="switchTab('tickets')">
+            <span>🎧 Support Ticket Desk</span>
+            <span class="nav-badge" id="badge-open-tickets">0</span>
+          </div>
+          <div class="nav-item" data-tab="cms" onclick="switchTab('cms')">
+            <span>🏙️ Tribes & Safe-Date CMS</span>
+          </div>
+          <div class="nav-item" data-tab="broadcast" onclick="switchTab('broadcast')">
+            <span>📣 Broadcast & Audit Logs</span>
+          </div>
+        </nav>
+
+        <div style="padding-top: 14px; border-top: 1px solid var(--border); font-size: 11px; color: var(--text-dim);">
+          <div id="admin-user-label" style="color: #FFF; font-weight: 700; margin-bottom: 4px;">admin@blunderr.in</div>
+          <button class="btn btn-ghost btn-sm" style="width: 100%; margin-top: 8px;" onclick="handleLogout()">
+            🔒 Sign Out
+          </button>
+        </div>
+      </aside>
+
+      <!-- CENTER MAIN WORKSPACE -->
+      <div class="main-area">
+        <!-- TOPBAR -->
+        <header class="topbar">
+          <div class="global-search">
+            <span>🔍</span>
+            <input
+              type="text"
+              id="global-search-input"
+              placeholder="Search user by name, phone (+91...), city, tribe..."
+              onkeydown="if(event.key==='Enter'){ switchTab('users'); loadUsers(); }"
+            />
+          </div>
+
+          <div class="topbar-right">
+            <span class="role-pill" id="topbar-role-badge">SUPER_ADMIN</span>
+            <button class="btn btn-ghost btn-sm" onclick="refreshCurrentTab()">🔄 Refresh</button>
+            <a href="https://blunderr.in" target="_blank" class="btn btn-ghost btn-sm" style="text-decoration: none;">🌐 Website ↗</a>
+          </div>
+        </header>
+
+        <!-- MODULE PANES -->
+        <main class="content-body">
+
+          <!-- MODULE 1: OVERVIEW -->
+          <section id="pane-overview" class="module-pane active">
+            <div class="section-header">
+              <div>
+                <h1 class="section-title">📊 Executive Pulse Dashboard</h1>
+                <p class="section-sub">Real-time user growth, background AI selfie verification health, and revenue metrics.</p>
+              </div>
+            </div>
+
+            <div class="kpi-grid" id="overview-kpi-grid"></div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1.6fr; gap: 18px;">
+              <div class="panel-card">
+                <div class="panel-title">🏙️ Active Singles by City</div>
+                <div id="overview-cities-list"></div>
+              </div>
+
+              <div class="panel-card">
+                <div class="panel-title">
+                  <span>🆕 Recent User Signups</span>
+                  <button class="btn btn-ghost btn-sm" onclick="switchTab('users')">View All ➔</button>
+                </div>
+                <div class="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>User</th>
+                        <th>City / Tribe</th>
+                        <th>Photos</th>
+                        <th>Selfie Status</th>
+                        <th>Inspect</th>
+                      </tr>
+                    </thead>
+                    <tbody id="overview-recent-users"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- MODULE 2: SELFIE & KYC MODERATION QUEUE -->
+          <section id="pane-verification" class="module-pane">
+            <div class="section-header">
+              <div>
+                <h1 class="section-title">🪪 Selfie & Biometric FaceMatch Queue</h1>
+                <p class="section-sub">Review pending background AI selfie verifications side-by-side against uploaded profile photos.</p>
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <button class="btn btn-ghost btn-sm" onclick="loadVerificationQueue('ALL')">All</button>
+                <button class="btn btn-ghost btn-sm" onclick="loadVerificationQueue('PENDING')">⏳ Pending Only</button>
+                <button class="btn btn-ghost btn-sm" onclick="loadVerificationQueue('WITH_SELFIE')">📸 Has Selfie</button>
+                <button class="btn btn-ghost btn-sm" onclick="loadVerificationQueue('VERIFIED')">✓ Verified</button>
+                <button class="btn btn-ghost btn-sm" onclick="loadVerificationQueue('REJECTED')">⚠️ Rejected</button>
+              </div>
+            </div>
+
+            <div class="mod-grid" id="verification-mod-grid"></div>
+          </section>
+
+          <!-- MODULE 3: 360° USER DIRECTORY -->
+          <section id="pane-users" class="module-pane">
+            <div class="section-header">
+              <div>
+                <h1 class="section-title">👥 360° User & Profile Directory</h1>
+                <p class="section-sub">Inspect any user's 6 photo slots, selfie, Kundali chart, credits, or moderate accounts.</p>
+              </div>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <select id="user-status-filter" class="form-select" style="width: 160px;" onchange="loadUsers()">
+                  <option value="ALL">All Statuses</option>
+                  <option value="VERIFIED">✓ Selfie Verified</option>
+                  <option value="PENDING">⏳ Pending Verification</option>
+                  <option value="REJECTED">⚠️ Rejected</option>
+                  <option value="UNVERIFIED">Unverified</option>
+                  <option value="VIP">👑 Active VIP Pass</option>
+                  <option value="SHADOWBANNED">👻 Shadowbanned</option>
+                </select>
+                <button class="btn btn-primary btn-sm" onclick="loadUsers()">Filter Users</button>
+              </div>
+            </div>
+
+            <div class="panel-card">
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>User</th>
+                      <th>Phone (Masked)</th>
+                      <th>City & Neighborhood Tribe</th>
+                      <th>Photos</th>
+                      <th>Verification</th>
+                      <th>Karma / Credits</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="users-table-body"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <!-- MODULE 4: TRUST, SAFETY & SHADOWSHIELD -->
+          <section id="pane-safety" class="module-pane">
+            <div class="section-header">
+              <div>
+                <h1 class="section-title">🛡️ Trust, Safety & ShadowShield Center</h1>
+                <p class="section-sub">Zero-Knowledge contact shielding telemetry, corporate domain blocks, and flagged/shadowbanned accounts.</p>
+              </div>
+            </div>
+
+            <div class="kpi-grid" id="safety-kpi-grid"></div>
+
+            <div class="panel-card">
+              <div class="panel-title">👻 Shadowbanned & Low-Karma Accounts</div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>User</th>
+                      <th>City</th>
+                      <th>Karma Score</th>
+                      <th>Shadowban Status</th>
+                      <th>Quick Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="safety-flagged-body"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <!-- MODULE 5: PAYMENTS & REVENUE AUDIT -->
+          <section id="pane-payments" class="module-pane">
+            <div class="section-header">
+              <div>
+                <h1 class="section-title">💳 Payments, Micro-Sachets & Forensic Audit</h1>
+                <p class="section-sub">Track Razorpay UPI, Cashfree, and IAP orders plus real-time AOP execution logs.</p>
+              </div>
+            </div>
+
+            <div class="kpi-grid" id="payments-kpi-grid"></div>
+
+            <div class="panel-card">
+              <div class="panel-title">🧾 UPI & Store Orders</div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Order ID</th>
+                      <th>User ID</th>
+                      <th>SKU</th>
+                      <th>Amount</th>
+                      <th>Provider</th>
+                      <th>Status</th>
+                      <th>Created At</th>
+                      <th>Reconcile</th>
+                    </tr>
+                  </thead>
+                  <tbody id="payments-orders-body"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="panel-card">
+              <div class="panel-title">⚡ AOP Payment Execution Logs (Last 50)</div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Timestamp</th>
+                      <th>Action</th>
+                      <th>Order ID</th>
+                      <th>Status</th>
+                      <th>Latency</th>
+                      <th>Summary</th>
+                    </tr>
+                  </thead>
+                  <tbody id="payments-logs-body"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <!-- MODULE 6: SUPPORT TICKET DESK -->
+          <section id="pane-tickets" class="module-pane">
+            <div class="section-header">
+              <div>
+                <h1 class="section-title">🎧 Customer Support Ticket Desk</h1>
+                <p class="section-sub">Resolve user tickets and send instant in-app updates.</p>
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <button class="btn btn-ghost btn-sm" onclick="loadTickets('ALL')">All</button>
+                <button class="btn btn-ghost btn-sm" onclick="loadTickets('PENDING')">Pending</button>
+                <button class="btn btn-ghost btn-sm" onclick="loadTickets('IN_PROGRESS')">In Progress</button>
+                <button class="btn btn-ghost btn-sm" onclick="loadTickets('RESOLVED')">Resolved</button>
+              </div>
+            </div>
+
+            <div class="panel-card">
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Ticket #</th>
+                      <th>User</th>
+                      <th>Category</th>
+                      <th>Subject & Description</th>
+                      <th>Status</th>
+                      <th>Resolution Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tickets-table-body"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <!-- MODULE 7: TRIBES & SAFE-DATE CMS -->
+          <section id="pane-cms" class="module-pane">
+            <div class="section-header">
+              <div>
+                <h1 class="section-title">🏙️ Neighborhood Tribes & Safe-Date Cafes CMS</h1>
+                <p class="section-sub">Add new city-wise Micro-Circles and O2O Safe-Date partner cafes live without an app update.</p>
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 18px;">
+              <!-- Add New Micro-Circle -->
+              <div class="panel-card">
+                <div class="panel-title">➕ Add City Micro-Circle (Tribe)</div>
+                <form onsubmit="handleCreateCircle(event)">
+                  <div class="form-group">
+                    <label class="form-label">City</label>
+                    <input type="text" id="cms-circle-city" class="form-input" placeholder="e.g. Bengaluru, Mumbai, Delhi NCR" required />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Circle / Tribe Name</label>
+                    <input type="text" id="cms-circle-name" class="form-input" placeholder="e.g. HSR Layout AI Founders" required />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Tagline / Description</label>
+                    <input type="text" id="cms-circle-tagline" class="form-input" placeholder="Late-night filter coffee & startup builders" required />
+                  </div>
+                  <button type="submit" class="btn btn-primary btn-sm">✨ Publish Micro-Circle</button>
+                </form>
+              </div>
+
+              <!-- Add New Safe-Date Cafe -->
+              <div class="panel-card">
+                <div class="panel-title">☕ Add Partner Safe-Date Spot</div>
+                <form onsubmit="handleCreateSafeSpot(event)">
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div class="form-group">
+                      <label class="form-label">Venue Name</label>
+                      <input type="text" id="cms-spot-name" class="form-input" placeholder="Blue Tokai Indiranagar" required />
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">City</label>
+                      <input type="text" id="cms-spot-city" class="form-input" placeholder="Bengaluru" required />
+                    </div>
+                  </div>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div class="form-group">
+                      <label class="form-label">Neighborhood</label>
+                      <input type="text" id="cms-spot-hood" class="form-input" placeholder="100 Feet Road" required />
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Coupon Code (15% Off)</label>
+                      <input type="text" id="cms-spot-coupon" class="form-input" value="BLUNDERR15" required />
+                    </div>
+                  </div>
+                  <button type="submit" class="btn btn-primary btn-sm">🛡️ Publish Safe-Date Cafe</button>
+                </form>
+              </div>
+            </div>
+
+            <div class="panel-card">
+              <div class="panel-title">📍 Active Neighborhood Micro-Circles</div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>City</th>
+                      <th>Circle Name</th>
+                      <th>Tagline</th>
+                      <th>Members</th>
+                      <th>Delete</th>
+                    </tr>
+                  </thead>
+                  <tbody id="cms-circles-body"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="panel-card">
+              <div class="panel-title">☕ Active Safe-Date Partner Cafes</div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>City</th>
+                      <th>Venue</th>
+                      <th>Neighborhood</th>
+                      <th>Discount & Coupon</th>
+                      <th>Delete</th>
+                    </tr>
+                  </thead>
+                  <tbody id="cms-spots-body"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <!-- MODULE 8: BROADCAST CAMPAIGNS & IMMUTABLE AUDIT LOGS -->
+          <section id="pane-broadcast" class="module-pane">
+            <div class="section-header">
+              <div>
+                <h1 class="section-title">📣 City Broadcasts & Security Audit Trail</h1>
+                <p class="section-sub">Send targeted in-app notifications and inspect the immutable admin security log.</p>
+              </div>
+            </div>
+
+            <div class="panel-card">
+              <div class="panel-title">📣 Send In-App Notification Campaign</div>
+              <form onsubmit="handleSendBroadcast(event)" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div class="form-group">
+                  <label class="form-label">Target Segment</label>
+                  <select id="bc-audience" class="form-select">
+                    <option value="ALL_USERS">All Registered Users</option>
+                    <option value="PENDING_SELFIE">Users with Pending Selfie Verification</option>
+                    <option value="UNVERIFIED_SELFIE">Unverified Users (Nudge to Verify)</option>
+                    <option value="CITY">Specific City Only</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">City Filter (if City selected)</label>
+                  <input type="text" id="bc-city" class="form-input" placeholder="e.g. Bengaluru" />
+                </div>
+                <div class="form-group" style="grid-column: span 2;">
+                  <label class="form-label">Notification Title</label>
+                  <input type="text" id="bc-title" class="form-input" placeholder="⚡ Friday Peak Hour in Indiranagar & Koramangala!" required />
+                </div>
+                <div class="form-group" style="grid-column: span 2;">
+                  <label class="form-label">Notification Message</label>
+                  <input type="text" id="bc-body" class="form-input" placeholder="Open BlunderR now to check your 36-Guna Cosmic & Meme DNA matches." required />
+                </div>
+                <div style="grid-column: span 2;">
+                  <button type="submit" class="btn btn-primary">🚀 Send Broadcast Now</button>
+                </div>
+              </form>
+            </div>
+
+            <div class="panel-card">
+              <div class="panel-title">🔒 Immutable Admin Security Audit Log</div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Audit ID</th>
+                      <th>Timestamp</th>
+                      <th>Admin</th>
+                      <th>Role</th>
+                      <th>Action</th>
+                      <th>Target</th>
+                      <th>Details</th>
+                      <th>IP Address</th>
+                    </tr>
+                  </thead>
+                  <tbody id="audit-logs-body"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+        </main>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 3. RIGHT SLIDE-OVER 360° USER INSPECTOR ==================== -->
+  <div id="inspector-backdrop" class="drawer-backdrop" onclick="if(event.target===this) closeInspector()">
+    <div class="inspector-drawer" id="inspector-content"></div>
+  </div>
+
+  <div id="toast-box" class="toast-box"></div>
+
+  <script>
+    const API_BASE = '/v1/admin';
+    let adminToken = localStorage.getItem('blunderr_admin_token') || '';
+    let adminRole = localStorage.getItem('blunderr_admin_role') || '';
+    let adminEmail = localStorage.getItem('blunderr_admin_email') || '';
+    let currentTab = 'overview';
+
+    function showToast(msg) {
+      const el = document.getElementById('toast-box');
+      el.textContent = msg;
+      el.style.display = 'block';
+      setTimeout(() => { el.style.display = 'none'; }, 3200);
+    }
+
+    function fillRole(email, pass) {
+      document.getElementById('login-email').value = email;
+      document.getElementById('login-password').value = pass;
+      document.getElementById('login-pin').value = '2026';
+    }
+
+    async function apiCall(path, options = {}) {
+      const headers = Object.assign({
+        'Content-Type': 'application/json',
+        'X-Admin-Token': adminToken
+      }, options.headers || {});
+
+      const res = await fetch(API_BASE + path, Object.assign({}, options, { headers }));
+      if (res.status === 401) {
+        handleLogout();
+        throw new Error('Session expired. Please sign in again.');
+      }
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(errText || ('HTTP ' + res.status));
+      }
+      return res.json();
+    }
+
+    async function handleAdminLogin(e) {
+      e.preventDefault();
+      const errEl = document.getElementById('login-error');
+      errEl.style.display = 'none';
+
+      const email = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value.trim();
+      const pin = document.getElementById('login-pin').value.trim();
+
+      try {
+        const res = await fetch(API_BASE + '/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password, pin })
+        });
+        if (!res.ok) {
+          const msg = await res.json().catch(() => ({ message: 'Invalid credentials or PIN' }));
+          throw new Error(msg.message || 'Authentication failed');
+        }
+        const data = await res.json();
+        adminToken = data.token;
+        adminRole = data.role;
+        adminEmail = data.email;
+        localStorage.setItem('blunderr_admin_token', adminToken);
+        localStorage.setItem('blunderr_admin_role', adminRole);
+        localStorage.setItem('blunderr_admin_email', adminEmail);
+        enterCommandCenter();
+      } catch (err) {
+        errEl.textContent = '⚠️ ' + err.message;
+        errEl.style.display = 'block';
+      }
+    }
+
+    function handleLogout() {
+      adminToken = '';
+      localStorage.removeItem('blunderr_admin_token');
+      document.getElementById('app-shell').style.display = 'none';
+      document.getElementById('login-screen').style.display = 'flex';
+    }
+
+    function enterCommandCenter() {
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('app-shell').style.display = 'block';
+      document.getElementById('admin-user-label').textContent = adminEmail;
+      document.getElementById('topbar-role-badge').textContent = adminRole;
+      loadOverview();
+    }
+
+    function switchTab(tab) {
+      currentTab = tab;
+      document.querySelectorAll('.nav-item').forEach(el => {
+        el.classList.toggle('active', el.getAttribute('data-tab') === tab);
+      });
+      document.querySelectorAll('.module-pane').forEach(el => {
+        el.classList.toggle('active', el.id === 'pane-' + tab);
+      });
+      refreshCurrentTab();
+    }
+
+    function refreshCurrentTab() {
+      if (currentTab === 'overview') loadOverview();
+      else if (currentTab === 'verification') loadVerificationQueue('ALL');
+      else if (currentTab === 'users') loadUsers();
+      else if (currentTab === 'safety') loadSafety();
+      else if (currentTab === 'payments') loadPayments();
+      else if (currentTab === 'tickets') loadTickets('ALL');
+      else if (currentTab === 'cms') loadCms();
+      else if (currentTab === 'broadcast') loadAuditLogs();
+    }
+
+    // ==================== 1. OVERVIEW ====================
+    async function loadOverview() {
+      try {
+        const d = await apiCall('/overview');
+        document.getElementById('badge-pending-selfie').textContent = d.pendingSelfie || 0;
+        document.getElementById('badge-total-users').textContent = d.totalUsers || 0;
+        document.getElementById('badge-open-tickets').textContent = d.openTickets || 0;
+
+        const kpis = [
+          { label: 'Total Users', value: d.totalUsers, meta: `+${d.signups24h} in last 24h • +${d.signups7d} in 7d`, color: '#FFF' },
+          { label: 'Selfie Verified ✓', value: d.verifiedSelfie, meta: `${d.pendingSelfie} Pending • ${d.rejectedSelfie} Rejected`, color: '#6EE7B7' },
+          { label: '2+ Photos Ready 📸', value: d.twoOrMorePhotos, meta: `DigiLocker Verified: ${d.digilockerVerified}`, color: '#38BDF8' },
+          { label: 'Total Matches & Chats', value: d.totalMatches, meta: `${d.totalMessages} encrypted messages`, color: '#F472B6' },
+          { label: 'Captured Revenue (INR)', value: '₹' + Number(d.totalRevenueInr || 0).toLocaleString(), meta: `${d.capturedOrders} paid orders • ${d.activeVipPasses} VIP Passes`, color: '#FCD34D' },
+          { label: 'Tribes & Safe Cafes', value: d.totalCircles, meta: `${d.totalSafeSpots} partner Safe-Date spots`, color: '#C4B5FD' }
+        ];
+
+        document.getElementById('overview-kpi-grid').innerHTML = kpis.map(k => `
+          <div class="kpi-card">
+            <div class="kpi-label">${k.label}</div>
+            <div class="kpi-value" style="color:${k.color}">${k.value}</div>
+            <div class="kpi-meta">${k.meta}</div>
+          </div>
+        `).join('');
+
+        document.getElementById('overview-cities-list').innerHTML = (d.topCities || []).map(c => `
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.06);">
+            <span style="font-weight:700;font-size:13px;">🏙️ ${c.city}</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-weight:800;color:#FF6B8B;">${c.users} users</span>
+          </div>
+        `).join('') || '<div style="color:var(--text-dim);font-size:13px;">No city data yet.</div>';
+
+        document.getElementById('overview-recent-users').innerHTML = (d.recentUsers || []).map(u => `
+          <tr>
+            <td>
+              <div style="font-weight:800;">${escapeHtml(u.displayName)}</div>
+              <div style="font-size:11px;color:var(--text-dim);">${u.phoneMasked}</div>
+            </td>
+            <td>
+              <div style="font-weight:700;">${escapeHtml(u.city)}</div>
+              <div style="font-size:11px;color:var(--text-muted);">${escapeHtml(u.microCircle)}</div>
+            </td>
+            <td><span class="status-pill ${u.photoCount >= 2 ? 'status-VERIFIED' : 'status-PENDING'}">📸 ${u.photoCount}/6</span></td>
+            <td><span class="status-pill status-${u.verificationStatus}">${u.verificationStatus}</span></td>
+            <td><button class="btn btn-ghost btn-sm" onclick="openInspector('${u.userId}')">🔍 Inspect</button></td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        showToast('⚠️ ' + e.message);
+      }
+    }
+
+    // ==================== 2. SELFIE & KYC QUEUE ====================
+    async function loadVerificationQueue(filter = 'ALL') {
+      try {
+        const list = await apiCall('/verification-queue?statusFilter=' + encodeURIComponent(filter));
+        const grid = document.getElementById('verification-mod-grid');
+        if (!list.length) {
+          grid.innerHTML = `<div class="panel-card" style="grid-column:1/-1;text-align:center;color:var(--text-muted);">No users in "${filter}" verification filter.</div>`;
+          return;
+        }
+        grid.innerHTML = list.map(u => {
+          const photos = u.photos || [];
+          const thumbsHtml = [0,1,2,3,4,5].map(idx => {
+            const pUrl = photos[idx];
+            return `<div class="profile-thumb">${pUrl ? `<img src="${pUrl}" alt="Photo ${idx+1}" />` : `#${idx+1}`}</div>`;
+          }).join('');
+
+          return `
+            <div class="mod-card">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                  <div style="font-weight:900;font-size:15px;">${escapeHtml(u.displayName)}</div>
+                  <div style="font-size:11px;color:var(--text-muted);">📍 ${escapeHtml(u.city)} • ${escapeHtml(u.microCircle)}</div>
+                </div>
+                <span class="status-pill status-${u.verificationStatus}">${u.verificationStatus}</span>
+              </div>
+
+              <div class="mod-photos-compare">
+                <div class="selfie-box">
+                  ${u.selfieUrl ? `<img src="${u.selfieUrl}" alt="Live Selfie" />` : `<span style="font-size:11px;color:var(--text-dim);text-align:center;padding:8px;">No Selfie Uploaded</span>`}
+                  <span class="selfie-tag">🤳 LIVE SELFIE</span>
+                </div>
+                <div class="profile-photos-grid">${thumbsHtml}</div>
+              </div>
+
+              <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--text-muted);">
+                <span>📸 ${u.photoCount}/6 Photos Uploaded</span>
+                <span>Liveness: ${(Number(u.livenessScore || 0) * 100).toFixed(0)}%</span>
+              </div>
+
+              <div style="display:flex;gap:8px;">
+                <button class="btn btn-emerald btn-sm" style="flex:1;" onclick="decideSelfie('${u.userId}','APPROVE')">✓ Approve Verified</button>
+                <button class="btn btn-danger btn-sm" style="flex:1;" onclick="decideSelfie('${u.userId}','REJECT')">✕ Reject Retake</button>
+                <button class="btn btn-ghost btn-sm" onclick="openInspector('${u.userId}')">🔍</button>
+              </div>
+            </div>
+          `;
+        }).join('');
+      } catch (e) {
+        showToast('⚠️ ' + e.message);
+      }
+    }
+
+    async function decideSelfie(userId, decision) {
+      let reason = '';
+      if (decision === 'REJECT') {
+        reason = prompt('Reason for rejecting selfie (sent to user):', 'Please take a clear, well-lit selfie matching your profile photos.') || '';
+        if (!reason) return;
+      }
+      try {
+        await apiCall(`/verification/${userId}/decision`, {
+          method: 'POST',
+          body: JSON.stringify({ decision, reason })
+        });
+        showToast(decision === 'APPROVE' ? '✅ Selfie Approved & User Notified!' : '⚠️ Selfie Marked Rejected & User Notified');
+        loadVerificationQueue('ALL');
+        loadOverview();
+      } catch (e) {
+        showToast('⚠️ ' + e.message);
+      }
+    }
+
+    // ==================== 3. USERS DIRECTORY ====================
+    async function loadUsers() {
+      try {
+        const q = document.getElementById('global-search-input').value.trim();
+        const status = document.getElementById('user-status-filter').value;
+        const list = await apiCall(`/users?q=${encodeURIComponent(q)}&status=${encodeURIComponent(status)}`);
+        document.getElementById('users-table-body').innerHTML = list.map(u => `
+          <tr>
+            <td>
+              <div style="font-weight:800;">${escapeHtml(u.displayName)}</div>
+              <div style="font-size:10px;color:var(--text-dim);font-family:'JetBrains Mono',monospace;">${u.userId}</div>
+            </td>
+            <td style="font-family:'JetBrains Mono',monospace;font-size:12px;">${u.phoneMasked}</td>
+            <td>
+              <div style="font-weight:700;">${escapeHtml(u.city)}</div>
+              <div style="font-size:11px;color:var(--text-muted);">📍 ${escapeHtml(u.microCircle)}</div>
+            </td>
+            <td>
+              <span class="status-pill ${u.photoCount >= 2 ? 'status-VERIFIED' : 'status-PENDING'}">📸 ${u.photoCount} / 6</span>
+            </td>
+            <td>
+              <span class="status-pill status-${u.verificationStatus}">${u.verificationStatus}</span>
+              ${u.digilockerVerified ? '<span class="status-pill status-VERIFIED" style="margin-left:4px;">🪪 Gov ID</span>' : ''}
+              ${u.isShadowbanned ? '<span class="status-pill status-REJECTED" style="margin-left:4px;">👻 Shadowbanned</span>' : ''}
+            </td>
+            <td style="font-size:12px;">
+              ⚖️ Karma: <b>${u.karmaScore}</b> • ⚡ ${u.sparksBalance} Sparks
+              ${u.hasActivePass ? '<span class="status-pill status-VERIFIED" style="margin-left:4px;">👑 VIP</span>' : ''}
+            </td>
+            <td>
+              <button class="btn btn-primary btn-sm" onclick="openInspector('${u.userId}')">360° Inspect</button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        showToast('⚠️ ' + e.message);
+      }
+    }
+
+    // ==================== 4. 360° USER INSPECTOR DRAWER ====================
+    async function openInspector(userId) {
+      try {
+        const u = await apiCall('/users/' + userId);
+        const drawer = document.getElementById('inspector-content');
+        const astro = u.astrology || {};
+        const slots = [u.photo1, u.photo2, u.photo3, u.photo4, u.photo5, u.photo6];
+
+        drawer.innerHTML = `
+          <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);padding-bottom:14px;">
+            <div>
+              <div style="font-size:18px;font-weight:900;">${escapeHtml(u.displayName)}</div>
+              <div style="font-size:11px;color:var(--text-dim);font-family:'JetBrains Mono',monospace;">${u.userId}</div>
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="closeInspector()">✕ Close</button>
+          </div>
+
+          <!-- Phone & Quick Identity -->
+          <div class="panel-card" style="margin-bottom:0;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                <div class="form-label">REGISTERED PHONE (PII PROTECTED)</div>
+                <div id="insp-phone-val" style="font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:800;">${u.phoneMasked}</div>
+              </div>
+              <button class="btn btn-ghost btn-sm" onclick="revealPhone('${u.userId}')">🔓 Reveal Phone (Logged)</button>
+            </div>
+            <div style="margin-top:10px;font-size:12px;color:var(--text-muted);">
+              📍 <b>${escapeHtml(u.city || 'Bengaluru')}</b> • Tribe: <b>${escapeHtml(u.microCircle || 'None')}</b><br/>
+              💼 ${escapeHtml(u.job || 'Not specified')} • 🎓 ${escapeHtml(u.institute || 'Not specified')}
+            </div>
+          </div>
+
+          <!-- Live Selfie & 6 Profile Photo Slots -->
+          <div class="panel-card" style="margin-bottom:0;">
+            <div class="panel-title">
+              <span>📸 Live Selfie & 6 Photo Showcase (${u.photoCount}/6)</span>
+              <span class="status-pill status-${u.verificationStatus}">${u.verificationStatus}</span>
+            </div>
+
+            <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px;background:#070912;padding:10px;border-radius:12px;border:1px solid var(--border);">
+              <div style="width:70px;height:86px;border-radius:10px;overflow:hidden;border:2px solid var(--brand);background:#111;display:flex;align-items:center;justify-content:center;">
+                ${u.selfieUrl ? `<img src="${u.selfieUrl}" style="width:100%;height:100%;object-fit:cover;" />` : '<span style="font-size:10px;color:#64748B;">No Selfie</span>'}
+              </div>
+              <div style="flex:1;">
+                <div style="font-size:12px;font-weight:800;">Verification Selfie</div>
+                <div style="font-size:11px;color:var(--text-muted);margin:3px 0 8px;">Approve or reject background FaceMatch verification:</div>
+                <div style="display:flex;gap:6px;">
+                  <button class="btn btn-emerald btn-sm" onclick="userAction('${u.userId}',{action:'VERIFY_SELFIE'})">✓ Mark Verified</button>
+                  <button class="btn btn-danger btn-sm" onclick="userAction('${u.userId}',{action:'REJECT_SELFIE'})">✕ Mark Rejected</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="inspector-photo-strip">
+              ${slots.map((url, i) => `
+                <div class="inspector-photo-card">
+                  ${url ? `
+                    <img src="${url}" alt="Slot ${i+1}" />
+                    <button class="inspector-photo-del" onclick="userAction('${u.userId}',{action:'REMOVE_PHOTO',photoSlot:${i+1}})">🗑️ #${i+1}</button>
+                  ` : `<span style="font-size:11px;color:var(--text-dim);">Slot #${i+1} Empty</span>`}
+                </div>
+              `).join('')}
+            </div>
+          </div>
+
+          <!-- Vedic Kundali Summary -->
+          <div class="panel-card" style="margin-bottom:0;">
+            <div class="panel-title">🪐 Vedic Janampatri & Kundali</div>
+            <div style="font-size:12px;color:var(--text-muted);line-height:1.6;">
+              🌙 Moon (Rashi): <b style="color:#FFF;">${astro.chandraRashi || 'Taurus (वृषभ)'}</b> •
+              ⭐ Nakshatra: <b style="color:#FFF;">${astro.nakshatraName || 'Rohini'} (Pada ${astro.nakshatraPada || 2})</b><br/>
+              ☀️ Sun Sign: <b style="color:#FFF;">${astro.sunSign || 'Leo'}</b> •
+              🧬 Gana: <b style="color:#FFF;">${astro.gana || 'Manushya'}</b> •
+              🛡️ Shielded Contacts: <b style="color:#6EE7B7;">${u.shieldedContactsCount || 0}</b>
+            </div>
+          </div>
+
+          <!-- Moderation & Credits Controls -->
+          <div class="panel-card" style="margin-bottom:0;">
+            <div class="panel-title">⚡ Admin Controls & Entitlements</div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
+              <button class="btn btn-ghost btn-sm" onclick="userAction('${u.userId}',{action:'TOGGLE_DIGILOCKER'})">
+                🪪 ${u.digilockerVerified ? 'Revoke DigiLocker' : 'Grant DigiLocker Badge'}
+              </button>
+              <button class="btn ${u.isShadowbanned ? 'btn-emerald' : 'btn-danger'} btn-sm" onclick="userAction('${u.userId}',{action:'TOGGLE_SHADOWBAN'})">
+                👻 ${u.isShadowbanned ? 'Remove Shadowban' : 'Shadowban User'}
+              </button>
+              <button class="btn btn-primary btn-sm" onclick="userAction('${u.userId}',{action:'GRANT_CREDITS',sparksDelta:5,boostsDelta:2,directDmsDelta:2,grantVipPass:true})">
+                🎁 Gift +5 Sparks, +2 Boosts & 30d VIP
+              </button>
+            </div>
+          </div>
+        `;
+
+        document.getElementById('inspector-backdrop').classList.add('open');
+      } catch (e) {
+        showToast('⚠️ ' + e.message);
+      }
+    }
+
+    function closeInspector() {
+      document.getElementById('inspector-backdrop').classList.remove('open');
+    }
+
+    async function revealPhone(userId) {
+      try {
+        const res = await apiCall(`/users/${userId}/reveal-phone`, { method: 'POST' });
+        document.getElementById('insp-phone-val').textContent = res.phoneE164;
+        document.getElementById('insp-phone-val').style.color = '#FCD34D';
+        showToast('🔓 Phone revealed & recorded in Admin Audit Log');
+      } catch (e) {
+        showToast('⚠️ ' + e.message);
+      }
+    }
+
+    async function userAction(userId, payload) {
+      try {
+        await apiCall(`/users/${userId}/action`, {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        });
+        showToast('✅ Action applied & logged!');
+        openInspector(userId);
+        refreshCurrentTab();
+      } catch (e) {
+        showToast('⚠️ ' + e.message);
+      }
+    }
+
+    // ==================== 5. SAFETY & SHADOWSHIELD ====================
+    async function loadSafety() {
+      try {
+        const d = await apiCall('/safety');
+        document.getElementById('safety-kpi-grid').innerHTML = `
+          <div class="kpi-card">
+            <div class="kpi-label">Shielded Contact Hashes</div>
+            <div class="kpi-value" style="color:#6EE7B7">${d.totalShieldedHashes || 0}</div>
+            <div class="kpi-meta">${d.uniqueUsersUsingShield || 0} users with active ShadowShield</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Corporate Domains Shielded</div>
+            <div class="kpi-value" style="color:#38BDF8">${(d.corporateDomainsBlocked || []).length}</div>
+            <div class="kpi-meta">${(d.corporateDomainsBlocked || []).join(', ') || 'None configured'}</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Flagged / Shadowbanned</div>
+            <div class="kpi-value" style="color:#FCA5A5">${(d.flaggedUsers || []).length}</div>
+            <div class="kpi-meta">Hidden from discovery feed</div>
+          </div>
+        `;
+
+        document.getElementById('safety-flagged-body').innerHTML = (d.flaggedUsers || []).map(u => `
+          <tr>
+            <td><b>${escapeHtml(u.displayName)}</b> <span style="color:var(--text-dim);font-size:11px;">(${u.phoneMasked})</span></td>
+            <td>${escapeHtml(u.city)}</td>
+            <td>${u.karmaScore}</td>
+            <td><span class="status-pill ${u.isShadowbanned ? 'status-REJECTED' : 'status-PENDING'}">${u.isShadowbanned ? 'SHADOWBANNED' : 'LOW KARMA'}</span></td>
+            <td><button class="btn btn-ghost btn-sm" onclick="openInspector('${u.userId}')">Manage</button></td>
+          </tr>
+        `).join('') || '<tr><td colspan="5" style="color:var(--text-dim);text-align:center;">Zero flagged or shadowbanned accounts.</td></tr>';
+      } catch (e) {
+        showToast('⚠️ ' + e.message);
+      }
+    }
+
+    // ==================== 6. PAYMENTS & REVENUE ====================
+    async function loadPayments() {
+      try {
+        const d = await apiCall('/payments');
+        document.getElementById('payments-kpi-grid').innerHTML = `
+          <div class="kpi-card">
+            <div class="kpi-label">Captured Revenue</div>
+            <div class="kpi-value" style="color:#6EE7B7">₹${Number(d.totalRevenueInr || 0).toLocaleString()}</div>
+            <div class="kpi-meta">${d.capturedCount} captured orders</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Pending Orders</div>
+            <div class="kpi-value" style="color:#FCD34D">${d.pendingCount || 0}</div>
+            <div class="kpi-meta">Awaiting UPI webhook / reconciliation</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Failed Orders</div>
+            <div class="kpi-value" style="color:#FCA5A5">${d.failedCount || 0}</div>
+            <div class="kpi-meta">Total orders: ${d.totalOrders || 0}</div>
+          </div>
+        `;
+
+        document.getElementById('payments-orders-body').innerHTML = (d.orders || []).map(o => `
+          <tr>
+            <td style="font-family:'JetBrains Mono',monospace;font-size:12px;">${o.orderId}</td>
+            <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-muted);">${o.userId}</td>
+            <td><b>${o.sku}</b></td>
+            <td>₹${((o.amountPaise || 0) / 100).toFixed(0)}</td>
+            <td>${o.paymentProvider || 'UPI'}</td>
+            <td><span class="status-pill status-${o.status}">${o.status}</span></td>
+            <td style="font-size:11px;color:var(--text-muted);">${(o.createdAt || '').toString().slice(0,16).replace('T',' ')}</td>
+            <td>
+              ${o.status !== 'CAPTURED' ? `<button class="btn btn-emerald btn-sm" onclick="reconcilePayment('${o.orderId}')">✓ Grant & Capture</button>` : '<span style="color:#6EE7B7;font-size:11px;">✓ Credited</span>'}
+            </td>
+          </tr>
+        `).join('') || '<tr><td colspan="8" style="text-align:center;color:var(--text-dim);">No orders recorded yet.</td></tr>';
+
+        document.getElementById('payments-logs-body').innerHTML = (d.executionLogs || []).map(l => `
+          <tr>
+            <td style="font-size:11px;color:var(--text-muted);">${(l.createdAt || '').toString().slice(0,19).replace('T',' ')}</td>
+            <td><b>${l.action}</b></td>
+            <td style="font-family:'JetBrains Mono',monospace;font-size:11px;">${l.orderId || '—'}</td>
+            <td><span class="status-pill status-${l.status}">${l.status}</span></td>
+            <td>${l.executionTimeMs || 0} ms</td>
+            <td style="font-size:12px;color:var(--text-muted);">${escapeHtml(l.summary || '')}</td>
+          </tr>
+        `).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--text-dim);">No AOP execution logs yet.</td></tr>';
+      } catch (e) {
+        showToast('⚠️ ' + e.message);
+      }
+    }
+
+    async function reconcilePayment(orderId) {
+      const notes = prompt('Admin reconciliation note for ' + orderId + ':', 'Verified UTR manually & granted benefits');
+      if (!notes) return;
+      try {
+        await apiCall(`/payments/${orderId}/reconcile`, {
+          method: 'POST',
+          body: JSON.stringify({ action: 'APPROVE_AND_CREDIT', adminNotes: notes })
+        });
+        showToast('✅ Order reconciled & user benefits credited!');
+        loadPayments();
+      } catch (e) {
+        showToast('⚠️ ' + e.message);
+      }
+    }
+
+    // ==================== 7. SUPPORT TICKETS ====================
+    async function loadTickets(status = 'ALL') {
+      try {
+        const list = await apiCall('/tickets?status=' + encodeURIComponent(status));
+        document.getElementById('tickets-table-body').innerHTML = list.map(t => `
+          <tr>
+            <td style="font-family:'JetBrains Mono',monospace;font-weight:800;">${t.ticketNumber}</td>
+            <td>
+              <div style="font-weight:700;">${escapeHtml(t.userName)}</div>
+              <div style="font-size:11px;color:var(--text-dim);">${t.userPhoneMasked}</div>
+            </td>
+            <td><span class="status-pill status-UNVERIFIED">${t.category}</span></td>
+            <td>
+              <div style="font-weight:800;">${escapeHtml(t.subject)}</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">${escapeHtml(t.description)}</div>
+              ${t.resolutionNotes ? `<div style="font-size:11px;color:#6EE7B7;margin-top:4px;">✓ Note: ${escapeHtml(t.resolutionNotes)}</div>` : ''}
+            </td>
+            <td><span class="status-pill status-${t.status}">${t.status}</span></td>
+            <td>
+              <button class="btn btn-emerald btn-sm" onclick="resolveTicketPrompt('${t.id}','${t.ticketNumber}')">✓ Resolve</button>
+            </td>
+          </tr>
+        `).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--text-dim);">No support tickets found.</td></tr>';
+      } catch (e) {
+        showToast('⚠️ ' + e.message);
+      }
+    }
+
+    async function resolveTicketPrompt(id, number) {
+      const notes = prompt(`Resolution note for ticket ${number} (sent to user):`, 'Issue resolved by BlunderR Support Team.');
+      if (!notes) return;
+      try {
+        await apiCall(`/tickets/${id}/status`, {
+          method: 'POST',
+          body: JSON.stringify({ status: 'RESOLVED', resolutionNotes: notes })
+        });
+        showToast(`✅ Ticket ${number} resolved & user notified!`);
+        loadTickets('ALL');
+      } catch (e) {
+        showToast('⚠️ ' + e.message);
+      }
+    }
+
+    // ==================== 8. CMS (CIRCLES & SAFE SPOTS) ====================
+    async function loadCms() {
+      try {
+        const [circles, spots] = await Promise.all([
+          apiCall('/cms/circles'),
+          apiCall('/cms/safe-dates')
+        ]);
+
+        document.getElementById('cms-circles-body').innerHTML = circles.map(c => `
+          <tr>
+            <td><b>🏙️ ${escapeHtml(c.city)}</b></td>
+            <td style="font-weight:800;color:#FF6B8B;">${escapeHtml(c.name)}</td>
+            <td style="color:var(--text-muted);font-size:12px;">${escapeHtml(c.tagline || '')}</td>
+            <td>👥 ${c.activeMembersCount || 150}</td>
+            <td><button class="btn btn-danger btn-sm" onclick="deleteCircle('${c.id}')">🗑️</button></td>
+          </tr>
+        `).join('');
+
+        document.getElementById('cms-spots-body').innerHTML = spots.map(s => `
+          <tr>
+            <td><b>${escapeHtml(s.city)}</b></td>
+            <td style="font-weight:800;">☕ ${escapeHtml(s.name)}</td>
+            <td style="color:var(--text-muted);">${escapeHtml(s.neighborhood || s.address)}</td>
+            <td><span class="status-pill status-VERIFIED">${s.discountPercent}% OFF • ${escapeHtml(s.couponCode || 'BLUNDERR15')}</span></td>
+            <td><button class="btn btn-danger btn-sm" onclick="deleteSafeSpot('${s.id}')">🗑️</button></td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        showToast('⚠️ ' + e.message);
+      }
+    }
+
+    async function handleCreateCircle(e) {
+      e.preventDefault();
+      try {
+        await apiCall('/cms/circles', {
+          method: 'POST',
+          body: JSON.stringify({
+            city: document.getElementById('cms-circle-city').value,
+            name: document.getElementById('cms-circle-name').value,
+            tagline: document.getElementById('cms-circle-tagline').value
+          })
+        });
+        document.getElementById('cms-circle-name').value = '';
+        document.getElementById('cms-circle-tagline').value = '';
+        showToast('✨ Micro-Circle published live!');
+        loadCms();
+      } catch (err) {
+        showToast('⚠️ ' + err.message);
+      }
+    }
+
+    async function deleteCircle(id) {
+      if (!confirm('Delete this Micro-Circle?')) return;
+      await apiCall('/cms/circles/' + id, { method: 'DELETE' });
+      showToast('🗑️ Micro-Circle removed');
+      loadCms();
+    }
+
+    async function handleCreateSafeSpot(e) {
+      e.preventDefault();
+      try {
+        await apiCall('/cms/safe-dates', {
+          method: 'POST',
+          body: JSON.stringify({
+            name: document.getElementById('cms-spot-name').value,
+            brand: document.getElementById('cms-spot-name').value.split(' ')[0],
+            city: document.getElementById('cms-spot-city').value,
+            neighborhood: document.getElementById('cms-spot-hood').value,
+            address: document.getElementById('cms-spot-hood').value,
+            couponCode: document.getElementById('cms-spot-coupon').value,
+            discountPercent: 15
+          })
+        });
+        document.getElementById('cms-spot-name').value = '';
+        showToast('🛡️ Safe-Date Spot published!');
+        loadCms();
+      } catch (err) {
+        showToast('⚠️ ' + err.message);
+      }
+    }
+
+    async function deleteSafeSpot(id) {
+      if (!confirm('Remove this Safe-Date spot?')) return;
+      await apiCall('/cms/safe-dates/' + id, { method: 'DELETE' });
+      showToast('🗑️ Safe-Date spot removed');
+      loadCms();
+    }
+
+    // ==================== 9. BROADCAST & AUDIT LOGS ====================
+    async function handleSendBroadcast(e) {
+      e.preventDefault();
+      try {
+        const res = await apiCall('/broadcast', {
+          method: 'POST',
+          body: JSON.stringify({
+            audience: document.getElementById('bc-audience').value,
+            city: document.getElementById('bc-city').value,
+            title: document.getElementById('bc-title').value,
+            body: document.getElementById('bc-body').value
+          })
+        });
+        showToast(`🚀 Broadcast delivered to ${res.recipientsCount} users!`);
+        document.getElementById('bc-title').value = '';
+        document.getElementById('bc-body').value = '';
+        loadAuditLogs();
+      } catch (err) {
+        showToast('⚠️ ' + err.message);
+      }
+    }
+
+    async function loadAuditLogs() {
+      try {
+        const logs = await apiCall('/audit-logs');
+        document.getElementById('audit-logs-body').innerHTML = logs.map(l => `
+          <tr>
+            <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#FCD34D;">${l.id}</td>
+            <td style="font-size:11px;color:var(--text-muted);">${l.timestamp}</td>
+            <td style="font-weight:700;">${escapeHtml(l.adminEmail)}</td>
+            <td><span class="status-pill status-UNVERIFIED">${l.adminRole}</span></td>
+            <td style="font-weight:800;color:#FF6B8B;">${l.action}</td>
+            <td style="font-family:'JetBrains Mono',monospace;font-size:11px;">${escapeHtml(l.targetId || '')}</td>
+            <td style="font-size:12px;color:var(--text-muted);">${escapeHtml(l.details || '')}</td>
+            <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-dim);">${l.ipAddress}</td>
+          </tr>
+        `).join('') || '<tr><td colspan="8" style="text-align:center;color:var(--text-dim);">No audit events recorded yet.</td></tr>';
+      } catch (e) {
+        showToast('⚠️ ' + e.message);
+      }
+    }
+
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    // Auto-resume session if token present
+    if (adminToken) {
+      apiCall('/auth/me')
+        .then(d => {
+          adminEmail = d.email;
+          adminRole = d.role;
+          enterCommandCenter();
+        })
+        .catch(() => handleLogout());
+    }
+  </script>
+</body>
+</html>

@@ -52,6 +52,7 @@ public class SecurityConfig {
                                 "/index.html",
                                 "/*.html",
                                 "/v1/auth/**",
+                                "/v1/admin/**",
                                 "/v1/images/**",
                                 "/api/images/**",
                                 "/uploads/**",
