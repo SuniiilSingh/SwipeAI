@@ -1663,7 +1663,7 @@
       try {
         await apiCall(`/payments/${orderId}/reconcile`, {
           method: 'POST',
-          body: JSON.stringify({ action: 'APPROVE_AND_CREDIT', adminNotes: notes })
+          body: JSON.stringify({ status: 'CAPTURED', grantPerks: true, adminNotes: notes })
         });
         showToast('✅ Order reconciled & user benefits credited!');
         loadPayments();

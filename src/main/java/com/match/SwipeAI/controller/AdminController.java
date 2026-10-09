@@ -735,11 +735,15 @@ public class AdminController {
         AdminSession session = requireAdmin(request, "SUPER_ADMIN");
         String ip = extractClientIp(request);
 
+        if (req.getStatus() == null) {
+            req.setStatus(OrderStatus.CAPTURED);
+            req.setGrantPerks(true);
+        }
         PaymentDto.PaymentAuditTimelineDto timeline = paymentAuditService.reviewAndReconcileOrder(
                 orderId, req, UUID.nameUUIDFromBytes(session.email.getBytes(StandardCharsets.UTF_8)));
 
         recordAudit(session.email, session.role, "PAYMENT_RECONCILE", orderId,
-                "Action=" + req.getAction() + ", Notes=" + req.getAdminNotes(), ip);
+                "Status=" + req.getStatus() + ", GrantPerks=" + req.isGrantPerks() + ", Notes=" + req.getAdminNotes(), ip);
 
         return ResponseEntity.ok(timeline);
     }
