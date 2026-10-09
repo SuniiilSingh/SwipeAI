@@ -57,7 +57,7 @@ public class AdminController {
     private final UserContactShieldRepository contactShieldRepository;
     private final UserNotificationRepository notificationRepository;
     private final PaymentAuditService paymentAuditService;
-    private final ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Value("${jwt.secret:blunderr-super-secret-admin-hmac-signing-key-2026}")
     private String jwtSecret;
