@@ -58,6 +58,8 @@ public class ProfileDto {
         private String photo5;
         private String photo6;
         private String selfieUrl;
+        private String verificationStatus;
+        private Boolean faceVerified;
         private String smokingHabit;
         private String drinkingHabit;
         private String hobbies;
@@ -111,6 +113,7 @@ public class ProfileDto {
         private boolean digilockerVerified;
         private boolean whatsappVerified;
         private boolean faceVerified;
+        private String verificationStatus;
         private double livenessScore;
         private int karmaScore;
         private DietaryPreference dietaryPref;

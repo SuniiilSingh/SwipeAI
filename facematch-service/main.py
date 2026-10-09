@@ -84,8 +84,9 @@ def load_image(image_input: Optional[str], fallback_url: Optional[str] = None) -
             raise ValueError(f"Failed to decode base64 image: {str(e)}")
 
     # 2. Local uploads shortcut (checks mounted /app/uploads first)
-    if "/uploads/" in raw_str:
-        filename = raw_str.split("/uploads/")[-1]
+    if "/uploads/" in raw_str or "/v1/images/" in raw_str:
+        filename = raw_str.split("/uploads/")[-1] if "/uploads/" in raw_str else raw_str.split("/v1/images/")[-1]
+        filename = filename.split("?")[0]
         upload_path = os.path.join("/app/uploads", filename)
         if os.path.exists(upload_path):
             try:

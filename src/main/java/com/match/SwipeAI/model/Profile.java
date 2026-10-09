@@ -149,6 +149,9 @@ public class Profile {
     @Column(name = "selfie_url", length = 512)
     private String selfieUrl;
 
+    @Column(name = "verification_status", length = 30)
+    private String verificationStatus;
+
     @Column(name = "smoking_habit", length = 50)
     private String smokingHabit;
 

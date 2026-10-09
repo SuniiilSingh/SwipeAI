@@ -29,6 +29,7 @@ public class KycController {
     private final LivenessService livenessService;
     private final FaceMatchService faceMatchService;
     private final com.match.SwipeAI.repository.ProfileRepository profileRepository;
+    private final com.match.SwipeAI.service.ProfileService profileService;
     private final com.match.SwipeAI.service.integration.R2StorageService r2StorageService;
     private final UserRepository userRepository;
     private final com.match.SwipeAI.config.FeatureFlagsProperties featureFlagsProperties;
@@ -98,14 +99,7 @@ public class KycController {
 
     /**
      * Evaluate 3-second head turn 3D biometric selfie scan to eliminate deepfakes.
-     *
-     * @param userId Authenticated user UUID
-     * @param request Contains head turn duration and frame payload
-     * @return Liveness score (>= 0.85 indicates live human)
-     */
-    /**
-     * Evaluate 3-second head turn 3D biometric selfie scan to eliminate deepfakes.
-     * When selfieFrameBase64 is provided and user has a profile photo, performs 1:1 face matching.
+     * Immediately marks verification status as PENDING and verifies selfie in the background.
      *
      * @param userId Authenticated user UUID
      * @param request Contains head turn duration and frame payload
@@ -119,42 +113,99 @@ public class KycController {
             request = new KycDto.LivenessRequest();
         }
 
-        // If a selfie frame is provided, match against user's profile photo
-        if (request.getSelfieFrameBase64() != null && !request.getSelfieFrameBase64().trim().isEmpty()) {
-            com.match.SwipeAI.model.Profile profile = profileRepository.findById(userId).orElse(null);
-            String primaryPhoto = null;
-            if (profile != null) {
-                if (profile.getPhoto1() != null && !profile.getPhoto1().trim().isEmpty()) {
-                    primaryPhoto = profile.getPhoto1().trim();
-                } else if (profile.getPhoto2() != null && !profile.getPhoto2().trim().isEmpty()) {
-                    primaryPhoto = profile.getPhoto2().trim();
-                }
-            }
-
-            if (primaryPhoto != null) {
-                try {
-                    FaceMatchService.FaceMatchResult matchResult = faceMatchService.compareFaces(
-                            request.getSelfieFrameBase64(), primaryPhoto
-                    );
-                    log.info("3D Liveness face match check for user {}: match={}, score={}, status={}",
-                            userId, matchResult.isMatch(), matchResult.getSimilarityScore(), matchResult.getStatus());
-                } catch (Exception e) {
-                    log.warn("Advisory face match check during 3D liveness bypassed: {}", e.getMessage());
-                }
-            }
-        }
-
         KycDto.LivenessResponse response = livenessService.verifyLiveness(userId, request);
 
         if (response.isLiveHuman()) {
+            String savedSelfieUrl = null;
+            if (request.getSelfieFrameBase64() != null && !request.getSelfieFrameBase64().trim().isEmpty()) {
+                try {
+                    String raw = request.getSelfieFrameBase64().trim();
+                    if (raw.startsWith("http://") || raw.startsWith("https://")) {
+                        savedSelfieUrl = raw;
+                    } else {
+                        String cleanBase64 = raw.replaceAll("^data:image/[a-zA-Z]+;base64,", "");
+                        byte[] selfieBytes = java.util.Base64.getDecoder().decode(cleanBase64);
+                        var uploadRes = r2StorageService.uploadFile("selfie_" + userId + ".jpg", "image/jpeg", selfieBytes);
+                        savedSelfieUrl = uploadRes.get("publicUrl");
+                    }
+                } catch (Exception e) {
+                    log.warn("Could not store liveness selfie frame for user {}: {}", userId, e.getMessage());
+                }
+            }
+
+            final String finalSelfieUrl = savedSelfieUrl;
             userRepository.findById(userId).ifPresent(user -> {
                 user.setLivenessScore(response.getLivenessScore());
-                user.setFaceVerified(true);
+                user.setFaceVerified(false);
                 userRepository.save(user);
             });
+
+            com.match.SwipeAI.model.Profile profile = profileRepository.findById(userId)
+                    .orElseGet(() -> com.match.SwipeAI.model.Profile.builder().userId(userId).build());
+            if (finalSelfieUrl != null) {
+                profile.setSelfieUrl(finalSelfieUrl);
+            }
+            profile.setVerificationStatus("PENDING");
+            profileRepository.save(profile);
+
+            profileService.triggerAsyncSelfieVerification(userId);
         }
 
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Submit a selfie asynchronously: immediately marks verificationStatus = PENDING
+     * and runs background AI verification without blocking the user.
+     */
+    @PostMapping("/selfie/submit-async")
+    public ResponseEntity<KycDto.FaceMatchResponse> submitSelfieAsync(
+            @AuthenticationPrincipal UUID userId,
+            @RequestBody KycDto.FaceMatchRequest request) {
+        if (request == null || request.getSelfieBase64() == null || request.getSelfieBase64().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(KycDto.FaceMatchResponse.builder()
+                    .verified(false)
+                    .status("MISSING_SELFIE")
+                    .message("Selfie image is required.")
+                    .build());
+        }
+
+        String savedSelfieUrl = null;
+        String raw = request.getSelfieBase64().trim();
+        if (raw.startsWith("http://") || raw.startsWith("https://")) {
+            savedSelfieUrl = raw;
+        } else {
+            try {
+                String cleanBase64 = raw.replaceAll("^data:image/[a-zA-Z]+;base64,", "");
+                byte[] selfieBytes = java.util.Base64.getDecoder().decode(cleanBase64);
+                var uploadRes = r2StorageService.uploadFile("selfie_" + userId + ".jpg", "image/jpeg", selfieBytes);
+                savedSelfieUrl = uploadRes.get("publicUrl");
+            } catch (Exception e) {
+                log.warn("Failed to decode/upload async selfie for user {}: {}", userId, e.getMessage());
+            }
+        }
+
+        userRepository.findById(userId).ifPresent(user -> {
+            user.setFaceVerified(false);
+            userRepository.save(user);
+        });
+
+        com.match.SwipeAI.model.Profile profile = profileRepository.findById(userId)
+                .orElseGet(() -> com.match.SwipeAI.model.Profile.builder().userId(userId).build());
+        if (savedSelfieUrl != null) {
+            profile.setSelfieUrl(savedSelfieUrl);
+        }
+        profile.setVerificationStatus("PENDING");
+        profileRepository.save(profile);
+
+        profileService.triggerAsyncSelfieVerification(userId);
+
+        return ResponseEntity.ok(KycDto.FaceMatchResponse.builder()
+                .verified(false)
+                .status("PENDING")
+                .message("Verification Pending — verifying your selfie in the background.")
+                .selfieUrl(savedSelfieUrl != null ? savedSelfieUrl : profile.getSelfieUrl())
+                .build());
     }
 
     /**
