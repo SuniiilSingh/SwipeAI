@@ -8,6 +8,7 @@ import com.match.SwipeAI.enums.TicketStatus;
 import com.match.SwipeAI.model.*;
 import com.match.SwipeAI.repository.*;
 import com.match.SwipeAI.service.integration.PaymentAuditService;
+import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -18,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -33,9 +35,9 @@ import java.util.stream.Collectors;
 
 /**
  * Isolated BlunderR Admin Command Center Controller (/v1/admin/**).
- * Uses dedicated HMAC-SHA256 signed X-Admin-Token authentication, RBAC roles,
- * IP brute-force rate limiting, and immutable audit logging.
- * Does NOT alter any mobile/web user endpoints or user JWT flows.
+ * Uses database-backed AdminAccount credentials (BCrypt or plain SQL insert),
+ * HMAC-SHA256 signed X-Admin-Token authentication, strict RBAC roles
+ * (SUPER_ADMIN vs SUPPORT_AGENT), IP brute-force rate limiting, and audit logging.
  */
 @Slf4j
 @CrossOrigin(exposedHeaders = {"X-Admin-Token", "X-Total-Count"})
@@ -44,6 +46,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AdminController {
 
+    private final AdminAccountRepository adminAccountRepository;
     private final UserRepository userRepository;
     private final ProfileRepository profileRepository;
     private final UserAstrologyRepository astrologyRepository;
@@ -58,6 +61,7 @@ public class AdminController {
     private final UserNotificationRepository notificationRepository;
     private final PaymentAuditService paymentAuditService;
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder(10);
 
     @Value("${jwt.secret:blunderr-super-secret-admin-hmac-signing-key-2026}")
     private String jwtSecret;
@@ -65,11 +69,8 @@ public class AdminController {
     @Value("${admin.super.password:Blunderr@Admin2026}")
     private String superAdminPassword;
 
-    @Value("${admin.mod.password:Blunderr@Mod2026}")
-    private String modAdminPassword;
-
-    @Value("${admin.growth.password:Blunderr@Growth2026}")
-    private String growthAdminPassword;
+    @Value("${admin.support.password:Blunderr@Support2026}")
+    private String supportAdminPassword;
 
     @Value("${admin.pin:2026}")
     private String admin2faPin;
@@ -77,10 +78,42 @@ public class AdminController {
     // Brute-force protection: IP -> list of failed login timestamps (epoch ms)
     private final Map<String, List<Long>> failedLoginTracker = new ConcurrentHashMap<>();
 
-    // Append-only Admin Audit Log (persisted in memory + mirrored into PaymentExecutionLog for durability)
+    // Append-only Admin Audit Log
     private final List<AdminAuditEntry> auditLogs = new CopyOnWriteArrayList<>();
 
     private static final long ADMIN_TOKEN_TTL_MS = 2 * 60 * 60 * 1000L; // 2 hours
+
+    @PostConstruct
+    public void seedDefaultAdminAccountsIfEmpty() {
+        try {
+            if (adminAccountRepository.findByEmailIgnoreCase("admin@blunderr.in").isEmpty()) {
+                adminAccountRepository.save(AdminAccount.builder()
+                        .email("admin@blunderr.in")
+                        .displayName("Sunil (Super Admin)")
+                        .role("SUPER_ADMIN")
+                        .passwordHash(passwordEncoder.encode(superAdminPassword))
+                        .pinHash(passwordEncoder.encode(admin2faPin))
+                        .isActive(true)
+                        .failedAttempts(0)
+                        .build());
+                log.info("Seeded default SUPER_ADMIN account: admin@blunderr.in");
+            }
+            if (adminAccountRepository.findByEmailIgnoreCase("support@blunderr.in").isEmpty()) {
+                adminAccountRepository.save(AdminAccount.builder()
+                        .email("support@blunderr.in")
+                        .displayName("Customer Support Desk")
+                        .role("SUPPORT_AGENT")
+                        .passwordHash(passwordEncoder.encode(supportAdminPassword))
+                        .pinHash(passwordEncoder.encode(admin2faPin))
+                        .isActive(true)
+                        .failedAttempts(0)
+                        .build());
+                log.info("Seeded default SUPPORT_AGENT account: support@blunderr.in");
+            }
+        } catch (Exception e) {
+            log.warn("Could not seed initial admin accounts: {}", e.getMessage());
+        }
+    }
 
     @Data
     @Builder
@@ -161,8 +194,16 @@ public class AdminController {
     }
 
     // =========================================================================
-    // 1. ADMIN AUTHENTICATION & SECURITY
+    // 1. ADMIN AUTHENTICATION & SECURITY (DB-BACKED)
     // =========================================================================
+
+    private boolean matchesSecret(String rawInput, String storedHashOrPlain) {
+        if (rawInput == null || storedHashOrPlain == null) return false;
+        if (storedHashOrPlain.startsWith("$2a$") || storedHashOrPlain.startsWith("$2b$") || storedHashOrPlain.startsWith("$2y$")) {
+            return passwordEncoder.matches(rawInput, storedHashOrPlain);
+        }
+        return storedHashOrPlain.equals(rawInput);
+    }
 
     @PostMapping("/auth/login")
     public ResponseEntity<Map<String, Object>> login(
@@ -175,50 +216,57 @@ public class AdminController {
         String password = req.getPassword() != null ? req.getPassword().trim() : "";
         String pin = req.getPin() != null ? req.getPin().trim() : "";
 
-        if (!admin2faPin.equals(pin)) {
+        AdminAccount account = adminAccountRepository.findByEmailIgnoreCase(email).orElse(null);
+
+        if (account == null || !Boolean.TRUE.equals(account.getIsActive())) {
             recordFailedLogin(ip);
-            recordAudit(email.isEmpty() ? "unknown" : email, "NONE", "ADMIN_LOGIN_FAILED", ip, "Invalid 2FA PIN", ip);
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid 2FA Security PIN");
+            recordAudit(email.isEmpty() ? "unknown" : email, "NONE", "ADMIN_LOGIN_FAILED", ip, "Account not found or inactive", ip);
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid admin email or account is disabled");
         }
 
-        String role = null;
-        String displayName = null;
-
-        if (("admin@blunderr.in".equals(email) || "sunil@blunderr.in".equals(email))
-                && superAdminPassword.equals(password)) {
-            role = "SUPER_ADMIN";
-            displayName = "Founder / Super Admin";
-        } else if ("moderator@blunderr.in".equals(email) && modAdminPassword.equals(password)) {
-            role = "TRUST_MODERATOR";
-            displayName = "Trust & Safety Moderator";
-        } else if ("growth@blunderr.in".equals(email) && growthAdminPassword.equals(password)) {
-            role = "GROWTH_MANAGER";
-            displayName = "City Growth & CMS Manager";
+        if (account.getLockedUntil() != null && account.getLockedUntil().isAfter(OffsetDateTime.now())) {
+            throw new ResponseStatusException(HttpStatus.LOCKED, "Account temporarily locked due to failed attempts. Try again later.");
         }
 
-        if (role == null) {
+        boolean passOk = matchesSecret(password, account.getPasswordHash());
+        boolean pinOk = matchesSecret(pin, account.getPinHash());
+
+        if (!passOk || !pinOk) {
+            int fails = (account.getFailedAttempts() != null ? account.getFailedAttempts() : 0) + 1;
+            account.setFailedAttempts(fails);
+            if (fails >= 5) {
+                account.setLockedUntil(OffsetDateTime.now().plusMinutes(15));
+            }
+            adminAccountRepository.save(account);
             recordFailedLogin(ip);
-            recordAudit(email.isEmpty() ? "unknown" : email, "NONE", "ADMIN_LOGIN_FAILED", ip, "Invalid credentials", ip);
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid admin email or password");
+            recordAudit(email, account.getRole(), "ADMIN_LOGIN_FAILED", ip, !pinOk ? "Invalid 2FA PIN" : "Invalid password", ip);
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, !pinOk ? "Invalid 2FA Security PIN" : "Invalid password");
         }
 
+        account.setFailedAttempts(0);
+        account.setLockedUntil(null);
+        account.setLastLoginAt(OffsetDateTime.now());
+        account.setLastLoginIp(ip);
+        adminAccountRepository.save(account);
+
+        String role = account.getRole().toUpperCase();
         long expiresAt = System.currentTimeMillis() + ADMIN_TOKEN_TTL_MS;
-        String token = generateAdminToken(email, role, expiresAt);
+        String token = generateAdminToken(account.getEmail(), role, expiresAt);
 
-        recordAudit(email, role, "ADMIN_LOGIN_SUCCESS", email, "Signed in to BlunderR Command Center", ip);
+        recordAudit(account.getEmail(), role, "ADMIN_LOGIN_SUCCESS", account.getEmail(), "Signed in to BlunderR Command Center", ip);
 
         return ResponseEntity.ok(Map.of(
                 "token", token,
-                "email", email,
+                "email", account.getEmail(),
                 "role", role,
-                "displayName", displayName,
+                "displayName", account.getDisplayName(),
                 "expiresAt", expiresAt
         ));
     }
 
     @GetMapping("/auth/me")
     public ResponseEntity<Map<String, Object>> me(HttpServletRequest request) {
-        AdminSession session = requireAdmin(request, "SUPER_ADMIN", "TRUST_MODERATOR", "GROWTH_MANAGER");
+        AdminSession session = requireAdmin(request, "SUPER_ADMIN", "SUPPORT_AGENT");
         return ResponseEntity.ok(Map.of(
                 "email", session.email,
                 "role", session.role,
@@ -232,7 +280,7 @@ public class AdminController {
 
     @GetMapping("/overview")
     public ResponseEntity<Map<String, Object>> getOverview(HttpServletRequest request) {
-        requireAdmin(request, "SUPER_ADMIN", "TRUST_MODERATOR", "GROWTH_MANAGER");
+        requireAdmin(request, "SUPER_ADMIN");
 
         List<User> allUsers = userRepository.findAll();
         List<Profile> allProfiles = profileRepository.findAll();
@@ -335,14 +383,14 @@ public class AdminController {
     }
 
     // =========================================================================
-    // 3. MODULE 2: SELFIE & FACEMATCH MODERATION QUEUE
+    // 3. MODULE 2: SELFIE & FACEMATCH MODERATION QUEUE (SUPER_ADMIN ONLY)
     // =========================================================================
 
     @GetMapping("/verification-queue")
     public ResponseEntity<List<Map<String, Object>>> getVerificationQueue(
             @RequestParam(defaultValue = "ALL") String statusFilter,
             HttpServletRequest request) {
-        requireAdmin(request, "SUPER_ADMIN", "TRUST_MODERATOR");
+        requireAdmin(request, "SUPER_ADMIN");
 
         List<User> users = userRepository.findAll();
         Map<UUID, Profile> profileMap = profileRepository.findAll().stream()
@@ -386,7 +434,7 @@ public class AdminController {
             @PathVariable UUID userId,
             @RequestBody VerificationDecisionRequest req,
             HttpServletRequest request) {
-        AdminSession session = requireAdmin(request, "SUPER_ADMIN", "TRUST_MODERATOR");
+        AdminSession session = requireAdmin(request, "SUPER_ADMIN");
         String ip = extractClientIp(request);
 
         User user = userRepository.findById(userId)
@@ -435,6 +483,7 @@ public class AdminController {
 
     // =========================================================================
     // 4. MODULE 3: 360° USER DIRECTORY & INSPECTOR
+    //    (READ-ONLY FOR SUPPORT_AGENT, FULL CRUD FOR SUPER_ADMIN)
     // =========================================================================
 
     @GetMapping("/users")
@@ -443,7 +492,7 @@ public class AdminController {
             @RequestParam(required = false) String city,
             @RequestParam(required = false) String status,
             HttpServletRequest request) {
-        requireAdmin(request, "SUPER_ADMIN", "TRUST_MODERATOR", "GROWTH_MANAGER");
+        requireAdmin(request, "SUPER_ADMIN", "SUPPORT_AGENT");
 
         String query = q != null ? q.trim().toLowerCase() : "";
         String cityFilter = city != null ? city.trim().toLowerCase() : "";
@@ -495,13 +544,14 @@ public class AdminController {
     public ResponseEntity<Map<String, Object>> inspectUser(
             @PathVariable UUID userId,
             HttpServletRequest request) {
-        requireAdmin(request, "SUPER_ADMIN", "TRUST_MODERATOR", "GROWTH_MANAGER");
+        requireAdmin(request, "SUPER_ADMIN", "SUPPORT_AGENT");
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
         Profile profile = profileRepository.findById(userId).orElse(null);
         UserAstrology astro = astrologyRepository.findById(userId).orElse(null);
         List<UpiOrder> orders = upiOrderRepository.findByUserIdOrderByCreatedAtDesc(userId);
+        List<PaymentExecutionLog> paymentLogs = paymentExecutionLogRepository.findByUserIdOrderByCreatedAtDesc(userId);
         List<SupportTicket> tickets = supportTicketRepository.findByUserIdOrderByCreatedAtDesc(userId);
         int shieldedContacts = contactShieldRepository.findByUserId(userId).size();
 
@@ -528,6 +578,7 @@ public class AdminController {
         detail.put("astrology", astro);
         detail.put("shieldedContactsCount", shieldedContacts);
         detail.put("orders", orders);
+        detail.put("paymentLogs", paymentLogs);
         detail.put("tickets", tickets);
 
         return ResponseEntity.ok(detail);
@@ -537,7 +588,7 @@ public class AdminController {
     public ResponseEntity<Map<String, String>> revealUserPhone(
             @PathVariable UUID userId,
             HttpServletRequest request) {
-        AdminSession session = requireAdmin(request, "SUPER_ADMIN");
+        AdminSession session = requireAdmin(request, "SUPER_ADMIN", "SUPPORT_AGENT");
         String ip = extractClientIp(request);
 
         User user = userRepository.findById(userId)
@@ -557,7 +608,8 @@ public class AdminController {
             @PathVariable UUID userId,
             @RequestBody UserActionRequest req,
             HttpServletRequest request) {
-        AdminSession session = requireAdmin(request, "SUPER_ADMIN", "TRUST_MODERATOR");
+        // Strictly SUPER_ADMIN only — Support Agent cannot modify profiles, approve selfies, or grant credits
+        AdminSession session = requireAdmin(request, "SUPER_ADMIN");
         String ip = extractClientIp(request);
 
         User user = userRepository.findById(userId)
@@ -590,9 +642,6 @@ public class AdminController {
                 auditDetail = (next ? "Shadowbanned user (hidden from discovery)" : "Removed shadowban");
             }
             case "GRANT_CREDITS" -> {
-                if (!"SUPER_ADMIN".equals(session.role)) {
-                    throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only SUPER_ADMIN can grant credits");
-                }
                 if (req.getSparksDelta() != null) {
                     user.setSparksBalance(Math.max(0, (user.getSparksBalance() != null ? user.getSparksBalance() : 0) + req.getSparksDelta()));
                 }
@@ -648,12 +697,12 @@ public class AdminController {
     }
 
     // =========================================================================
-    // 5. MODULE 4: TRUST, SAFETY & SHADOWSHIELD CENTER
+    // 5. MODULE 4: TRUST, SAFETY & SHADOWSHIELD CENTER (SUPER_ADMIN ONLY)
     // =========================================================================
 
     @GetMapping("/safety")
     public ResponseEntity<Map<String, Object>> getSafetyOverview(HttpServletRequest request) {
-        requireAdmin(request, "SUPER_ADMIN", "TRUST_MODERATOR");
+        requireAdmin(request, "SUPER_ADMIN");
 
         List<User> users = userRepository.findAll();
         Map<UUID, Profile> profileMap = profileRepository.findAll().stream()
@@ -693,11 +742,12 @@ public class AdminController {
 
     // =========================================================================
     // 6. MODULE 5: PAYMENTS, REVENUE & AUDIT TIMELINE
+    //    (VIEW FOR SUPPORT_AGENT, RECONCILE CRUD FOR SUPER_ADMIN ONLY)
     // =========================================================================
 
     @GetMapping("/payments")
     public ResponseEntity<Map<String, Object>> getPaymentsOverview(HttpServletRequest request) {
-        requireAdmin(request, "SUPER_ADMIN");
+        requireAdmin(request, "SUPER_ADMIN", "SUPPORT_AGENT");
 
         List<UpiOrder> orders = upiOrderRepository.findAll();
         orders.sort((a, b) -> {
@@ -732,6 +782,7 @@ public class AdminController {
             @PathVariable String orderId,
             @RequestBody PaymentDto.ReviewOrderRequest req,
             HttpServletRequest request) {
+        // Strictly SUPER_ADMIN only — Support Agent cannot modify or capture payment orders
         AdminSession session = requireAdmin(request, "SUPER_ADMIN");
         String ip = extractClientIp(request);
 
@@ -749,14 +800,14 @@ public class AdminController {
     }
 
     // =========================================================================
-    // 7. MODULE 6: SUPPORT TICKET DESK
+    // 7. MODULE 6: SUPPORT TICKET DESK (SUPER_ADMIN & SUPPORT_AGENT)
     // =========================================================================
 
     @GetMapping("/tickets")
     public ResponseEntity<List<Map<String, Object>>> getAllTickets(
             @RequestParam(required = false) String status,
             HttpServletRequest request) {
-        requireAdmin(request, "SUPER_ADMIN", "TRUST_MODERATOR");
+        requireAdmin(request, "SUPER_ADMIN", "SUPPORT_AGENT");
 
         Map<UUID, Profile> profileMap = profileRepository.findAll().stream()
                 .collect(Collectors.toMap(Profile::getUserId, p -> p, (a, b) -> a));
@@ -800,7 +851,7 @@ public class AdminController {
             @PathVariable UUID ticketId,
             @RequestBody TicketStatusUpdateRequest req,
             HttpServletRequest request) {
-        AdminSession session = requireAdmin(request, "SUPER_ADMIN", "TRUST_MODERATOR");
+        AdminSession session = requireAdmin(request, "SUPER_ADMIN", "SUPPORT_AGENT");
         String ip = extractClientIp(request);
 
         SupportTicket ticket = supportTicketRepository.findById(ticketId)
@@ -837,12 +888,12 @@ public class AdminController {
     }
 
     // =========================================================================
-    // 8. MODULE 7: CONTENT & GROWTH CMS (MICRO-CIRCLES & SAFE DATE SPOTS)
+    // 8. MODULE 7: CONTENT & GROWTH CMS (SUPER_ADMIN ONLY)
     // =========================================================================
 
     @GetMapping("/cms/circles")
     public ResponseEntity<List<MicroCommunity>> getCircles(HttpServletRequest request) {
-        requireAdmin(request, "SUPER_ADMIN", "GROWTH_MANAGER", "TRUST_MODERATOR");
+        requireAdmin(request, "SUPER_ADMIN");
         List<MicroCommunity> list = microCommunityRepository.findAll();
         list.sort(Comparator.comparing(MicroCommunity::getCity, Comparator.nullsLast(String::compareToIgnoreCase))
                 .thenComparing(MicroCommunity::getName, Comparator.nullsLast(String::compareToIgnoreCase)));
@@ -853,7 +904,7 @@ public class AdminController {
     public ResponseEntity<MicroCommunity> createCircle(
             @RequestBody CreateCircleRequest req,
             HttpServletRequest request) {
-        AdminSession session = requireAdmin(request, "SUPER_ADMIN", "GROWTH_MANAGER");
+        AdminSession session = requireAdmin(request, "SUPER_ADMIN");
         String ip = extractClientIp(request);
 
         if (req.getName() == null || req.getName().isBlank() || req.getCity() == null || req.getCity().isBlank()) {
@@ -890,7 +941,7 @@ public class AdminController {
     public ResponseEntity<Map<String, String>> deleteCircle(
             @PathVariable UUID id,
             HttpServletRequest request) {
-        AdminSession session = requireAdmin(request, "SUPER_ADMIN", "GROWTH_MANAGER");
+        AdminSession session = requireAdmin(request, "SUPER_ADMIN");
         String ip = extractClientIp(request);
 
         microCommunityRepository.deleteById(id);
@@ -900,7 +951,7 @@ public class AdminController {
 
     @GetMapping("/cms/safe-dates")
     public ResponseEntity<List<SafeDateSpot>> getSafeSpots(HttpServletRequest request) {
-        requireAdmin(request, "SUPER_ADMIN", "GROWTH_MANAGER", "TRUST_MODERATOR");
+        requireAdmin(request, "SUPER_ADMIN");
         return ResponseEntity.ok(safeDateSpotRepository.findAll());
     }
 
@@ -908,7 +959,7 @@ public class AdminController {
     public ResponseEntity<SafeDateSpot> createSafeSpot(
             @RequestBody CreateSafeSpotRequest req,
             HttpServletRequest request) {
-        AdminSession session = requireAdmin(request, "SUPER_ADMIN", "GROWTH_MANAGER");
+        AdminSession session = requireAdmin(request, "SUPER_ADMIN");
         String ip = extractClientIp(request);
 
         SafeDateSpot spot = SafeDateSpot.builder()
@@ -935,7 +986,7 @@ public class AdminController {
     public ResponseEntity<Map<String, String>> deleteSafeSpot(
             @PathVariable Long id,
             HttpServletRequest request) {
-        AdminSession session = requireAdmin(request, "SUPER_ADMIN", "GROWTH_MANAGER");
+        AdminSession session = requireAdmin(request, "SUPER_ADMIN");
         String ip = extractClientIp(request);
 
         safeDateSpotRepository.deleteById(id);
@@ -944,14 +995,14 @@ public class AdminController {
     }
 
     // =========================================================================
-    // 9. MODULE 8: BROADCAST CAMPAIGNS & IMMUTABLE AUDIT LOGS
+    // 9. MODULE 8: BROADCAST CAMPAIGNS & IMMUTABLE AUDIT LOGS (SUPER_ADMIN ONLY)
     // =========================================================================
 
     @PostMapping("/broadcast")
     public ResponseEntity<Map<String, Object>> sendBroadcast(
             @RequestBody BroadcastRequest req,
             HttpServletRequest request) {
-        AdminSession session = requireAdmin(request, "SUPER_ADMIN", "GROWTH_MANAGER");
+        AdminSession session = requireAdmin(request, "SUPER_ADMIN");
         String ip = extractClientIp(request);
 
         if (req.getTitle() == null || req.getTitle().isBlank() || req.getBody() == null || req.getBody().isBlank()) {
@@ -1001,7 +1052,7 @@ public class AdminController {
 
     @GetMapping("/audit-logs")
     public ResponseEntity<List<AdminAuditEntry>> getAuditLogs(HttpServletRequest request) {
-        requireAdmin(request, "SUPER_ADMIN", "TRUST_MODERATOR", "GROWTH_MANAGER");
+        requireAdmin(request, "SUPER_ADMIN");
         return ResponseEntity.ok(auditLogs);
     }
 

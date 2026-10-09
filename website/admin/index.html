@@ -680,18 +680,18 @@
 
       <form id="login-form" onsubmit="handleAdminLogin(event)">
         <div class="form-group">
-          <label class="form-label">Admin Email</label>
-          <input type="email" id="login-email" class="form-input" value="admin@blunderr.in" required />
+          <label class="form-label">Admin / Support Email</label>
+          <input type="email" id="login-email" class="form-input" placeholder="admin@blunderr.in or support@blunderr.in" autocomplete="username" required />
         </div>
 
         <div class="form-group">
-          <label class="form-label">Master Password</label>
-          <input type="password" id="login-password" class="form-input" value="Blunderr@Admin2026" required />
+          <label class="form-label">Password</label>
+          <input type="password" id="login-password" class="form-input" placeholder="Enter your password" autocomplete="current-password" required />
         </div>
 
         <div class="form-group">
           <label class="form-label">2FA Security PIN</label>
-          <input type="password" id="login-pin" class="form-input" placeholder="4-digit PIN (e.g. 2026)" value="2026" required />
+          <input type="password" id="login-pin" class="form-input" placeholder="Enter your 4-6 digit security PIN" autocomplete="one-time-code" required />
         </div>
 
         <div id="login-error" style="color: #FCA5A5; font-size: 12px; font-weight: 700; margin-bottom: 12px; display: none;"></div>
@@ -701,11 +701,8 @@
         </button>
       </form>
 
-      <div style="margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border); display: flex; gap: 6px; flex-wrap: wrap;">
-        <span style="font-size: 11px; color: var(--text-dim); width: 100%; margin-bottom: 4px;">Quick Role Switch (Demo Presets):</span>
-        <button type="button" class="btn btn-ghost btn-sm" onclick="fillRole('admin@blunderr.in','Blunderr@Admin2026')">👑 Super Admin</button>
-        <button type="button" class="btn btn-ghost btn-sm" onclick="fillRole('moderator@blunderr.in','Blunderr@Mod2026')">🛡️ Moderator</button>
-        <button type="button" class="btn btn-ghost btn-sm" onclick="fillRole('growth@blunderr.in','Blunderr@Growth2026')">📈 Growth CMS</button>
+      <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border); font-size: 11px; color: var(--text-dim); text-align: center;">
+        🔐 Accounts & roles (<code>SUPER_ADMIN</code> / <code>SUPPORT_AGENT</code>) are verified directly against PostgreSQL <code>admin_accounts</code>.
       </div>
     </div>
   </div>
@@ -1253,10 +1250,30 @@
       document.getElementById('app-shell').style.display = 'block';
       document.getElementById('admin-user-label').textContent = adminEmail;
       document.getElementById('topbar-role-badge').textContent = adminRole;
-      loadOverview();
+
+      const isSupport = adminRole === 'SUPPORT_AGENT';
+      const supportAllowedTabs = ['tickets', 'users', 'payments'];
+
+      document.querySelectorAll('.nav-item').forEach(el => {
+        const tab = el.getAttribute('data-tab');
+        if (isSupport && !supportAllowedTabs.includes(tab)) {
+          el.style.display = 'none';
+        } else {
+          el.style.display = 'flex';
+        }
+      });
+
+      if (isSupport) {
+        switchTab('tickets');
+      } else {
+        switchTab('overview');
+      }
     }
 
     function switchTab(tab) {
+      if (adminRole === 'SUPPORT_AGENT' && !['tickets', 'users', 'payments'].includes(tab)) {
+        tab = 'tickets';
+      }
       currentTab = tab;
       document.querySelectorAll('.nav-item').forEach(el => {
         el.classList.toggle('active', el.getAttribute('data-tab') === tab);
@@ -1407,6 +1424,7 @@
         const q = document.getElementById('global-search-input').value.trim();
         const status = document.getElementById('user-status-filter').value;
         const list = await apiCall(`/users?q=${encodeURIComponent(q)}&status=${encodeURIComponent(status)}`);
+        document.getElementById('badge-total-users').textContent = list.length;
         document.getElementById('users-table-body').innerHTML = list.map(u => `
           <tr>
             <td>
@@ -1431,7 +1449,7 @@
               ${u.hasActivePass ? '<span class="status-pill status-VERIFIED" style="margin-left:4px;">👑 VIP</span>' : ''}
             </td>
             <td>
-              <button class="btn btn-primary btn-sm" onclick="openInspector('${u.userId}')">360° Inspect</button>
+              <button class="btn btn-primary btn-sm" onclick="openInspector('${u.userId}')">360° Details & Payments</button>
             </td>
           </tr>
         `).join('');
@@ -1447,6 +1465,10 @@
         const drawer = document.getElementById('inspector-content');
         const astro = u.astrology || {};
         const slots = [u.photo1, u.photo2, u.photo3, u.photo4, u.photo5, u.photo6];
+        const isSuperAdmin = adminRole === 'SUPER_ADMIN';
+        const userOrders = u.orders || [];
+        const userLogs = u.paymentLogs || [];
+        const userTickets = u.tickets || [];
 
         drawer.innerHTML = `
           <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);padding-bottom:14px;">
@@ -1466,39 +1488,110 @@
               </div>
               <button class="btn btn-ghost btn-sm" onclick="revealPhone('${u.userId}')">🔓 Reveal Phone (Logged)</button>
             </div>
-            <div style="margin-top:10px;font-size:12px;color:var(--text-muted);">
+            <div style="margin-top:10px;font-size:12px;color:var(--text-muted);line-height:1.6;">
               📍 <b>${escapeHtml(u.city || 'Bengaluru')}</b> • Tribe: <b>${escapeHtml(u.microCircle || 'None')}</b><br/>
-              💼 ${escapeHtml(u.job || 'Not specified')} • 🎓 ${escapeHtml(u.institute || 'Not specified')}
+              💼 ${escapeHtml(u.job || 'Not specified')} • 🎓 ${escapeHtml(u.institute || 'Not specified')}<br/>
+              ⚡ Sparks: <b style="color:#FFF;">${u.sparksBalance}</b> • 🚀 Boosts: <b style="color:#FFF;">${u.boostsBalance}</b> • 💬 Direct DMs: <b style="color:#FFF;">${u.directDmsBalance}</b> • 👑 VIP: <b style="color:#6EE7B7;">${u.hasActivePass ? 'ACTIVE' : 'No'}</b>
             </div>
           </div>
 
-          <!-- Live Selfie & 6 Profile Photo Slots -->
+          <!-- User Payment Orders & Execution Logs (Visible to Support & Super Admin) -->
           <div class="panel-card" style="margin-bottom:0;">
             <div class="panel-title">
-              <span>📸 Live Selfie & 6 Photo Showcase (${u.photoCount}/6)</span>
+              <span>💳 User Payments & Orders (${userOrders.length})</span>
+              <span style="font-size:11px;color:var(--text-muted);">Logs: ${userLogs.length}</span>
+            </div>
+            ${userOrders.length ? `
+              <div class="table-wrap" style="margin-bottom:10px;">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Order ID</th>
+                      <th>SKU</th>
+                      <th>Amount</th>
+                      <th>Status</th>
+                      <th>Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${userOrders.map(o => `
+                      <tr>
+                        <td style="font-family:'JetBrains Mono',monospace;font-size:11px;">${o.orderId}</td>
+                        <td><b>${escapeHtml(o.sku)}</b></td>
+                        <td>₹${((o.amountPaise || 0) / 100).toFixed(0)}</td>
+                        <td><span class="status-pill status-${o.status}">${o.status}</span></td>
+                        <td style="font-size:11px;color:var(--text-muted);">${(o.createdAt || '').toString().slice(0,16).replace('T',' ')}</td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+            ` : `<div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">No payment orders found for this user.</div>`}
+
+            ${userLogs.length ? `
+              <div style="font-size:11px;font-weight:800;color:var(--text-muted);margin:8px 0 6px;text-transform:uppercase;">Recent Payment Execution Logs</div>
+              <div style="max-height:140px;overflow-y:auto;border:1px solid var(--border);border-radius:10px;padding:8px;background:#070912;">
+                ${userLogs.map(l => `
+                  <div style="font-size:11px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+                    <span class="status-pill status-${l.status}" style="font-size:9px;padding:1px 5px;">${l.status}</span>
+                    <b>${escapeHtml(l.action)}</b> • <span style="font-family:'JetBrains Mono',monospace;">${escapeHtml(l.orderId || '—')}</span>
+                    <div style="color:var(--text-muted);margin-top:2px;">${escapeHtml(l.summary || '')}</div>
+                  </div>
+                `).join('')}
+              </div>
+            ` : ''}
+          </div>
+
+          <!-- User Support Tickets (Support & Super Admin can resolve directly) -->
+          <div class="panel-card" style="margin-bottom:0;">
+            <div class="panel-title">
+              <span>🎧 User Support Tickets (${userTickets.length})</span>
+            </div>
+            ${userTickets.length ? userTickets.map(t => `
+              <div style="padding:10px;border:1px solid var(--border);border-radius:10px;background:#070912;margin-bottom:8px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <span style="font-family:'JetBrains Mono',monospace;font-weight:800;font-size:12px;">${t.ticketNumber}</span>
+                  <span class="status-pill status-${t.status}">${t.status}</span>
+                </div>
+                <div style="font-weight:800;font-size:12px;margin-top:4px;">${escapeHtml(t.subject)}</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${escapeHtml(t.description)}</div>
+                ${t.resolutionNotes ? `<div style="font-size:11px;color:#6EE7B7;margin-top:4px;">✓ Resolution: ${escapeHtml(t.resolutionNotes)}</div>` : ''}
+                <div style="margin-top:8px;">
+                  <button class="btn btn-emerald btn-sm" onclick="resolveTicketPrompt('${t.id}','${t.ticketNumber}','${u.userId}')">✓ Update / Resolve Ticket</button>
+                </div>
+              </div>
+            `).join('') : `<div style="font-size:12px;color:var(--text-dim);">No support tickets raised by this user.</div>`}
+          </div>
+
+          <!-- Live Selfie & 6 Profile Photo Slots (Read-Only for SUPPORT_AGENT, Editable for SUPER_ADMIN) -->
+          <div class="panel-card" style="margin-bottom:0;">
+            <div class="panel-title">
+              <span>📸 Profile Photos (${u.photoCount}/6)</span>
               <span class="status-pill status-${u.verificationStatus}">${u.verificationStatus}</span>
             </div>
 
-            <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px;background:#070912;padding:10px;border-radius:12px;border:1px solid var(--border);">
-              <div style="width:70px;height:86px;border-radius:10px;overflow:hidden;border:2px solid var(--brand);background:#111;display:flex;align-items:center;justify-content:center;">
-                ${u.selfieUrl ? `<img src="${u.selfieUrl}" style="width:100%;height:100%;object-fit:cover;" />` : '<span style="font-size:10px;color:#64748B;">No Selfie</span>'}
-              </div>
-              <div style="flex:1;">
-                <div style="font-size:12px;font-weight:800;">Verification Selfie</div>
-                <div style="font-size:11px;color:var(--text-muted);margin:3px 0 8px;">Approve or reject background FaceMatch verification:</div>
-                <div style="display:flex;gap:6px;">
-                  <button class="btn btn-emerald btn-sm" onclick="userAction('${u.userId}',{action:'VERIFY_SELFIE'})">✓ Mark Verified</button>
-                  <button class="btn btn-danger btn-sm" onclick="userAction('${u.userId}',{action:'REJECT_SELFIE'})">✕ Mark Rejected</button>
+            ${isSuperAdmin ? `
+              <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px;background:#070912;padding:10px;border-radius:12px;border:1px solid var(--border);">
+                <div style="width:70px;height:86px;border-radius:10px;overflow:hidden;border:2px solid var(--brand);background:#111;display:flex;align-items:center;justify-content:center;">
+                  ${u.selfieUrl ? `<img src="${u.selfieUrl}" style="width:100%;height:100%;object-fit:cover;" />` : '<span style="font-size:10px;color:#64748B;">No Selfie</span>'}
+                </div>
+                <div style="flex:1;">
+                  <div style="font-size:12px;font-weight:800;">Verification Selfie</div>
+                  <div style="font-size:11px;color:var(--text-muted);margin:3px 0 8px;">Approve or reject background FaceMatch verification:</div>
+                  <div style="display:flex;gap:6px;">
+                    <button class="btn btn-emerald btn-sm" onclick="userAction('${u.userId}',{action:'VERIFY_SELFIE'})">✓ Mark Verified</button>
+                    <button class="btn btn-danger btn-sm" onclick="userAction('${u.userId}',{action:'REJECT_SELFIE'})">✕ Mark Rejected</button>
+                  </div>
                 </div>
               </div>
-            </div>
+            ` : ''}
 
             <div class="inspector-photo-strip">
               ${slots.map((url, i) => `
                 <div class="inspector-photo-card">
                   ${url ? `
                     <img src="${url}" alt="Slot ${i+1}" />
-                    <button class="inspector-photo-del" onclick="userAction('${u.userId}',{action:'REMOVE_PHOTO',photoSlot:${i+1}})">🗑️ #${i+1}</button>
+                    ${isSuperAdmin ? `<button class="inspector-photo-del" onclick="userAction('${u.userId}',{action:'REMOVE_PHOTO',photoSlot:${i+1}})">🗑️ #${i+1}</button>` : ''}
                   ` : `<span style="font-size:11px;color:var(--text-dim);">Slot #${i+1} Empty</span>`}
                 </div>
               `).join('')}
@@ -1517,21 +1610,23 @@
             </div>
           </div>
 
-          <!-- Moderation & Credits Controls -->
-          <div class="panel-card" style="margin-bottom:0;">
-            <div class="panel-title">⚡ Admin Controls & Entitlements</div>
-            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
-              <button class="btn btn-ghost btn-sm" onclick="userAction('${u.userId}',{action:'TOGGLE_DIGILOCKER'})">
-                🪪 ${u.digilockerVerified ? 'Revoke DigiLocker' : 'Grant DigiLocker Badge'}
-              </button>
-              <button class="btn ${u.isShadowbanned ? 'btn-emerald' : 'btn-danger'} btn-sm" onclick="userAction('${u.userId}',{action:'TOGGLE_SHADOWBAN'})">
-                👻 ${u.isShadowbanned ? 'Remove Shadowban' : 'Shadowban User'}
-              </button>
-              <button class="btn btn-primary btn-sm" onclick="userAction('${u.userId}',{action:'GRANT_CREDITS',sparksDelta:5,boostsDelta:2,directDmsDelta:2,grantVipPass:true})">
-                🎁 Gift +5 Sparks, +2 Boosts & 30d VIP
-              </button>
+          ${isSuperAdmin ? `
+            <!-- Moderation & Credits Controls (SUPER_ADMIN ONLY) -->
+            <div class="panel-card" style="margin-bottom:0;">
+              <div class="panel-title">⚡ Admin Controls & Entitlements (Super Admin Only)</div>
+              <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
+                <button class="btn btn-ghost btn-sm" onclick="userAction('${u.userId}',{action:'TOGGLE_DIGILOCKER'})">
+                  🪪 ${u.digilockerVerified ? 'Revoke DigiLocker' : 'Grant DigiLocker Badge'}
+                </button>
+                <button class="btn ${u.isShadowbanned ? 'btn-emerald' : 'btn-danger'} btn-sm" onclick="userAction('${u.userId}',{action:'TOGGLE_SHADOWBAN'})">
+                  👻 ${u.isShadowbanned ? 'Remove Shadowban' : 'Shadowban User'}
+                </button>
+                <button class="btn btn-primary btn-sm" onclick="userAction('${u.userId}',{action:'GRANT_CREDITS',sparksDelta:5,boostsDelta:2,directDmsDelta:2,grantVipPass:true})">
+                  🎁 Gift +5 Sparks, +2 Boosts & 30d VIP
+                </button>
+              </div>
             </div>
-          </div>
+          ` : ''}
         `;
 
         document.getElementById('inspector-backdrop').classList.add('open');
@@ -1609,6 +1704,7 @@
     async function loadPayments() {
       try {
         const d = await apiCall('/payments');
+        const isSuperAdmin = adminRole === 'SUPER_ADMIN';
         document.getElementById('payments-kpi-grid').innerHTML = `
           <div class="kpi-card">
             <div class="kpi-label">Captured Revenue</div>
@@ -1630,14 +1726,22 @@
         document.getElementById('payments-orders-body').innerHTML = (d.orders || []).map(o => `
           <tr>
             <td style="font-family:'JetBrains Mono',monospace;font-size:12px;">${o.orderId}</td>
-            <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-muted);">${o.userId}</td>
+            <td>
+              <button class="btn btn-ghost btn-sm" style="font-family:'JetBrains Mono',monospace;font-size:10px;" onclick="openInspector('${o.userId}')">
+                🔍 ${String(o.userId).slice(0, 8)}...
+              </button>
+            </td>
             <td><b>${o.sku}</b></td>
             <td>₹${((o.amountPaise || 0) / 100).toFixed(0)}</td>
             <td>${o.paymentProvider || 'UPI'}</td>
             <td><span class="status-pill status-${o.status}">${o.status}</span></td>
             <td style="font-size:11px;color:var(--text-muted);">${(o.createdAt || '').toString().slice(0,16).replace('T',' ')}</td>
             <td>
-              ${o.status !== 'CAPTURED' ? `<button class="btn btn-emerald btn-sm" onclick="reconcilePayment('${o.orderId}')">✓ Grant & Capture</button>` : '<span style="color:#6EE7B7;font-size:11px;">✓ Credited</span>'}
+              ${o.status === 'CAPTURED'
+                ? '<span style="color:#6EE7B7;font-size:11px;">✓ Credited</span>'
+                : (isSuperAdmin
+                    ? `<button class="btn btn-emerald btn-sm" onclick="reconcilePayment('${o.orderId}')">✓ Grant & Capture</button>`
+                    : '<span style="color:var(--text-dim);font-size:11px;">🔒 View Only</span>')}
             </td>
           </tr>
         `).join('') || '<tr><td colspan="8" style="text-align:center;color:var(--text-dim);">No orders recorded yet.</td></tr>';
@@ -1676,12 +1780,16 @@
     async function loadTickets(status = 'ALL') {
       try {
         const list = await apiCall('/tickets?status=' + encodeURIComponent(status));
+        const openCount = list.filter(t => t.status === 'PENDING' || t.status === 'IN_PROGRESS').length;
+        document.getElementById('badge-open-tickets').textContent = openCount;
+
         document.getElementById('tickets-table-body').innerHTML = list.map(t => `
           <tr>
             <td style="font-family:'JetBrains Mono',monospace;font-weight:800;">${t.ticketNumber}</td>
             <td>
               <div style="font-weight:700;">${escapeHtml(t.userName)}</div>
               <div style="font-size:11px;color:var(--text-dim);">${t.userPhoneMasked}</div>
+              <button class="btn btn-ghost btn-sm" style="margin-top:4px;font-size:10px;padding:3px 8px;" onclick="openInspector('${t.userId}')">🔍 User & Payments</button>
             </td>
             <td><span class="status-pill status-UNVERIFIED">${t.category}</span></td>
             <td>
@@ -1691,7 +1799,10 @@
             </td>
             <td><span class="status-pill status-${t.status}">${t.status}</span></td>
             <td>
-              <button class="btn btn-emerald btn-sm" onclick="resolveTicketPrompt('${t.id}','${t.ticketNumber}')">✓ Resolve</button>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                <button class="btn btn-ghost btn-sm" onclick="markTicketInProgress('${t.id}','${t.ticketNumber}')">⏳ In Progress</button>
+                <button class="btn btn-emerald btn-sm" onclick="resolveTicketPrompt('${t.id}','${t.ticketNumber}')">✓ Resolve</button>
+              </div>
             </td>
           </tr>
         `).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--text-dim);">No support tickets found.</td></tr>';
@@ -1700,7 +1811,22 @@
       }
     }
 
-    async function resolveTicketPrompt(id, number) {
+    async function markTicketInProgress(id, number) {
+      const notes = prompt(`Note for marking ${number} In Progress:`, 'Support team is investigating your request.');
+      if (notes === null) return;
+      try {
+        await apiCall(`/tickets/${id}/status`, {
+          method: 'POST',
+          body: JSON.stringify({ status: 'IN_PROGRESS', resolutionNotes: notes })
+        });
+        showToast(`⏳ Ticket ${number} marked IN_PROGRESS`);
+        loadTickets('ALL');
+      } catch (e) {
+        showToast('⚠️ ' + e.message);
+      }
+    }
+
+    async function resolveTicketPrompt(id, number, reopenUserId) {
       const notes = prompt(`Resolution note for ticket ${number} (sent to user):`, 'Issue resolved by BlunderR Support Team.');
       if (!notes) return;
       try {
@@ -1710,6 +1836,9 @@
         });
         showToast(`✅ Ticket ${number} resolved & user notified!`);
         loadTickets('ALL');
+        if (reopenUserId) {
+          openInspector(reopenUserId);
+        }
       } catch (e) {
         showToast('⚠️ ' + e.message);
       }
