@@ -63,7 +63,7 @@ public class MicroCommunity {
 
     @Builder.Default
     @Column(name = "active_members_count")
-    private Integer activeMembersCount = 150;
+    private Integer activeMembersCount = 0;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

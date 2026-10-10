@@ -34,7 +34,7 @@ public class MicroCommunityInitializer implements CommandLineRunner {
                 .iconName("laptop-outline")
                 .centerLat(12.9352)
                 .centerLng(77.6245)
-                .activeMembersCount(1420)
+                .activeMembersCount(0)
                 .isPopular(true)
                 .build(),
             MicroCommunity.builder()
@@ -47,7 +47,7 @@ public class MicroCommunityInitializer implements CommandLineRunner {
                 .iconName("color-palette-outline")
                 .centerLat(12.9784)
                 .centerLng(77.6408)
-                .activeMembersCount(1850)
+                .activeMembersCount(0)
                 .isPopular(true)
                 .build(),
             MicroCommunity.builder()
@@ -60,7 +60,7 @@ public class MicroCommunityInitializer implements CommandLineRunner {
                 .iconName("flash-outline")
                 .centerLat(12.9121)
                 .centerLng(77.6446)
-                .activeMembersCount(1260)
+                .activeMembersCount(0)
                 .isPopular(true)
                 .build(),
             MicroCommunity.builder()
@@ -73,7 +73,7 @@ public class MicroCommunityInitializer implements CommandLineRunner {
                 .iconName("briefcase-outline")
                 .centerLat(12.9698)
                 .centerLng(77.7500)
-                .activeMembersCount(940)
+                .activeMembersCount(0)
                 .isPopular(true)
                 .build(),
             MicroCommunity.builder()
@@ -86,7 +86,7 @@ public class MicroCommunityInitializer implements CommandLineRunner {
                 .iconName("book-outline")
                 .centerLat(12.9749)
                 .centerLng(77.6092)
-                .activeMembersCount(1120)
+                .activeMembersCount(0)
                 .isPopular(false)
                 .build(),
             MicroCommunity.builder()
@@ -99,7 +99,7 @@ public class MicroCommunityInitializer implements CommandLineRunner {
                 .iconName("cafe-outline")
                 .centerLat(12.9063)
                 .centerLng(77.5857)
-                .activeMembersCount(880)
+                .activeMembersCount(0)
                 .isPopular(false)
                 .build(),
             MicroCommunity.builder()
@@ -112,7 +112,7 @@ public class MicroCommunityInitializer implements CommandLineRunner {
                 .iconName("code-slash-outline")
                 .centerLat(12.9260)
                 .centerLng(77.6762)
-                .activeMembersCount(750)
+                .activeMembersCount(0)
                 .isPopular(false)
                 .build(),
 
@@ -127,7 +127,7 @@ public class MicroCommunityInitializer implements CommandLineRunner {
                 .iconName("videocam-outline")
                 .centerLat(19.0596)
                 .centerLng(72.8295)
-                .activeMembersCount(2350)
+                .activeMembersCount(0)
                 .isPopular(true)
                 .build(),
             MicroCommunity.builder()
@@ -140,7 +140,7 @@ public class MicroCommunityInitializer implements CommandLineRunner {
                 .iconName("wine-outline")
                 .centerLat(18.9986)
                 .centerLng(72.8311)
-                .activeMembersCount(1680)
+                .activeMembersCount(0)
                 .isPopular(true)
                 .build(),
             MicroCommunity.builder()
@@ -153,7 +153,7 @@ public class MicroCommunityInitializer implements CommandLineRunner {
                 .iconName("ticket-outline")
                 .centerLat(19.1351)
                 .centerLng(72.8146)
-                .activeMembersCount(1420)
+                .activeMembersCount(0)
                 .isPopular(true)
                 .build(),
             MicroCommunity.builder()
@@ -166,7 +166,7 @@ public class MicroCommunityInitializer implements CommandLineRunner {
                 .iconName("water-outline")
                 .centerLat(19.1176)
                 .centerLng(72.9060)
-                .activeMembersCount(1190)
+                .activeMembersCount(0)
                 .isPopular(false)
                 .build(),
             MicroCommunity.builder()
@@ -179,7 +179,7 @@ public class MicroCommunityInitializer implements CommandLineRunner {
                 .iconName("sunny-outline")
                 .centerLat(19.0988)
                 .centerLng(72.8264)
-                .activeMembersCount(1530)
+                .activeMembersCount(0)
                 .isPopular(false)
                 .build(),
             MicroCommunity.builder()
@@ -192,7 +192,7 @@ public class MicroCommunityInitializer implements CommandLineRunner {
                 .iconName("business-outline")
                 .centerLat(18.9067)
                 .centerLng(72.8147)
-                .activeMembersCount(980)
+                .activeMembersCount(0)
                 .isPopular(false)
                 .build(),
 
@@ -207,7 +207,7 @@ public class MicroCommunityInitializer implements CommandLineRunner {
                 .iconName("musical-notes-outline")
                 .centerLat(28.5535)
                 .centerLng(77.2023)
-                .activeMembersCount(2140)
+                .activeMembersCount(0)
                 .isPopular(true)
                 .build(),
             MicroCommunity.builder()
@@ -220,7 +220,7 @@ public class MicroCommunityInitializer implements CommandLineRunner {
                 .iconName("business-outline")
                 .centerLat(28.4950)
                 .centerLng(77.0895)
-                .activeMembersCount(1890)
+                .activeMembersCount(0)
                 .isPopular(true)
                 .build(),
             MicroCommunity.builder()
@@ -233,7 +233,7 @@ public class MicroCommunityInitializer implements CommandLineRunner {
                 .iconName("school-outline")
                 .centerLat(28.6896)
                 .centerLng(77.2105)
-                .activeMembersCount(3100)
+                .activeMembersCount(0)
                 .isPopular(true)
                 .build(),
             MicroCommunity.builder()
@@ -246,7 +246,7 @@ public class MicroCommunityInitializer implements CommandLineRunner {
                 .iconName("sparkles-outline")
                 .centerLat(28.5380)
                 .centerLng(77.2435)
-                .activeMembersCount(1720)
+                .activeMembersCount(0)
                 .isPopular(false)
                 .build(),
             MicroCommunity.builder()
@@ -259,7 +259,7 @@ public class MicroCommunityInitializer implements CommandLineRunner {
                 .iconName("tv-outline")
                 .centerLat(28.5708)
                 .centerLng(77.3260)
-                .activeMembersCount(1280)
+                .activeMembersCount(0)
                 .isPopular(false)
                 .build(),
 
@@ -274,7 +274,7 @@ public class MicroCommunityInitializer implements CommandLineRunner {
                 .iconName("leaf-outline")
                 .centerLat(18.5362)
                 .centerLng(73.8940)
-                .activeMembersCount(1650)
+                .activeMembersCount(0)
                 .isPopular(true)
                 .build(),
             MicroCommunity.builder()
@@ -287,7 +287,7 @@ public class MicroCommunityInitializer implements CommandLineRunner {
                 .iconName("people-outline")
                 .centerLat(18.5679)
                 .centerLng(73.9143)
-                .activeMembersCount(1920)
+                .activeMembersCount(0)
                 .isPopular(true)
                 .build(),
             MicroCommunity.builder()
@@ -300,7 +300,7 @@ public class MicroCommunityInitializer implements CommandLineRunner {
                 .iconName("football-outline")
                 .centerLat(18.5750)
                 .centerLng(73.7740)
-                .activeMembersCount(1140)
+                .activeMembersCount(0)
                 .isPopular(false)
                 .build(),
             MicroCommunity.builder()
@@ -313,7 +313,7 @@ public class MicroCommunityInitializer implements CommandLineRunner {
                 .iconName("cafe-outline")
                 .centerLat(18.5236)
                 .centerLng(73.8415)
-                .activeMembersCount(1380)
+                .activeMembersCount(0)
                 .isPopular(false)
                 .build(),
 
@@ -328,7 +328,7 @@ public class MicroCommunityInitializer implements CommandLineRunner {
                 .iconName("diamond-outline")
                 .centerLat(17.4319)
                 .centerLng(78.4073)
-                .activeMembersCount(1590)
+                .activeMembersCount(0)
                 .isPopular(true)
                 .build(),
             MicroCommunity.builder()
@@ -341,7 +341,7 @@ public class MicroCommunityInitializer implements CommandLineRunner {
                 .iconName("globe-outline")
                 .centerLat(17.4474)
                 .centerLng(78.3762)
-                .activeMembersCount(2180)
+                .activeMembersCount(0)
                 .isPopular(true)
                 .build(),
             MicroCommunity.builder()
@@ -354,7 +354,7 @@ public class MicroCommunityInitializer implements CommandLineRunner {
                 .iconName("fitness-outline")
                 .centerLat(17.4401)
                 .centerLng(78.3489)
-                .activeMembersCount(1370)
+                .activeMembersCount(0)
                 .isPopular(false)
                 .build(),
 
@@ -369,7 +369,7 @@ public class MicroCommunityInitializer implements CommandLineRunner {
                 .iconName("flower-outline")
                 .centerLat(15.5871)
                 .centerLng(73.7423)
-                .activeMembersCount(980)
+                .activeMembersCount(0)
                 .isPopular(true)
                 .build(),
             MicroCommunity.builder()
@@ -382,7 +382,7 @@ public class MicroCommunityInitializer implements CommandLineRunner {
                 .iconName("home-outline")
                 .centerLat(15.4909)
                 .centerLng(73.8278)
-                .activeMembersCount(640)
+                .activeMembersCount(0)
                 .isPopular(false)
                 .build(),
 
@@ -397,7 +397,7 @@ public class MicroCommunityInitializer implements CommandLineRunner {
                 .iconName("musical-notes-outline")
                 .centerLat(22.5535)
                 .centerLng(88.3512)
-                .activeMembersCount(1240)
+                .activeMembersCount(0)
                 .isPopular(true)
                 .build(),
             MicroCommunity.builder()
@@ -410,7 +410,7 @@ public class MicroCommunityInitializer implements CommandLineRunner {
                 .iconName("bulb-outline")
                 .centerLat(22.5735)
                 .centerLng(88.4331)
-                .activeMembersCount(1460)
+                .activeMembersCount(0)
                 .isPopular(true)
                 .build(),
             MicroCommunity.builder()
@@ -423,7 +423,7 @@ public class MicroCommunityInitializer implements CommandLineRunner {
                 .iconName("book-outline")
                 .centerLat(22.5126)
                 .centerLng(88.3582)
-                .activeMembersCount(1150)
+                .activeMembersCount(0)
                 .isPopular(false)
                 .build(),
 
@@ -438,7 +438,7 @@ public class MicroCommunityInitializer implements CommandLineRunner {
                 .iconName("water-outline")
                 .centerLat(13.0003)
                 .centerLng(80.2667)
-                .activeMembersCount(1020)
+                .activeMembersCount(0)
                 .isPopular(true)
                 .build(),
             MicroCommunity.builder()
@@ -451,7 +451,7 @@ public class MicroCommunityInitializer implements CommandLineRunner {
                 .iconName("color-palette-outline")
                 .centerLat(13.0569)
                 .centerLng(80.2425)
-                .activeMembersCount(870)
+                .activeMembersCount(0)
                 .isPopular(true)
                 .build(),
 
@@ -466,7 +466,7 @@ public class MicroCommunityInitializer implements CommandLineRunner {
                 .iconName("business-outline")
                 .centerLat(28.4950)
                 .centerLng(77.0895)
-                .activeMembersCount(2450)
+                .activeMembersCount(0)
                 .isPopular(true)
                 .build(),
             MicroCommunity.builder()
@@ -479,7 +479,7 @@ public class MicroCommunityInitializer implements CommandLineRunner {
                 .iconName("trophy-outline")
                 .centerLat(28.4680)
                 .centerLng(77.0980)
-                .activeMembersCount(1980)
+                .activeMembersCount(0)
                 .isPopular(true)
                 .build(),
             MicroCommunity.builder()
@@ -492,7 +492,7 @@ public class MicroCommunityInitializer implements CommandLineRunner {
                 .iconName("sparkles-outline")
                 .centerLat(28.4611)
                 .centerLng(77.0514)
-                .activeMembersCount(2150)
+                .activeMembersCount(0)
                 .isPopular(true)
                 .build(),
             MicroCommunity.builder()
@@ -505,7 +505,7 @@ public class MicroCommunityInitializer implements CommandLineRunner {
                 .iconName("beer-outline")
                 .centerLat(28.4682)
                 .centerLng(77.0628)
-                .activeMembersCount(2800)
+                .activeMembersCount(0)
                 .isPopular(true)
                 .build(),
             MicroCommunity.builder()
@@ -518,7 +518,7 @@ public class MicroCommunityInitializer implements CommandLineRunner {
                 .iconName("cafe-outline")
                 .centerLat(28.4674)
                 .centerLng(77.0818)
-                .activeMembersCount(1760)
+                .activeMembersCount(0)
                 .isPopular(true)
                 .build(),
             MicroCommunity.builder()
@@ -531,7 +531,7 @@ public class MicroCommunityInitializer implements CommandLineRunner {
                 .iconName("rocket-outline")
                 .centerLat(28.4180)
                 .centerLng(77.0650)
-                .activeMembersCount(1340)
+                .activeMembersCount(0)
                 .isPopular(false)
                 .build(),
             MicroCommunity.builder()
@@ -544,7 +544,7 @@ public class MicroCommunityInitializer implements CommandLineRunner {
                 .iconName("bicycle-outline")
                 .centerLat(28.4350)
                 .centerLng(77.0180)
-                .activeMembersCount(1120)
+                .activeMembersCount(0)
                 .isPopular(false)
                 .build(),
 
@@ -559,7 +559,7 @@ public class MicroCommunityInitializer implements CommandLineRunner {
                 .iconName("cafe-outline")
                 .centerLat(28.5355)
                 .centerLng(77.3688)
-                .activeMembersCount(1950)
+                .activeMembersCount(0)
                 .isPopular(true)
                 .build(),
             MicroCommunity.builder()
@@ -572,7 +572,7 @@ public class MicroCommunityInitializer implements CommandLineRunner {
                 .iconName("wine-outline")
                 .centerLat(28.4986)
                 .centerLng(77.4116)
-                .activeMembersCount(2200)
+                .activeMembersCount(0)
                 .isPopular(true)
                 .build(),
             MicroCommunity.builder()
@@ -585,7 +585,7 @@ public class MicroCommunityInitializer implements CommandLineRunner {
                 .iconName("bag-handle-outline")
                 .centerLat(28.5708)
                 .centerLng(77.3260)
-                .activeMembersCount(2600)
+                .activeMembersCount(0)
                 .isPopular(true)
                 .build(),
             MicroCommunity.builder()
@@ -598,7 +598,7 @@ public class MicroCommunityInitializer implements CommandLineRunner {
                 .iconName("laptop-outline")
                 .centerLat(28.6280)
                 .centerLng(77.3650)
-                .activeMembersCount(1850)
+                .activeMembersCount(0)
                 .isPopular(true)
                 .build(),
             MicroCommunity.builder()
@@ -611,7 +611,7 @@ public class MicroCommunityInitializer implements CommandLineRunner {
                 .iconName("videocam-outline")
                 .centerLat(28.5620)
                 .centerLng(77.3150)
-                .activeMembersCount(1420)
+                .activeMembersCount(0)
                 .isPopular(true)
                 .build(),
             MicroCommunity.builder()
@@ -624,7 +624,7 @@ public class MicroCommunityInitializer implements CommandLineRunner {
                 .iconName("home-outline")
                 .centerLat(28.5640)
                 .centerLng(77.3820)
-                .activeMembersCount(1580)
+                .activeMembersCount(0)
                 .isPopular(false)
                 .build(),
             MicroCommunity.builder()
@@ -637,7 +637,7 @@ public class MicroCommunityInitializer implements CommandLineRunner {
                 .iconName("school-outline")
                 .centerLat(28.4600)
                 .centerLng(77.4900)
-                .activeMembersCount(2100)
+                .activeMembersCount(0)
                 .isPopular(false)
                 .build(),
             MicroCommunity.builder()
@@ -650,7 +650,7 @@ public class MicroCommunityInitializer implements CommandLineRunner {
                 .iconName("leaf-outline")
                 .centerLat(28.5440)
                 .centerLng(77.3090)
-                .activeMembersCount(980)
+                .activeMembersCount(0)
                 .isPopular(false)
                 .build()
         );

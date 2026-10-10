@@ -1365,12 +1365,6 @@
       setTimeout(() => { el.style.display = 'none'; }, 3200);
     }
 
-    function fillRole(email, pass) {
-      document.getElementById('login-email').value = email;
-      document.getElementById('login-password').value = pass;
-      document.getElementById('login-pin').value = '2026';
-    }
-
     async function apiCall(path, options = {}) {
       const headers = Object.assign({
         'Content-Type': 'application/json',
@@ -1674,7 +1668,7 @@
                   ${u.isShadowbanned ? '<span class="status-pill status-REJECTED">👻 SHADOWBANNED</span>' : ''}
                 </div>
                 <div style="font-size:13px;color:var(--text-muted);margin-top:4px;">
-                  📍 <b>${escapeHtml(u.city || 'Bengaluru')}</b> • Neighborhood Tribe: <b style="color:#FF6B8B;">${escapeHtml(u.microCircle || 'Unassigned')}</b> • Gender: <b>${escapeHtml(u.genderDisplay || u.gender || 'Not specified')}</b>
+                  📍 <b>${escapeHtml(u.city || 'Not specified')}</b> • Neighborhood Tribe: <b style="color:#FF6B8B;">${escapeHtml(u.microCircle || 'Unassigned')}</b> • Gender: <b>${escapeHtml(u.genderDisplay || u.gender || 'Not specified')}</b>
                 </div>
                 <div style="font-size:11px;color:var(--text-dim);font-family:'JetBrains Mono',monospace;margin-top:3px;">
                   UUID: ${u.userId} • Joined: ${(u.createdAt || '').toString().slice(0, 16).replace('T', ' ')}
@@ -1754,11 +1748,11 @@
                   </div>
                   <div style="background:var(--bg-surface);padding:10px 12px;border-radius:10px;border:1px solid var(--border);">
                     <div style="color:var(--text-dim);font-size:10px;font-weight:800;text-transform:uppercase;">💘 Relationship Intent</div>
-                    <div style="font-weight:700;margin-top:3px;">${escapeHtml(u.relationshipIntent || 'Serious / Vibe Check')}</div>
+                    <div style="font-weight:700;margin-top:3px;">${escapeHtml(u.relationshipIntent || 'Not specified')}</div>
                   </div>
                   <div style="background:var(--bg-surface);padding:10px 12px;border-radius:10px;border:1px solid var(--border);">
                     <div style="color:var(--text-dim);font-size:10px;font-weight:800;text-transform:uppercase;">🗣️ Languages Spoken</div>
-                    <div style="font-weight:700;margin-top:3px;">${escapeHtml(u.languagesSpoken || 'English, Hindi')}</div>
+                    <div style="font-weight:700;margin-top:3px;">${escapeHtml(u.languagesSpoken || 'Not specified')}</div>
                   </div>
                 </div>
 
@@ -1777,15 +1771,15 @@
                 <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;font-size:12px;">
                   <div style="background:#070912;padding:10px 12px;border-radius:10px;border:1px solid var(--border);">
                     <span style="color:var(--text-dim);font-size:10px;font-weight:800;">🌙 MOON RASHI</span>
-                    <div style="font-weight:800;color:#FCD34D;margin-top:2px;">${escapeHtml(astro.chandraRashi || 'Taurus (वृषभ)')}</div>
+                    <div style="font-weight:800;color:#FCD34D;margin-top:2px;">${(astro && astro.chandraRashi) ? escapeHtml(astro.chandraRashi) : '<span style="color:var(--text-dim);font-weight:400;">Not calculated</span>'}</div>
                   </div>
                   <div style="background:#070912;padding:10px 12px;border-radius:10px;border:1px solid var(--border);">
                     <span style="color:var(--text-dim);font-size:10px;font-weight:800;">⭐ NAKSHATRA</span>
-                    <div style="font-weight:800;color:#C4B5FD;margin-top:2px;">${escapeHtml(astro.nakshatraName || 'Rohini')} (Pada ${astro.nakshatraPada || 2})</div>
+                    <div style="font-weight:800;color:#C4B5FD;margin-top:2px;">${(astro && astro.nakshatraName) ? (escapeHtml(astro.nakshatraName) + (astro.nakshatraPada ? ' (Pada ' + astro.nakshatraPada + ')' : '')) : '<span style="color:var(--text-dim);font-weight:400;">Not calculated</span>'}</div>
                   </div>
                   <div style="background:#070912;padding:10px 12px;border-radius:10px;border:1px solid var(--border);">
                     <span style="color:var(--text-dim);font-size:10px;font-weight:800;">☀️ SUN SIGN & GANA</span>
-                    <div style="font-weight:800;color:#FFF;margin-top:2px;">${escapeHtml(astro.sunSign || 'Leo')} • ${escapeHtml(astro.gana || 'Manushya')}</div>
+                    <div style="font-weight:800;color:#FFF;margin-top:2px;">${(astro && (astro.sunSign || astro.gana)) ? (escapeHtml(astro.sunSign || '—') + (astro.gana ? ' • ' + escapeHtml(astro.gana) : '')) : '<span style="color:var(--text-dim);font-weight:400;">Not calculated</span>'}</div>
                   </div>
                   <div style="background:#070912;padding:10px 12px;border-radius:10px;border:1px solid var(--border);">
                     <span style="color:var(--text-dim);font-size:10px;font-weight:800;">🛡️ SHADOWSHIELD HASHES</span>
@@ -2149,20 +2143,20 @@
             <td><b>🏙️ ${escapeHtml(c.city)}</b></td>
             <td style="font-weight:800;color:#FF6B8B;">${escapeHtml(c.name)}</td>
             <td style="color:var(--text-muted);font-size:12px;">${escapeHtml(c.tagline || '')}</td>
-            <td>👥 ${c.activeMembersCount || 150}</td>
+            <td>👥 ${c.activeMembersCount || 0}</td>
             <td><button class="btn btn-danger btn-sm" onclick="deleteCircle('${c.id}')">🗑️</button></td>
           </tr>
-        `).join('');
+        `).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--text-dim);">No micro-circles configured.</td></tr>';
 
         document.getElementById('cms-spots-body').innerHTML = spots.map(s => `
           <tr>
             <td><b>${escapeHtml(s.city)}</b></td>
             <td style="font-weight:800;">☕ ${escapeHtml(s.name)}</td>
-            <td style="color:var(--text-muted);">${escapeHtml(s.neighborhood || s.address)}</td>
-            <td><span class="status-pill status-VERIFIED">${s.discountPercent}% OFF • ${escapeHtml(s.couponCode || 'BLUNDERR15')}</span></td>
+            <td style="color:var(--text-muted);">${escapeHtml(s.neighborhood || s.address || '—')}</td>
+            <td><span class="status-pill status-VERIFIED">${s.discountPercent}% OFF • ${escapeHtml(s.couponCode || '—')}</span></td>
             <td><button class="btn btn-danger btn-sm" onclick="deleteSafeSpot('${s.id}')">🗑️</button></td>
           </tr>
-        `).join('');
+        `).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--text-dim);">No partner Safe-Date cafes added yet.</td></tr>';
       } catch (e) {
         showToast('⚠️ ' + e.message);
       }
@@ -2304,7 +2298,7 @@
             </td>
             <td style="font-family:'JetBrains Mono',monospace;font-size:12px;">${s.phoneMasked}</td>
             <td style="font-family:'JetBrains Mono',monospace;font-size:12px;color:${s.email ? '#FFF' : 'var(--text-dim)'};">${escapeHtml(s.email || '—')}</td>
-            <td>${escapeHtml(s.city || 'Bengaluru')}</td>
+            <td>${escapeHtml(s.city || 'Not specified')}</td>
             <td>
               <span class="status-pill ${s.marketingOptIn ? 'status-VERIFIED' : 'status-UNVERIFIED'}">
                 ${s.marketingOptIn ? '✓ OPTED IN' : '✕ OPTED OUT'}
@@ -2454,7 +2448,7 @@
           <div style="padding:28px;">
             ${badgeHtml}
             <h2 style="margin:0 0 12px;font-size:20px;color:#FFF;">${escapeHtml(subject)}</h2>
-            <p style="font-size:14px;color:#CBD5E1;margin:0 0 14px;">Hi <b>Priya</b>,</p>
+            <p style="font-size:14px;color:#CBD5E1;margin:0 0 14px;">Hi <b>[Member Name]</b>,</p>
             <div style="font-size:14px;line-height:1.65;color:#E2E8F0;">${escapeHtml(body).replace(/\n/g, '<br/>')}</div>
             ${couponHtml}
             <div style="margin-top:24px;text-align:center;">

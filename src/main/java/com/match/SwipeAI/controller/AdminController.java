@@ -359,8 +359,10 @@ public class AdminController {
             if (p != null) {
                 int photoCount = extractProfilePhotos(p).size();
                 if (photoCount >= 2) twoOrMorePhotos++;
-                String city = (p.getCity() != null && !p.getCity().isBlank()) ? p.getCity().trim() : "Bengaluru";
-                cityCounts.put(city, cityCounts.getOrDefault(city, 0L) + 1L);
+                if (p.getCity() != null && !p.getCity().isBlank()) {
+                    String city = p.getCity().trim();
+                    cityCounts.put(city, cityCounts.getOrDefault(city, 0L) + 1L);
+                }
             }
         }
 
@@ -948,12 +950,43 @@ public class AdminController {
     // =========================================================================
 
     @GetMapping("/cms/circles")
-    public ResponseEntity<List<MicroCommunity>> getCircles(HttpServletRequest request) {
+    public ResponseEntity<List<Map<String, Object>>> getCircles(HttpServletRequest request) {
         requireAdmin(request, "SUPER_ADMIN");
         List<MicroCommunity> list = microCommunityRepository.findAll();
-        list.sort(Comparator.comparing(MicroCommunity::getCity, Comparator.nullsLast(String::compareToIgnoreCase))
-                .thenComparing(MicroCommunity::getName, Comparator.nullsLast(String::compareToIgnoreCase)));
-        return ResponseEntity.ok(list);
+        List<Profile> allProfiles = profileRepository.findAll();
+
+        Map<String, Long> circleCounts = new HashMap<>();
+        for (Profile p : allProfiles) {
+            if (p.getMicroCircle() != null && !p.getMicroCircle().isBlank()) {
+                String c = p.getMicroCircle().trim().toLowerCase();
+                circleCounts.put(c, circleCounts.getOrDefault(c, 0L) + 1L);
+            }
+        }
+
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (MicroCommunity c : list) {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("id", c.getId());
+            m.put("city", c.getCity());
+            m.put("name", c.getName());
+            m.put("slug", c.getSlug());
+            m.put("tagline", c.getTagline());
+            m.put("vibeCategory", c.getVibeCategory());
+            m.put("badgeIcon", c.getBadgeIcon());
+            m.put("isPopular", Boolean.TRUE.equals(c.getIsPopular()));
+
+            String cName = c.getName().toLowerCase();
+            long count = circleCounts.entrySet().stream()
+                    .filter(e -> e.getKey().contains(cName) || cName.contains(e.getKey()))
+                    .mapToLong(Map.Entry::getValue)
+                    .sum();
+            m.put("activeMembersCount", count);
+            result.add(m);
+        }
+
+        result.sort(Comparator.comparing((Map<String, Object> m) -> (String) m.get("city"), Comparator.nullsLast(String::compareToIgnoreCase))
+                .thenComparing(m -> (String) m.get("name"), Comparator.nullsLast(String::compareToIgnoreCase)));
+        return ResponseEntity.ok(result);
     }
 
     @PostMapping("/cms/circles")
@@ -983,7 +1016,7 @@ public class AdminController {
                 .badgeIcon(req.getBadgeIcon() != null ? req.getBadgeIcon().trim() : "📍")
                 .iconName("location")
                 .isPopular(req.getIsPopular() != null ? req.getIsPopular() : true)
-                .activeMembersCount(req.getActiveMembersCount() != null ? req.getActiveMembersCount() : 180)
+                .activeMembersCount(req.getActiveMembersCount() != null ? req.getActiveMembersCount() : 0)
                 .build();
 
         MicroCommunity saved = microCommunityRepository.save(circle);
@@ -1137,12 +1170,12 @@ public class AdminController {
             Profile p = profileMap.get(u.getId());
             Map<String, Object> row = new LinkedHashMap<>();
             row.put("userId", u.getId());
-            row.put("displayName", p != null && p.getDisplayName() != null ? p.getDisplayName() : "User");
+            row.put("displayName", (p != null && p.getDisplayName() != null && !p.getDisplayName().isBlank()) ? p.getDisplayName().trim() : "Unspecified");
             row.put("phoneMasked", maskPhone(u.getPhoneE164()));
             row.put("email", u.getEmail() != null ? u.getEmail() : "");
             row.put("marketingOptIn", optedIn);
             row.put("marketingOptInAt", u.getMarketingOptInAt() != null ? u.getMarketingOptInAt().toString() : "");
-            row.put("city", p != null && p.getCity() != null ? p.getCity() : "Bengaluru");
+            row.put("city", (p != null && p.getCity() != null && !p.getCity().isBlank()) ? p.getCity().trim() : "Not specified");
             row.put("hasActivePass", Boolean.TRUE.equals(u.getHasActivePass()));
             subscribers.add(row);
         }
@@ -1422,13 +1455,13 @@ public class AdminController {
         Map<String, Object> row = new LinkedHashMap<>();
         List<String> photos = p != null ? extractProfilePhotos(p) : List.of();
         row.put("userId", u.getId());
-        row.put("displayName", p != null && p.getDisplayName() != null ? p.getDisplayName() : "New User");
+        row.put("displayName", (p != null && p.getDisplayName() != null && !p.getDisplayName().isBlank()) ? p.getDisplayName().trim() : "Unspecified");
         row.put("phoneMasked", maskPhone ? maskPhone(u.getPhoneE164()) : u.getPhoneE164());
         row.put("email", u.getEmail() != null ? u.getEmail() : "");
         row.put("marketingOptIn", Boolean.TRUE.equals(u.getMarketingOptIn()));
-        row.put("gender", u.getGender() != null ? u.getGender().name() : (p != null ? p.getGenderDisplay() : "UNSPECIFIED"));
-        row.put("city", p != null && p.getCity() != null ? p.getCity() : "Bengaluru");
-        row.put("microCircle", p != null && p.getMicroCircle() != null ? p.getMicroCircle() : "Unassigned");
+        row.put("gender", u.getGender() != null ? u.getGender().name() : (p != null && p.getGenderDisplay() != null ? p.getGenderDisplay() : "UNSPECIFIED"));
+        row.put("city", (p != null && p.getCity() != null && !p.getCity().isBlank()) ? p.getCity().trim() : "Not specified");
+        row.put("microCircle", (p != null && p.getMicroCircle() != null && !p.getMicroCircle().isBlank()) ? p.getMicroCircle().trim() : "Unassigned");
         row.put("verificationStatus", resolveVerificationStatus(u, p));
         row.put("faceVerified", Boolean.TRUE.equals(u.getFaceVerified()));
         row.put("digilockerVerified", Boolean.TRUE.equals(u.getDigilockerVerified()));
