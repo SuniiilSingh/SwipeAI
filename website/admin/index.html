@@ -489,80 +489,149 @@
     /* Verification Moderation Cards */
     .mod-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
-      gap: 16px;
+      grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+      gap: 14px;
     }
 
     .mod-card {
       background: var(--bg-card);
       border: 1px solid var(--border-strong);
-      border-radius: 18px;
-      padding: 16px;
+      border-radius: 16px;
+      padding: 14px;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 10px;
+      transition: opacity 0.25s ease, transform 0.25s ease;
     }
 
     .mod-photos-compare {
       display: grid;
-      grid-template-columns: 125px 1fr;
-      gap: 10px;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
       align-items: stretch;
     }
 
-    .selfie-box {
+    .selfie-box, .profile-compare-box {
       background: #070912;
-      border: 2px solid var(--brand);
+      border: 1px solid var(--border-strong);
       border-radius: 12px;
       overflow: hidden;
       position: relative;
-      height: 155px;
+      height: 175px;
       display: flex;
       align-items: center;
       justify-content: center;
     }
 
-    .selfie-box img {
+    .selfie-box {
+      border: 2px solid var(--brand);
+    }
+
+    .selfie-box img, .profile-compare-box img {
       width: 100%;
       height: 100%;
       object-fit: cover;
     }
 
-    .selfie-tag {
+    .photo-tag {
       position: absolute;
-      bottom: 6px;
+      top: 6px;
       left: 6px;
-      background: rgba(5, 6, 10, 0.85);
-      color: #FCD34D;
+      background: rgba(5, 6, 10, 0.88);
       font-size: 9px;
       font-weight: 800;
-      padding: 2px 6px;
+      padding: 2px 7px;
       border-radius: 5px;
+      letter-spacing: 0.5px;
+      z-index: 2;
     }
 
-    .profile-photos-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 6px;
+    .photo-tag.tag-selfie {
+      color: #FCD34D;
+      border: 1px solid rgba(252, 211, 77, 0.3);
     }
 
-    .profile-thumb {
-      background: #070912;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      height: 74px;
-      overflow: hidden;
+    .photo-tag.tag-profile {
+      color: #38BDF8;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+
+    .photo-pager-bar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(180deg, transparent, rgba(3, 4, 8, 0.94) 40%);
+      padding: 6px 8px;
       display: flex;
       align-items: center;
-      justify-content: center;
-      color: var(--text-dim);
-      font-size: 10px;
+      justify-content: space-between;
+      z-index: 2;
     }
 
-    .profile-thumb img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
+    .pager-mini-btn {
+      background: rgba(255, 255, 255, 0.16);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      color: #FFF;
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 5px;
+      cursor: pointer;
+      line-height: 1;
+      font-weight: 700;
+      transition: background 0.15s;
+    }
+
+    .pager-mini-btn:hover:not(:disabled) {
+      background: var(--brand);
+      border-color: var(--brand);
+    }
+
+    .pager-mini-btn:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+
+    .pager-count-badge {
+      font-size: 10px;
+      font-weight: 700;
+      color: #E2E8F0;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Ticket Remarks History Styles */
+    .remarks-timeline {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: 280px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .remark-item {
+      background: rgba(255, 255, 255, 0.03);
+      border-left: 3px solid var(--brand);
+      border-radius: 0 8px 8px 0;
+      padding: 8px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .remark-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .remark-body {
+      font-size: 13px;
+      color: #F1F5F9;
+      line-height: 1.4;
+      white-space: pre-wrap;
     }
 
     /* Full-Screen Centered 360° Profile Modal */
@@ -874,11 +943,11 @@
                 <p class="section-sub">Review pending background AI selfie verifications side-by-side against uploaded profile photos.</p>
               </div>
               <div style="display: flex; gap: 8px;">
-                <button class="btn btn-ghost btn-sm" onclick="loadVerificationQueue('ALL')">All</button>
-                <button class="btn btn-ghost btn-sm" onclick="loadVerificationQueue('PENDING')">⏳ Pending Only</button>
-                <button class="btn btn-ghost btn-sm" onclick="loadVerificationQueue('WITH_SELFIE')">📸 Has Selfie</button>
-                <button class="btn btn-ghost btn-sm" onclick="loadVerificationQueue('VERIFIED')">✓ Verified</button>
-                <button class="btn btn-ghost btn-sm" onclick="loadVerificationQueue('REJECTED')">⚠️ Rejected</button>
+                <button class="btn btn-primary btn-sm" id="btn-vq-PENDING" onclick="loadVerificationQueue('PENDING')">⏳ Pending Only</button>
+                <button class="btn btn-ghost btn-sm" id="btn-vq-WITH_SELFIE" onclick="loadVerificationQueue('WITH_SELFIE')">📸 Has Selfie</button>
+                <button class="btn btn-ghost btn-sm" id="btn-vq-VERIFIED" onclick="loadVerificationQueue('VERIFIED')">✓ Verified</button>
+                <button class="btn btn-ghost btn-sm" id="btn-vq-REJECTED" onclick="loadVerificationQueue('REJECTED')">⚠️ Rejected</button>
+                <button class="btn btn-ghost btn-sm" id="btn-vq-ALL" onclick="loadVerificationQueue('ALL')">All</button>
               </div>
             </div>
 
@@ -974,13 +1043,13 @@
                   <thead>
                     <tr>
                       <th>Order ID</th>
-                      <th>User ID</th>
+                      <th>Customer Name & Phone</th>
                       <th>SKU</th>
                       <th>Amount</th>
                       <th>Provider</th>
                       <th>Status</th>
                       <th>Created At</th>
-                      <th>Reconcile</th>
+                      <th>Action</th>
                     </tr>
                   </thead>
                   <tbody id="payments-orders-body"></tbody>
@@ -1029,11 +1098,12 @@
                   <thead>
                     <tr>
                       <th>Ticket #</th>
-                      <th>User</th>
+                      <th>Customer</th>
                       <th>Category</th>
                       <th>Subject & Description</th>
+                      <th>Activity & Earlier Remarks</th>
                       <th>Status</th>
-                      <th>Resolution Action</th>
+                      <th>Action</th>
                     </tr>
                   </thead>
                   <tbody id="tickets-table-body"></tbody>
@@ -1292,30 +1362,6 @@
               </form>
             </div>
 
-            <!-- Opt-In Subscribers Directory -->
-            <div class="panel-card">
-              <div class="panel-title">
-                <span>📋 Registered Users & Marketing Opt-In Status</span>
-                <span style="font-size:11px;color:var(--text-muted);">Users can toggle opt-in in their app profile or admin can set email</span>
-              </div>
-              <div class="table-wrap">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>User</th>
-                      <th>Phone</th>
-                      <th>Email Address</th>
-                      <th>City</th>
-                      <th>Marketing Status</th>
-                      <th>Opt-In Date</th>
-                      <th>Manage</th>
-                    </tr>
-                  </thead>
-                  <tbody id="mkt-subscribers-body"></tbody>
-                </table>
-              </div>
-            </div>
-
             <!-- Sent Campaigns History -->
             <div class="panel-card">
               <div class="panel-title">📜 Marketing Email Campaigns History</div>
@@ -1347,6 +1393,16 @@
   <!-- ==================== 3. RIGHT SLIDE-OVER 360° USER INSPECTOR ==================== -->
   <div id="inspector-backdrop" class="drawer-backdrop" onclick="if(event.target===this) closeInspector()">
     <div class="inspector-drawer" id="inspector-content"></div>
+  </div>
+
+  <!-- ==================== 4. PAYMENT & REVENUE INSPECTOR MODAL ==================== -->
+  <div id="payment-inspector-backdrop" class="drawer-backdrop" onclick="if(event.target===this) closePaymentInspector()">
+    <div class="inspector-drawer" style="max-width: 820px;" id="payment-inspector-content"></div>
+  </div>
+
+  <!-- ==================== 5. SUPPORT TICKET REMARKS & ACTION MODAL ==================== -->
+  <div id="ticket-modal-backdrop" class="drawer-backdrop" onclick="if(event.target===this) closeTicketModal()">
+    <div class="inspector-drawer" style="max-width: 740px;" id="ticket-modal-content"></div>
   </div>
 
   <div id="toast-box" class="toast-box"></div>
@@ -1464,11 +1520,11 @@
 
     function refreshCurrentTab() {
       if (currentTab === 'overview') loadOverview();
-      else if (currentTab === 'verification') loadVerificationQueue('ALL');
+      else if (currentTab === 'verification') loadVerificationQueue(currentVerFilter || 'PENDING');
       else if (currentTab === 'users') loadUsers();
       else if (currentTab === 'safety') loadSafety();
       else if (currentTab === 'payments') loadPayments();
-      else if (currentTab === 'tickets') loadTickets('ALL');
+      else if (currentTab === 'tickets') loadTickets(currentTicketFilter || 'ALL');
       else if (currentTab === 'cms') loadCms();
       else if (currentTab === 'broadcast') loadAuditLogs();
       else if (currentTab === 'marketing') loadMarketing();
@@ -1527,48 +1583,94 @@
     }
 
     // ==================== 2. SELFIE & KYC QUEUE ====================
-    async function loadVerificationQueue(filter = 'ALL') {
+    let currentVerFilter = 'PENDING';
+    const queuePhotosCache = {};
+    const queuePhotoIndex = {};
+
+    function cycleQueuePhoto(userId, dir) {
+      const photos = queuePhotosCache[userId] || [];
+      if (photos.length <= 1) return;
+      let idx = (queuePhotoIndex[userId] || 0) + dir;
+      if (idx < 0) idx = photos.length - 1;
+      if (idx >= photos.length) idx = 0;
+      queuePhotoIndex[userId] = idx;
+
+      const imgEl = document.getElementById('qimg-' + userId);
+      const idxEl = document.getElementById('qidx-' + userId);
+      if (imgEl) imgEl.src = photos[idx];
+      if (idxEl) idxEl.textContent = (idx + 1);
+    }
+
+    async function loadVerificationQueue(filter = currentVerFilter || 'PENDING') {
+      currentVerFilter = filter;
+      ['PENDING', 'WITH_SELFIE', 'VERIFIED', 'REJECTED', 'ALL'].forEach(f => {
+        const btn = document.getElementById('btn-vq-' + f);
+        if (btn) {
+          btn.className = (f === filter) ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm';
+        }
+      });
+
       try {
         const list = await apiCall('/verification-queue?statusFilter=' + encodeURIComponent(filter));
         const grid = document.getElementById('verification-mod-grid');
-        if (!list.length) {
-          grid.innerHTML = `<div class="panel-card" style="grid-column:1/-1;text-align:center;color:var(--text-muted);">No users in "${filter}" verification filter.</div>`;
+        if (!list || !list.length) {
+          grid.innerHTML = `<div class="panel-card" style="grid-column:1/-1;text-align:center;padding:36px;color:var(--text-muted);">
+            <div style="font-size:24px;margin-bottom:8px;">🎉</div>
+            <div style="font-weight:700;font-size:15px;color:#FFF;">No users in "${filter}" verification queue.</div>
+            <div style="font-size:12px;margin-top:4px;">All pending biometric face checks are up to date!</div>
+          </div>`;
           return;
         }
+
         grid.innerHTML = list.map(u => {
-          const photos = u.photos || [];
-          const thumbsHtml = [0,1,2,3,4,5].map(idx => {
-            const pUrl = photos[idx];
-            return `<div class="profile-thumb">${pUrl ? `<img src="${pUrl}" alt="Photo ${idx+1}" />` : `#${idx+1}`}</div>`;
-          }).join('');
+          const rawPhotos = (u.photos || []).filter(p => !!p && typeof p === 'string' && p.trim() !== '');
+          queuePhotosCache[u.userId] = rawPhotos;
+          queuePhotoIndex[u.userId] = 0;
+
+          const totalPhotos = rawPhotos.length;
+          const primaryPhoto = totalPhotos > 0 ? rawPhotos[0] : '';
+          const hasMultiple = totalPhotos > 1;
 
           return `
-            <div class="mod-card">
+            <div class="mod-card" id="ver-card-${u.userId}">
               <div style="display:flex;justify-content:space-between;align-items:center;">
                 <div>
-                  <div style="font-weight:900;font-size:15px;">${escapeHtml(u.displayName)}</div>
-                  <div style="font-size:11px;color:var(--text-muted);">📍 ${escapeHtml(u.city)} • ${escapeHtml(u.microCircle)}</div>
+                  <div style="font-weight:900;font-size:14px;color:#FFF;">${escapeHtml(u.displayName || 'User')}</div>
+                  <div style="font-size:11px;color:var(--text-muted);">📍 ${escapeHtml(u.city || 'India')} • ${escapeHtml(u.microCircle || 'General')}</div>
                 </div>
                 <span class="status-pill status-${u.verificationStatus}">${u.verificationStatus}</span>
               </div>
 
               <div class="mod-photos-compare">
                 <div class="selfie-box">
-                  ${u.selfieUrl ? `<img src="${u.selfieUrl}" alt="Live Selfie" />` : `<span style="font-size:11px;color:var(--text-dim);text-align:center;padding:8px;">No Selfie Uploaded</span>`}
-                  <span class="selfie-tag">🤳 LIVE SELFIE</span>
+                  ${u.selfieUrl
+                    ? `<img src="${u.selfieUrl}" alt="Live Selfie" />`
+                    : `<span style="font-size:11px;color:var(--text-dim);text-align:center;padding:8px;">No Selfie</span>`}
+                  <span class="photo-tag tag-selfie">🤳 SELFIE</span>
                 </div>
-                <div class="profile-photos-grid">${thumbsHtml}</div>
+
+                <div class="profile-compare-box">
+                  ${primaryPhoto
+                    ? `<img id="qimg-${u.userId}" src="${primaryPhoto}" alt="Profile Photo" />`
+                    : `<span style="font-size:11px;color:var(--text-dim);text-align:center;padding:8px;">No Photo</span>`}
+                  <span class="photo-tag tag-profile">📸 PROFILE PHOTO</span>
+                  <div class="photo-pager-bar">
+                    <button class="pager-mini-btn" onclick="cycleQueuePhoto('${u.userId}', -1)" ${hasMultiple ? '' : 'disabled'}>◀ Prev</button>
+                    <span class="pager-count-badge"><span id="qidx-${u.userId}">${totalPhotos > 0 ? 1 : 0}</span> of ${totalPhotos}</span>
+                    <button class="pager-mini-btn" onclick="cycleQueuePhoto('${u.userId}', 1)" ${hasMultiple ? '' : 'disabled'}>Next ▶</button>
+                  </div>
+                </div>
               </div>
 
               <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--text-muted);">
-                <span>📸 ${u.photoCount}/6 Photos Uploaded</span>
+                <span>📸 ${totalPhotos}/6 Photos</span>
                 <span>Liveness: ${(Number(u.livenessScore || 0) * 100).toFixed(0)}%</span>
               </div>
 
-              <div style="display:flex;gap:8px;">
-                <button class="btn btn-emerald btn-sm" style="flex:1;" onclick="decideSelfie('${u.userId}','APPROVE')">✓ Approve Verified</button>
-                <button class="btn btn-danger btn-sm" style="flex:1;" onclick="decideSelfie('${u.userId}','REJECT')">✕ Reject Retake</button>
-                <button class="btn btn-ghost btn-sm" onclick="openInspector('${u.userId}')">🔍</button>
+              <div style="display:flex;gap:6px;">
+                <button class="btn btn-emerald btn-sm" style="flex:1;padding:7px 10px;" onclick="decideSelfie('${u.userId}','APPROVE')">✓ Approve</button>
+                <button class="btn btn-danger btn-sm" style="flex:1;padding:7px 10px;" onclick="decideSelfie('${u.userId}','REJECT')">✕ Reject</button>
+                <button class="btn btn-ghost btn-sm" title="View Full Profile" onclick="openInspector('${u.userId}')">🔍</button>
               </div>
             </div>
           `;
@@ -1590,7 +1692,21 @@
           body: JSON.stringify({ decision, reason })
         });
         showToast(decision === 'APPROVE' ? '✅ Selfie Approved & User Notified!' : '⚠️ Selfie Marked Rejected & User Notified');
-        loadVerificationQueue('ALL');
+
+        const cardEl = document.getElementById('ver-card-' + userId);
+        if (cardEl) {
+          cardEl.style.opacity = '0';
+          cardEl.style.transform = 'scale(0.92)';
+          setTimeout(() => {
+            if (cardEl) cardEl.remove();
+            const grid = document.getElementById('verification-mod-grid');
+            if (grid && grid.querySelectorAll('.mod-card').length === 0) {
+              loadVerificationQueue(currentVerFilter);
+            }
+          }, 240);
+        } else {
+          loadVerificationQueue(currentVerFilter);
+        }
         loadOverview();
       } catch (e) {
         showToast('⚠️ ' + e.message);
@@ -1987,10 +2103,14 @@
     }
 
     // ==================== 6. PAYMENTS & REVENUE ====================
+    let paymentsCache = {};
+
     async function loadPayments() {
       try {
         const d = await apiCall('/payments');
-        const isSuperAdmin = adminRole === 'SUPER_ADMIN';
+        paymentsCache = {};
+        (d.orders || []).forEach(o => { paymentsCache[o.orderId] = o; });
+
         document.getElementById('payments-kpi-grid').innerHTML = `
           <div class="kpi-card">
             <div class="kpi-label">Captured Revenue</div>
@@ -2009,28 +2129,32 @@
           </div>
         `;
 
-        document.getElementById('payments-orders-body').innerHTML = (d.orders || []).map(o => `
-          <tr>
-            <td style="font-family:'JetBrains Mono',monospace;font-size:12px;">${o.orderId}</td>
-            <td>
-              <button class="btn btn-ghost btn-sm" style="font-family:'JetBrains Mono',monospace;font-size:10px;" onclick="openInspector('${o.userId}')">
-                🔍 ${String(o.userId).slice(0, 8)}...
-              </button>
-            </td>
-            <td><b>${o.sku}</b></td>
-            <td>₹${((o.amountPaise || 0) / 100).toFixed(0)}</td>
-            <td>${o.paymentProvider || 'UPI'}</td>
-            <td><span class="status-pill status-${o.status}">${o.status}</span></td>
-            <td style="font-size:11px;color:var(--text-muted);">${(o.createdAt || '').toString().slice(0,16).replace('T',' ')}</td>
-            <td>
-              ${o.status === 'CAPTURED'
-                ? '<span style="color:#6EE7B7;font-size:11px;">✓ Credited</span>'
-                : (isSuperAdmin
-                    ? `<button class="btn btn-emerald btn-sm" onclick="reconcilePayment('${o.orderId}')">✓ Grant & Capture</button>`
-                    : '<span style="color:var(--text-dim);font-size:11px;">🔒 View Only</span>')}
-            </td>
-          </tr>
-        `).join('') || '<tr><td colspan="8" style="text-align:center;color:var(--text-dim);">No orders recorded yet.</td></tr>';
+        document.getElementById('payments-orders-body').innerHTML = (d.orders || []).map(o => {
+          const amtInr = Number(o.amountInr || ((o.amountPaise || 0) / 100)).toFixed(0);
+          return `
+            <tr style="cursor:pointer;" onclick="openPaymentInspector('${o.orderId}')">
+              <td style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;color:#38BDF8;">${o.orderId}</td>
+              <td>
+                <div style="font-weight:700;color:#FFF;">${escapeHtml(o.userName || 'User')}</div>
+                <div style="font-size:11px;color:var(--text-dim);">${escapeHtml(o.userPhoneMasked || '—')}</div>
+              </td>
+              <td><b>${escapeHtml(o.sku)}</b></td>
+              <td style="font-weight:800;color:#FCD34D;">₹${amtInr}</td>
+              <td>${escapeHtml(o.paymentProvider || 'UPI')}</td>
+              <td><span class="status-pill status-${o.status}">${o.status}</span></td>
+              <td style="font-size:11px;color:var(--text-muted);">${(o.createdAt || '').toString().slice(0,16).replace('T',' ')}</td>
+              <td onclick="event.stopPropagation()">
+                <div style="display:flex;gap:6px;align-items:center;">
+                  <button class="btn btn-ghost btn-sm" onclick="openPaymentInspector('${o.orderId}')">🔍 Inspect</button>
+                  ${o.status === 'CAPTURED'
+                    ? '<span style="color:#6EE7B7;font-size:11px;font-weight:700;">✓ Credited</span>'
+                    : `<button class="btn btn-emerald btn-sm" onclick="handleMarkPaymentSuccess('${o.orderId}')">⚡ Mark Success</button>`
+                  }
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('') || '<tr><td colspan="8" style="text-align:center;color:var(--text-dim);">No orders recorded yet.</td></tr>';
 
         document.getElementById('payments-logs-body').innerHTML = (d.executionLogs || []).map(l => `
           <tr>
@@ -2047,15 +2171,141 @@
       }
     }
 
-    async function reconcilePayment(orderId) {
-      const notes = prompt('Admin reconciliation note for ' + orderId + ':', 'Verified UTR manually & granted benefits');
-      if (!notes) return;
+    async function openPaymentInspector(orderId) {
+      try {
+        const o = await apiCall('/payments/' + encodeURIComponent(orderId));
+        const amtInr = Number(o.amountInr || ((o.amountPaise || 0) / 100)).toFixed(0);
+        const drawer = document.getElementById('payment-inspector-content');
+
+        drawer.innerHTML = `
+          <!-- Header -->
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid var(--border);padding-bottom:16px;">
+            <div>
+              <div style="font-size:11px;color:var(--brand);font-weight:800;letter-spacing:1px;">DIGITAL PAYMENT & ORDER AUDIT</div>
+              <div style="font-size:22px;font-weight:900;margin-top:2px;">Order #${o.orderId}</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Provider: <b>${escapeHtml(o.paymentProvider || 'UPI')}</b> • Created: ${(o.createdAt || '').toString().slice(0,19).replace('T',' ')}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span class="status-pill status-${o.status}" style="font-size:12px;padding:5px 12px;">${o.status}</span>
+              <button class="btn btn-ghost btn-sm" onclick="closePaymentInspector()">✕</button>
+            </div>
+          </div>
+
+          <!-- Section 1: Payment Details Grid -->
+          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(160px, 1fr));gap:12px;margin-top:16px;">
+            <div class="kpi-card" style="padding:12px;">
+              <div class="kpi-label">Order Amount</div>
+              <div class="kpi-value" style="color:#FCD34D;font-size:24px;">₹${amtInr}</div>
+              <div class="kpi-meta">${o.amountPaise || 0} paise</div>
+            </div>
+            <div class="kpi-card" style="padding:12px;">
+              <div class="kpi-label">Item / SKU</div>
+              <div class="kpi-value" style="color:#38BDF8;font-size:18px;">${escapeHtml(o.sku)}</div>
+              <div class="kpi-meta">Digital In-App Sachet</div>
+            </div>
+            <div class="kpi-card" style="padding:12px;">
+              <div class="kpi-label">Buyer Name</div>
+              <div class="kpi-value" style="font-size:17px;color:#FFF;">${escapeHtml(o.userName || 'User')}</div>
+              <div class="kpi-meta">${escapeHtml(o.userPhoneMasked || o.userPhone || '—')}</div>
+            </div>
+            <div class="kpi-card" style="padding:12px;">
+              <div class="kpi-label">Payment City</div>
+              <div class="kpi-value" style="font-size:17px;color:#FFF;">${escapeHtml(o.userCity || '—')}</div>
+              <div class="kpi-meta">Registered location</div>
+            </div>
+          </div>
+
+          <!-- Section 2: Gateway Details & Identifiers -->
+          <div class="panel-card" style="margin-top:14px;background:rgba(255,255,255,0.02);">
+            <div class="panel-title">💳 Gateway & Forensic Identifiers</div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));gap:10px;font-size:12px;">
+              <div><span style="color:var(--text-muted);">Gateway Order / Payment ID:</span><br/><code style="color:#FFF;">${escapeHtml(o.razorpayPaymentId || 'N/A')}</code></div>
+              <div><span style="color:var(--text-muted);">Internal Order ID:</span><br/><code style="color:#FFF;">${o.orderId}</code></div>
+              <div><span style="color:var(--text-muted);">User Account ID:</span><br/><code style="color:#FFF;">${o.userId}</code></div>
+              <div><span style="color:var(--text-muted);">Provider Status:</span><br/><b>${o.status}</b></div>
+            </div>
+          </div>
+
+          <!-- Section 3: Payment Recovery / Mark Success Action -->
+          <div class="panel-card" style="margin-top:14px;border-color:${o.status === 'CAPTURED' ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)'};">
+            <div class="panel-title" style="display:flex;justify-content:space-between;align-items:center;">
+              <span>⚡ Transaction Fulfillment & Account Credit</span>
+              <span class="status-pill status-${o.status}">${o.status}</span>
+            </div>
+            ${o.status === 'CAPTURED'
+              ? `<div style="color:#6EE7B7;font-size:13px;display:flex;align-items:center;gap:8px;">
+                  <span style="font-size:18px;">✓</span>
+                  <div><b>Transaction is Active & Credited.</b> All perks associated with <b>${escapeHtml(o.sku)}</b> are active on this account.</div>
+                </div>`
+              : `<div style="display:flex;flex-direction:column;gap:10px;">
+                  <div style="font-size:13px;color:#FCA5A5;">
+                    ⚠️ <b>Order is currently marked as ${o.status}.</b> In case of payment gateway failure or if money was debited from user's UPI, click below to mark this transaction as <b>Success / Active / Credited</b>. This captures the payment and instantly credits user benefits (VIP Pass, Sparks, or Boosts).
+                  </div>
+                  <div>
+                    <button class="btn btn-emerald" style="padding:10px 18px;font-weight:800;" onclick="handleMarkPaymentSuccess('${o.orderId}')">
+                      ⚡ Mark as Success / Active / Credited (Grant Benefits)
+                    </button>
+                  </div>
+                </div>`
+            }
+          </div>
+
+          <!-- Section 4: Separate User Dating Profile Details -->
+          <div class="panel-card" style="margin-top:14px;background:rgba(255,255,255,0.02);border:1px dashed var(--border-strong);">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+              <div>
+                <div style="font-weight:900;font-size:15px;color:#FFF;">👤 User Dating Profile Details</div>
+                <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">
+                  Customer: <b>${escapeHtml(o.userName || 'User')}</b> • City: <b>${escapeHtml(o.userCity || '—')}</b> • ID: <code>${String(o.userId).slice(0,8)}...</code>
+                </div>
+              </div>
+              <button class="btn btn-primary" onclick="closePaymentInspector(); openInspector('${o.userId}')">
+                👤 Open Full 360° Profile Inspector ➔
+              </button>
+            </div>
+          </div>
+
+          <!-- Section 5: Decrypted Audit Timeline (if available) -->
+          ${(o.auditLogs && o.auditLogs.length > 0) ? `
+            <div class="panel-card" style="margin-top:14px;">
+              <div class="panel-title">🛡️ Decrypted Cryptographic Audit Trail</div>
+              <div style="font-size:12px;display:flex;flex-direction:column;gap:8px;">
+                ${o.auditLogs.map(a => `
+                  <div style="padding:8px 12px;background:rgba(255,255,255,0.03);border-radius:8px;">
+                    <div style="display:flex;justify-content:space-between;color:var(--text-muted);font-size:11px;">
+                      <span><b>${escapeHtml(a.eventType || 'EVENT')}</b></span>
+                      <span>${escapeHtml(a.timestamp || '')}</span>
+                    </div>
+                    <div style="margin-top:4px;color:#FFF;">${escapeHtml(a.details || a.decryptedPayload || '')}</div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          ` : ''}
+        `;
+
+        document.getElementById('payment-inspector-backdrop').classList.add('open');
+      } catch (e) {
+        showToast('⚠️ ' + e.message);
+      }
+    }
+
+    function closePaymentInspector() {
+      document.getElementById('payment-inspector-backdrop').classList.remove('open');
+    }
+
+    async function handleMarkPaymentSuccess(orderId) {
+      const note = prompt(`Mark order #${orderId} as Success / Active / Credited:\nEnter UTR or manual reconciliation note:`, 'Verified bank transaction & manually credited');
+      if (note === null) return;
       try {
         await apiCall(`/payments/${orderId}/reconcile`, {
           method: 'POST',
-          body: JSON.stringify({ status: 'CAPTURED', grantPerks: true, adminNotes: notes })
+          body: JSON.stringify({ status: 'CAPTURED', grantPerks: true, adminNotes: note || 'Manual reconciliation' })
         });
-        showToast('✅ Order reconciled & user benefits credited!');
+        showToast('✅ Transaction marked as Success / Active / Credited and user benefits granted!');
+        if (document.getElementById('payment-inspector-backdrop').classList.contains('open')) {
+          openPaymentInspector(orderId);
+        }
         loadPayments();
       } catch (e) {
         showToast('⚠️ ' + e.message);
@@ -2063,68 +2313,172 @@
     }
 
     // ==================== 7. SUPPORT TICKETS ====================
-    async function loadTickets(status = 'ALL') {
+    let currentTicketFilter = 'ALL';
+    let ticketsCache = {};
+
+    async function loadTickets(status = currentTicketFilter || 'ALL') {
+      currentTicketFilter = status;
       try {
         const list = await apiCall('/tickets?status=' + encodeURIComponent(status));
-        const openCount = list.filter(t => t.status === 'PENDING' || t.status === 'IN_PROGRESS').length;
+        ticketsCache = {};
+        (list || []).forEach(t => { ticketsCache[t.id] = t; });
+
+        const openCount = (list || []).filter(t => t.status === 'PENDING' || t.status === 'IN_PROGRESS').length;
         document.getElementById('badge-open-tickets').textContent = openCount;
 
-        document.getElementById('tickets-table-body').innerHTML = list.map(t => `
-          <tr>
-            <td style="font-family:'JetBrains Mono',monospace;font-weight:800;">${t.ticketNumber}</td>
-            <td>
-              <div style="font-weight:700;">${escapeHtml(t.userName)}</div>
-              <div style="font-size:11px;color:var(--text-dim);">${t.userPhoneMasked}</div>
-              <button class="btn btn-ghost btn-sm" style="margin-top:4px;font-size:10px;padding:3px 8px;" onclick="openInspector('${t.userId}')">🔍 User & Payments</button>
-            </td>
-            <td><span class="status-pill status-UNVERIFIED">${t.category}</span></td>
-            <td>
-              <div style="font-weight:800;">${escapeHtml(t.subject)}</div>
-              <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">${escapeHtml(t.description)}</div>
-              ${t.resolutionNotes ? `<div style="font-size:11px;color:#6EE7B7;margin-top:4px;">✓ Note: ${escapeHtml(t.resolutionNotes)}</div>` : ''}
-            </td>
-            <td><span class="status-pill status-${t.status}">${t.status}</span></td>
-            <td>
-              <div style="display:flex;gap:6px;flex-wrap:wrap;">
-                <button class="btn btn-ghost btn-sm" onclick="markTicketInProgress('${t.id}','${t.ticketNumber}')">⏳ In Progress</button>
-                <button class="btn btn-emerald btn-sm" onclick="resolveTicketPrompt('${t.id}','${t.ticketNumber}')">✓ Resolve</button>
-              </div>
-            </td>
-          </tr>
-        `).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--text-dim);">No support tickets found.</td></tr>';
+        document.getElementById('tickets-table-body').innerHTML = (list || []).map(t => {
+          const remarks = t.remarksHistory || [];
+          const remarksCount = remarks.length;
+          const latestRemark = remarksCount > 0 ? remarks[0] : null;
+
+          return `
+            <tr>
+              <td style="font-family:'JetBrains Mono',monospace;font-weight:800;color:#38BDF8;">${t.ticketNumber}</td>
+              <td>
+                <div style="font-weight:700;color:#FFF;">${escapeHtml(t.userName || 'User')}</div>
+                <div style="font-size:11px;color:var(--text-dim);">${escapeHtml(t.userPhoneMasked || '—')}</div>
+                <button class="btn btn-ghost btn-sm" style="margin-top:4px;font-size:10px;padding:2px 7px;" onclick="openInspector('${t.userId}')">🔍 Profile</button>
+              </td>
+              <td><span class="status-pill status-UNVERIFIED">${escapeHtml(t.category)}</span></td>
+              <td>
+                <div style="font-weight:800;color:#FFF;">${escapeHtml(t.subject)}</div>
+                <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">${escapeHtml(t.description)}</div>
+              </td>
+              <td>
+                ${remarksCount > 0
+                  ? `<div style="font-size:11px;color:#38BDF8;font-weight:700;">💬 ${remarksCount} remark(s) recorded</div>
+                     <div style="font-size:11px;color:var(--text-muted);margin-top:2px;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                       Latest: ${escapeHtml(latestRemark.remark)}
+                     </div>`
+                  : (t.resolutionNotes
+                      ? `<div style="font-size:11px;color:#6EE7B7;">✓ ${escapeHtml(t.resolutionNotes)}</div>`
+                      : '<span style="font-size:11px;color:var(--text-dim);">No remarks yet</span>')
+                }
+              </td>
+              <td><span class="status-pill status-${t.status}">${t.status}</span></td>
+              <td>
+                <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                  <button class="btn btn-primary btn-sm" onclick="openTicketModal('${t.id}')">💬 Remarks & Actions</button>
+                  ${t.status !== 'RESOLVED' ? `<button class="btn btn-emerald btn-sm" onclick="openTicketModal('${t.id}', 'RESOLVED')">✓ Resolve</button>` : ''}
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--text-dim);">No support tickets found.</td></tr>';
       } catch (e) {
         showToast('⚠️ ' + e.message);
       }
     }
 
-    async function markTicketInProgress(id, number) {
-      const notes = prompt(`Note for marking ${number} In Progress:`, 'Support team is investigating your request.');
-      if (notes === null) return;
-      try {
-        await apiCall(`/tickets/${id}/status`, {
-          method: 'POST',
-          body: JSON.stringify({ status: 'IN_PROGRESS', resolutionNotes: notes })
-        });
-        showToast(`⏳ Ticket ${number} marked IN_PROGRESS`);
-        loadTickets('ALL');
-      } catch (e) {
-        showToast('⚠️ ' + e.message);
-      }
+    function openTicketModal(ticketId, suggestedStatus) {
+      const t = ticketsCache[ticketId];
+      if (!t) return;
+      const targetStatus = suggestedStatus || t.status;
+      const remarks = t.remarksHistory || [];
+      const drawer = document.getElementById('ticket-modal-content');
+
+      drawer.innerHTML = `
+        <!-- Header -->
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid var(--border);padding-bottom:14px;">
+          <div>
+            <div style="font-size:11px;color:var(--brand);font-weight:800;letter-spacing:1px;">CUSTOMER SUPPORT DESK</div>
+            <div style="font-size:20px;font-weight:900;margin-top:2px;">Ticket #${t.ticketNumber}</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">
+              Customer: <b>${escapeHtml(t.userName || 'User')}</b> (${escapeHtml(t.userPhoneMasked || '—')}) • Category: <b>${escapeHtml(t.category)}</b>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="status-pill status-${t.status}">${t.status}</span>
+            <button class="btn btn-ghost btn-sm" onclick="closeTicketModal()">✕</button>
+          </div>
+        </div>
+
+        <!-- Issue Details Card -->
+        <div class="panel-card" style="margin-top:14px;background:rgba(0,0,0,0.35);">
+          <div style="font-weight:800;font-size:15px;color:#FFF;">${escapeHtml(t.subject)}</div>
+          <div style="font-size:13px;color:var(--text-muted);margin-top:6px;line-height:1.5;white-space:pre-wrap;">${escapeHtml(t.description)}</div>
+          <div style="margin-top:10px;display:flex;gap:8px;">
+            <button class="btn btn-ghost btn-sm" style="font-size:11px;" onclick="closeTicketModal(); openInspector('${t.userId}')">
+              🔍 Inspect Customer 360° Profile & Payments
+            </button>
+          </div>
+        </div>
+
+        <!-- Earlier Remarks & Activity History -->
+        <div class="panel-card" style="margin-top:14px;">
+          <div class="panel-title" style="display:flex;justify-content:space-between;align-items:center;">
+            <span>📜 Activity & Remarks History (What has been done earlier)</span>
+            <span style="font-size:11px;color:var(--text-muted);">${remarks.length} remark(s) recorded</span>
+          </div>
+          <div class="remarks-timeline">
+            ${remarks.length > 0
+              ? remarks.map(r => `
+                  <div class="remark-item">
+                    <div class="remark-header">
+                      <span><b>${escapeHtml(r.admin || 'Support Agent')}</b> • <span class="status-pill status-${r.status || t.status}" style="font-size:9px;padding:1px 6px;">${r.status || 'UPDATE'}</span></span>
+                      <span>${escapeHtml(r.timestamp || '')}</span>
+                    </div>
+                    <div class="remark-body">${escapeHtml(r.remark || '')}</div>
+                  </div>
+                `).join('')
+              : (t.resolutionNotes
+                  ? `<div class="remark-item"><div class="remark-body">${escapeHtml(t.resolutionNotes)}</div></div>`
+                  : '<div style="font-size:12px;color:var(--text-dim);text-align:center;padding:16px;">No earlier remarks or actions recorded yet.</div>'
+                )
+            }
+          </div>
+        </div>
+
+        <!-- Add New Remark & Update Status Form -->
+        <form onsubmit="handleSaveTicketRemark(event, '${t.id}', '${t.ticketNumber}')" style="margin-top:14px;">
+          <div class="panel-card">
+            <div class="panel-title">💬 Add New Remark / Comment</div>
+            <div class="form-group">
+              <label class="form-label">Ticket Status</label>
+              <select id="ticket-modal-status" class="form-select">
+                <option value="IN_PROGRESS" ${targetStatus === 'IN_PROGRESS' ? 'selected' : ''}>⏳ IN_PROGRESS (Investigation Underway)</option>
+                <option value="RESOLVED" ${targetStatus === 'RESOLVED' ? 'selected' : ''}>✓ RESOLVED (Issue Fixed / Credited)</option>
+                <option value="PENDING" ${targetStatus === 'PENDING' ? 'selected' : ''}>⏳ PENDING (Awaiting User / Third Party)</option>
+                <option value="CLOSED" ${targetStatus === 'CLOSED' ? 'selected' : ''}>🔒 CLOSED (Archived)</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin-top:10px;">
+              <label class="form-label">Remark / Investigation Notes (Immutable log)</label>
+              <textarea id="ticket-modal-remark" class="form-input" rows="3" placeholder="Explain what has been verified, steps taken, or communication with user..." required></textarea>
+            </div>
+            <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px;">
+              <button type="button" class="btn btn-ghost" onclick="closeTicketModal()">Cancel</button>
+              <button type="submit" class="btn btn-primary">💾 Save Remark & Update Status</button>
+            </div>
+          </div>
+        </form>
+      `;
+
+      document.getElementById('ticket-modal-backdrop').classList.add('open');
+      setTimeout(() => {
+        const txt = document.getElementById('ticket-modal-remark');
+        if (txt) txt.focus();
+      }, 100);
     }
 
-    async function resolveTicketPrompt(id, number, reopenUserId) {
-      const notes = prompt(`Resolution note for ticket ${number} (sent to user):`, 'Issue resolved by BlunderR Support Team.');
-      if (!notes) return;
+    function closeTicketModal() {
+      document.getElementById('ticket-modal-backdrop').classList.remove('open');
+    }
+
+    async function handleSaveTicketRemark(event, ticketId, ticketNumber) {
+      event.preventDefault();
+      const status = document.getElementById('ticket-modal-status').value;
+      const remark = document.getElementById('ticket-modal-remark').value.trim();
+      if (!remark) return;
+
       try {
-        await apiCall(`/tickets/${id}/status`, {
+        await apiCall(`/tickets/${ticketId}/status`, {
           method: 'POST',
-          body: JSON.stringify({ status: 'RESOLVED', resolutionNotes: notes })
+          body: JSON.stringify({ status, resolutionNotes: remark })
         });
-        showToast(`✅ Ticket ${number} resolved & user notified!`);
-        loadTickets('ALL');
-        if (reopenUserId) {
-          openInspector(reopenUserId);
-        }
+        showToast(`✅ Remark recorded & ticket #${ticketNumber} updated to ${status}!`);
+        closeTicketModal();
+        loadTickets(currentTicketFilter || 'ALL');
       } catch (e) {
         showToast('⚠️ ' + e.message);
       }
@@ -2290,27 +2644,7 @@
         if (d.smtpUsername) document.getElementById('smtp-user').value = d.smtpUsername;
         if (d.smtpFrom) document.getElementById('smtp-from').value = d.smtpFrom;
 
-        document.getElementById('mkt-subscribers-body').innerHTML = (d.subscribers || []).map(s => `
-          <tr>
-            <td>
-              <div style="font-weight:800;">${escapeHtml(s.displayName)}</div>
-              <div style="font-size:10px;color:var(--text-dim);font-family:'JetBrains Mono',monospace;">${s.userId}</div>
-            </td>
-            <td style="font-family:'JetBrains Mono',monospace;font-size:12px;">${s.phoneMasked}</td>
-            <td style="font-family:'JetBrains Mono',monospace;font-size:12px;color:${s.email ? '#FFF' : 'var(--text-dim)'};">${escapeHtml(s.email || '—')}</td>
-            <td>${escapeHtml(s.city || 'Not specified')}</td>
-            <td>
-              <span class="status-pill ${s.marketingOptIn ? 'status-VERIFIED' : 'status-UNVERIFIED'}">
-                ${s.marketingOptIn ? '✓ OPTED IN' : '✕ OPTED OUT'}
-              </span>
-              ${s.hasActivePass ? '<span class="status-pill status-VERIFIED" style="margin-left:4px;">👑 VIP</span>' : ''}
-            </td>
-            <td style="font-size:11px;color:var(--text-muted);">${s.marketingOptInAt ? s.marketingOptInAt.slice(0, 16).replace('T', ' ') : '—'}</td>
-            <td>
-              <button class="btn btn-ghost btn-sm" onclick="promptEditMarketingEmail('${s.userId}','${escapeHtml(s.email || '')}',${s.marketingOptIn})">✏️ Edit</button>
-            </td>
-          </tr>
-        `).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--text-dim);">No users found.</td></tr>';
+
 
         document.getElementById('mkt-campaigns-body').innerHTML = (d.campaigns || []).map(c => `
           <tr>

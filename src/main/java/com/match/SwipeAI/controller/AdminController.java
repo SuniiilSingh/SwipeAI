@@ -433,7 +433,7 @@ public class AdminController {
 
     @GetMapping("/verification-queue")
     public ResponseEntity<List<Map<String, Object>>> getVerificationQueue(
-            @RequestParam(defaultValue = "ALL") String statusFilter,
+            @RequestParam(defaultValue = "PENDING") String statusFilter,
             HttpServletRequest request) {
         requireAdmin(request, "SUPER_ADMIN");
 
@@ -824,14 +824,86 @@ public class AdminController {
 
         List<PaymentExecutionLog> execLogs = paymentExecutionLogRepository.findTop50ByOrderByCreatedAtDesc();
 
+        Map<UUID, Profile> profileMap = profileRepository.findAll().stream()
+                .collect(Collectors.toMap(Profile::getUserId, p -> p, (a, b) -> a));
+        Map<UUID, User> userMap = userRepository.findAll().stream()
+                .collect(Collectors.toMap(User::getId, u -> u, (a, b) -> a));
+
+        List<Map<String, Object>> orderRows = new ArrayList<>();
+        for (UpiOrder o : orders.stream().limit(100).toList()) {
+            Map<String, Object> om = new LinkedHashMap<>();
+            om.put("id", o.getId());
+            om.put("orderId", o.getOrderId());
+            om.put("userId", o.getUserId());
+            Profile p = profileMap.get(o.getUserId());
+            User u = userMap.get(o.getUserId());
+            om.put("userName", (p != null && p.getDisplayName() != null && !p.getDisplayName().isBlank()) ? p.getDisplayName().trim() : "Unspecified");
+            om.put("userPhoneMasked", u != null ? maskPhone(u.getPhoneE164()) : "—");
+            om.put("city", (p != null && p.getCity() != null && !p.getCity().isBlank()) ? p.getCity().trim() : "Not specified");
+            om.put("sku", o.getSku());
+            om.put("amountPaise", o.getAmountPaise());
+            om.put("amountInr", o.getAmountPaise() != null ? o.getAmountPaise() / 100.0 : 0.0);
+            om.put("currency", o.getCurrency());
+            om.put("status", o.getStatus() != null ? o.getStatus().name() : "PENDING");
+            om.put("paymentProvider", o.getPaymentProvider() != null ? o.getPaymentProvider().name() : "UPI");
+            om.put("failureReason", o.getFailureReason());
+            om.put("adminNotes", o.getAdminNotes());
+            om.put("reviewedBy", o.getReviewedBy());
+            om.put("createdAt", o.getCreatedAt());
+            om.put("capturedAt", o.getCapturedAt());
+            orderRows.add(om);
+        }
+
         Map<String, Object> res = new LinkedHashMap<>();
         res.put("totalRevenueInr", totalPaise / 100.0);
         res.put("totalOrders", orders.size());
         res.put("capturedCount", capturedCount);
         res.put("pendingCount", pendingCount);
         res.put("failedCount", failedCount);
-        res.put("orders", orders.stream().limit(100).toList());
+        res.put("orders", orderRows);
         res.put("executionLogs", execLogs);
+        return ResponseEntity.ok(res);
+    }
+
+    @GetMapping("/payments/{orderId}")
+    public ResponseEntity<Map<String, Object>> getPaymentDetails(
+            @PathVariable String orderId,
+            HttpServletRequest request) {
+        requireAdmin(request, "SUPER_ADMIN", "SUPPORT_AGENT");
+
+        UpiOrder order = upiOrderRepository.findByOrderId(orderId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Payment order not found: " + orderId));
+
+        User user = userRepository.findById(order.getUserId()).orElse(null);
+        Profile profile = profileRepository.findById(order.getUserId()).orElse(null);
+
+        PaymentDto.PaymentAuditTimelineDto timeline = null;
+        try {
+            timeline = paymentAuditService.getOrderAuditTimeline(orderId);
+        } catch (Exception ignored) {}
+
+        List<PaymentExecutionLog> execLogs = paymentExecutionLogRepository.findByOrderIdOrderByCreatedAtDesc(orderId);
+
+        Map<String, Object> res = new LinkedHashMap<>();
+        res.put("orderId", order.getOrderId());
+        res.put("userId", order.getUserId());
+        res.put("userName", (profile != null && profile.getDisplayName() != null && !profile.getDisplayName().isBlank()) ? profile.getDisplayName().trim() : "Unspecified");
+        res.put("userPhoneMasked", user != null ? maskPhone(user.getPhoneE164()) : "—");
+        res.put("city", (profile != null && profile.getCity() != null && !profile.getCity().isBlank()) ? profile.getCity().trim() : "Not specified");
+        res.put("sku", order.getSku());
+        res.put("amountPaise", order.getAmountPaise());
+        res.put("amountInr", order.getAmountPaise() != null ? order.getAmountPaise() / 100.0 : 0.0);
+        res.put("currency", order.getCurrency());
+        res.put("status", order.getStatus() != null ? order.getStatus().name() : "PENDING");
+        res.put("paymentProvider", order.getPaymentProvider() != null ? order.getPaymentProvider().name() : "UPI");
+        res.put("failureReason", order.getFailureReason());
+        res.put("adminNotes", order.getAdminNotes());
+        res.put("reviewedBy", order.getReviewedBy());
+        res.put("createdAt", order.getCreatedAt());
+        res.put("capturedAt", order.getCapturedAt());
+        res.put("timeline", timeline);
+        res.put("executionLogs", execLogs);
+
         return ResponseEntity.ok(res);
     }
 
@@ -840,13 +912,15 @@ public class AdminController {
             @PathVariable String orderId,
             @RequestBody PaymentDto.ReviewOrderRequest req,
             HttpServletRequest request) {
-        // Strictly SUPER_ADMIN only — Support Agent cannot modify or capture payment orders
-        AdminSession session = requireAdmin(request, "SUPER_ADMIN");
+        AdminSession session = requireAdmin(request, "SUPER_ADMIN", "SUPPORT_AGENT");
         String ip = extractClientIp(request);
 
         if (req.getStatus() == null) {
             req.setStatus(OrderStatus.CAPTURED);
             req.setGrantPerks(true);
+        }
+        if (req.getAdminIdOrName() == null || req.getAdminIdOrName().isBlank()) {
+            req.setAdminIdOrName(session.email);
         }
         PaymentDto.PaymentAuditTimelineDto timeline = paymentAuditService.reviewAndReconcileOrder(
                 orderId, req, UUID.nameUUIDFromBytes(session.email.getBytes(StandardCharsets.UTF_8)));
@@ -890,13 +964,14 @@ public class AdminController {
             m.put("id", t.getId());
             m.put("ticketNumber", t.getTicketNumber());
             m.put("userId", t.getUserId());
-            m.put("userName", p != null ? p.getDisplayName() : "User");
-            m.put("userPhoneMasked", u != null ? maskPhone(u.getPhoneE164()) : "N/A");
+            m.put("userName", (p != null && p.getDisplayName() != null && !p.getDisplayName().isBlank()) ? p.getDisplayName().trim() : "Unspecified");
+            m.put("userPhoneMasked", u != null ? maskPhone(u.getPhoneE164()) : "—");
             m.put("category", t.getCategory());
             m.put("status", t.getStatus());
             m.put("subject", t.getSubject());
             m.put("description", t.getDescription());
             m.put("resolutionNotes", t.getResolutionNotes());
+            m.put("remarksHistory", parseRemarksHistory(t.getResolutionNotes()));
             m.put("createdAt", t.getCreatedAt());
             m.put("resolvedAt", t.getResolvedAt());
             out.add(m);
@@ -915,15 +990,26 @@ public class AdminController {
         SupportTicket ticket = supportTicketRepository.findById(ticketId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Ticket not found"));
 
-        if (req.getStatus() != null) {
+        if (req.getStatus() != null && !req.getStatus().isBlank()) {
             TicketStatus nextStatus = TicketStatus.valueOf(req.getStatus().trim().toUpperCase());
             ticket.setStatus(nextStatus);
             if (nextStatus == TicketStatus.RESOLVED || nextStatus == TicketStatus.CLOSED) {
                 ticket.setResolvedAt(OffsetDateTime.now());
             }
         }
-        if (req.getResolutionNotes() != null) {
-            ticket.setResolutionNotes(req.getResolutionNotes().trim());
+
+        if (req.getResolutionNotes() != null && !req.getResolutionNotes().isBlank()) {
+            String noteText = req.getResolutionNotes().trim();
+            String timestamp = OffsetDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+            String statusTag = ticket.getStatus() != null ? ticket.getStatus().name() : "IN_PROGRESS";
+            String entry = "[" + timestamp + " • " + session.email + " (" + statusTag + ")]: " + noteText;
+
+            String existing = ticket.getResolutionNotes();
+            if (existing != null && !existing.isBlank()) {
+                ticket.setResolutionNotes(existing + "\n\n" + entry);
+            } else {
+                ticket.setResolutionNotes(entry);
+            }
         }
         supportTicketRepository.save(ticket);
 
@@ -932,17 +1018,43 @@ public class AdminController {
                 .userId(ticket.getUserId())
                 .type("SYSTEM")
                 .title("Support Ticket " + ticket.getTicketNumber() + " Updated (" + ticket.getStatus() + ")")
-                .body(ticket.getResolutionNotes() != null && !ticket.getResolutionNotes().isBlank()
-                        ? ticket.getResolutionNotes()
+                .body(req.getResolutionNotes() != null && !req.getResolutionNotes().isBlank()
+                        ? req.getResolutionNotes().trim()
                         : "Your support request status is now " + ticket.getStatus())
                 .isRead(false)
                 .build();
         notificationRepository.save(notif);
 
         recordAudit(session.email, session.role, "TICKET_UPDATED", ticket.getTicketNumber(),
-                "Status=" + ticket.getStatus() + " | Notes=" + ticket.getResolutionNotes(), ip);
+                "Status=" + ticket.getStatus() + " | Notes=" + req.getResolutionNotes(), ip);
 
         return ResponseEntity.ok(ticket);
+    }
+
+    private List<Map<String, String>> parseRemarksHistory(String notes) {
+        List<Map<String, String>> list = new ArrayList<>();
+        if (notes == null || notes.isBlank()) return list;
+
+        String[] parts = notes.split("\n\n|---");
+        for (String part : parts) {
+            String p = part.trim();
+            if (p.isEmpty()) continue;
+            Map<String, String> item = new LinkedHashMap<>();
+            if (p.startsWith("[") && p.contains("]:")) {
+                int metaEnd = p.indexOf("]:");
+                String meta = p.substring(1, metaEnd);
+                String comment = p.substring(metaEnd + 2).trim();
+                item.put("meta", meta);
+                item.put("comment", comment);
+                item.put("raw", p);
+            } else {
+                item.put("meta", "Recorded Note");
+                item.put("comment", p);
+                item.put("raw", p);
+            }
+            list.add(item);
+        }
+        return list;
     }
 
     // =========================================================================
@@ -1154,38 +1266,16 @@ public class AdminController {
         requireAdmin(request, "SUPER_ADMIN");
 
         List<User> allUsers = userRepository.findAll();
-        Map<UUID, Profile> profileMap = profileRepository.findAll().stream()
-                .collect(Collectors.toMap(Profile::getUserId, p -> p, (a, b) -> a));
 
         long totalWithEmail = 0;
         long totalOptedIn = 0;
-        List<Map<String, Object>> subscribers = new ArrayList<>();
 
         for (User u : allUsers) {
             boolean hasEmail = u.getEmail() != null && !u.getEmail().isBlank();
             boolean optedIn = Boolean.TRUE.equals(u.getMarketingOptIn());
             if (hasEmail) totalWithEmail++;
             if (hasEmail && optedIn) totalOptedIn++;
-
-            Profile p = profileMap.get(u.getId());
-            Map<String, Object> row = new LinkedHashMap<>();
-            row.put("userId", u.getId());
-            row.put("displayName", (p != null && p.getDisplayName() != null && !p.getDisplayName().isBlank()) ? p.getDisplayName().trim() : "Unspecified");
-            row.put("phoneMasked", maskPhone(u.getPhoneE164()));
-            row.put("email", u.getEmail() != null ? u.getEmail() : "");
-            row.put("marketingOptIn", optedIn);
-            row.put("marketingOptInAt", u.getMarketingOptInAt() != null ? u.getMarketingOptInAt().toString() : "");
-            row.put("city", (p != null && p.getCity() != null && !p.getCity().isBlank()) ? p.getCity().trim() : "Not specified");
-            row.put("hasActivePass", Boolean.TRUE.equals(u.getHasActivePass()));
-            subscribers.add(row);
         }
-
-        // Show opted-in with email first
-        subscribers.sort((a, b) -> {
-            boolean oa = Boolean.TRUE.equals(a.get("marketingOptIn")) && !String.valueOf(a.get("email")).isBlank();
-            boolean ob = Boolean.TRUE.equals(b.get("marketingOptIn")) && !String.valueOf(b.get("email")).isBlank();
-            return Boolean.compare(ob, oa);
-        });
 
         boolean smtpReady = smtpHost != null && !smtpHost.isBlank() && smtpUsername != null && !smtpUsername.isBlank();
 
@@ -1198,7 +1288,6 @@ public class AdminController {
         res.put("smtpPort", smtpPort);
         res.put("smtpUsername", smtpUsername != null ? smtpUsername : "");
         res.put("smtpFrom", smtpFrom != null ? smtpFrom : "offers@blunderr.in");
-        res.put("subscribers", subscribers);
         res.put("campaigns", marketingEmailCampaignRepository.findTop30ByOrderByCreatedAtDesc());
         return ResponseEntity.ok(res);
     }
