@@ -1,0 +1,2839 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>BlunderR Command Center • Admin Panel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-base: #05060A;
+      --bg-surface: #0B0D16;
+      --bg-card: #111422;
+      --bg-elevated: #171B2E;
+      --border: rgba(255, 255, 255, 0.09);
+      --border-strong: rgba(255, 255, 255, 0.16);
+      --brand: #FF385C;
+      --brand-glow: rgba(255, 56, 92, 0.22);
+      --violet: #7C3AED;
+      --emerald: #10B981;
+      --amber: #F59E0B;
+      --danger: #EF4444;
+      --cyan: #38BDF8;
+      --text: #F8FAFC;
+      --text-muted: #94A3B8;
+      --text-dim: #64748B;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg-base);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ==================== LOGIN GATE ==================== */
+    #login-screen {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(255, 56, 92, 0.14), transparent 40%),
+        radial-gradient(circle at 80% 80%, rgba(124, 58, 237, 0.16), transparent 40%),
+        var(--bg-base);
+    }
+
+    .login-card {
+      width: 100%;
+      max-width: 440px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-strong);
+      border-radius: 24px;
+      padding: 32px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65);
+    }
+
+    .brand-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+
+    .brand-logo {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #FF385C, #7C3AED);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 22px;
+      color: #FFF;
+      box-shadow: 0 8px 20px rgba(255, 56, 92, 0.35);
+    }
+
+    .brand-title {
+      font-size: 20px;
+      font-weight: 900;
+      letter-spacing: -0.3px;
+    }
+
+    .brand-sub {
+      font-size: 11px;
+      font-weight: 700;
+      color: #FDA4AF;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+    }
+
+    .security-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.35);
+      color: #6EE7B7;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 6px 12px;
+      border-radius: 99px;
+      margin-bottom: 20px;
+    }
+
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--text-muted);
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .form-input, .form-select, .form-textarea {
+      width: 100%;
+      background: var(--bg-card);
+      border: 1px solid var(--border-strong);
+      border-radius: 12px;
+      padding: 11px 14px;
+      color: var(--text);
+      font-size: 13px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      border-color: var(--brand);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: none;
+      border-radius: 12px;
+      padding: 10px 16px;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      font-family: inherit;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #FF385C, #E11D48);
+      color: #FFF;
+      box-shadow: 0 6px 18px rgba(255, 56, 92, 0.3);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.08);
+    }
+
+    .btn-emerald {
+      background: rgba(16, 185, 129, 0.18);
+      border: 1px solid var(--emerald);
+      color: #6EE7B7;
+    }
+
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.16);
+      border: 1px solid var(--danger);
+      color: #FCA5A5;
+    }
+
+    .btn-ghost {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+    }
+
+    .btn-ghost:hover {
+      background: rgba(255, 255, 255, 0.12);
+      color: #FFF;
+    }
+
+    .btn-sm {
+      padding: 6px 11px;
+      font-size: 11px;
+      border-radius: 9px;
+    }
+
+    /* ==================== APP SHELL (3-PANE) ==================== */
+    #app-shell {
+      display: none;
+      min-height: 100vh;
+    }
+
+    .layout-grid {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      min-height: 100vh;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      background: var(--bg-surface);
+      border-right: 1px solid var(--border);
+      padding: 20px 14px;
+      display: flex;
+      flex-direction: column;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+    }
+
+    .nav-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-top: 12px;
+      flex: 1;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 11px 12px;
+      border-radius: 12px;
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.15s;
+    }
+
+    .nav-item:hover {
+      background: rgba(255, 255, 255, 0.04);
+      color: #FFF;
+    }
+
+    .nav-item.active {
+      background: var(--brand-glow);
+      border-color: rgba(255, 56, 92, 0.45);
+      color: #FFF;
+    }
+
+    .nav-badge {
+      background: var(--brand);
+      color: #FFF;
+      font-size: 10px;
+      font-weight: 900;
+      padding: 2px 7px;
+      border-radius: 99px;
+    }
+
+    .nav-badge.amber {
+      background: var(--amber);
+      color: #05060A;
+    }
+
+    /* Main Content Area */
+    .main-area {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .topbar {
+      height: 64px;
+      background: rgba(11, 13, 22, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+
+    .global-search {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-strong);
+      border-radius: 12px;
+      padding: 8px 14px;
+      width: 360px;
+    }
+
+    .global-search input {
+      background: transparent;
+      border: none;
+      color: #FFF;
+      font-size: 13px;
+      width: 100%;
+      outline: none;
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .role-pill {
+      background: rgba(124, 58, 237, 0.2);
+      border: 1px solid rgba(167, 139, 250, 0.45);
+      color: #DDD6FE;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 5px 10px;
+      border-radius: 8px;
+    }
+
+    .content-body {
+      padding: 24px;
+      max-width: 1440px;
+    }
+
+    .module-pane {
+      display: none;
+    }
+
+    .module-pane.active {
+      display: block;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .section-title {
+      font-size: 22px;
+      font-weight: 900;
+    }
+
+    .section-sub {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 3px;
+    }
+
+    /* KPI Grid */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+
+    .kpi-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 18px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .kpi-label {
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+
+    .kpi-value {
+      font-size: 28px;
+      font-weight: 900;
+      margin-top: 6px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .kpi-meta {
+      font-size: 11px;
+      color: var(--text-dim);
+      margin-top: 6px;
+      font-weight: 600;
+    }
+
+    /* Cards & Tables */
+    .panel-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 18px;
+      margin-bottom: 20px;
+    }
+
+    .panel-title {
+      font-size: 15px;
+      font-weight: 800;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .table-wrap {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    th {
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 11px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    td {
+      padding: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      font-size: 13px;
+      vertical-align: middle;
+    }
+
+    tr:hover td {
+      background: rgba(255, 255, 255, 0.025);
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 6px;
+      text-transform: uppercase;
+    }
+
+    .status-VERIFIED, .status-CAPTURED, .status-RESOLVED, .status-SUCCESS {
+      background: rgba(16, 185, 129, 0.16);
+      color: #6EE7B7;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+    }
+
+    .status-PENDING, .status-IN_PROGRESS {
+      background: rgba(245, 158, 11, 0.16);
+      color: #FCD34D;
+      border: 1px solid rgba(245, 158, 11, 0.4);
+    }
+
+    .status-REJECTED, .status-FAILED {
+      background: rgba(239, 68, 68, 0.16);
+      color: #FCA5A5;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+    }
+
+    .status-UNVERIFIED, .status-CLOSED {
+      background: rgba(148, 163, 184, 0.14);
+      color: #CBD5E1;
+      border: 1px solid rgba(148, 163, 184, 0.3);
+    }
+
+    /* Verification Moderation Cards */
+    .mod-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+      gap: 14px;
+    }
+
+    .mod-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-strong);
+      border-radius: 16px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      transition: opacity 0.25s ease, transform 0.25s ease;
+    }
+
+    .mod-photos-compare {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      align-items: stretch;
+    }
+
+    .selfie-box, .profile-compare-box {
+      background: #070912;
+      border: 1px solid var(--border-strong);
+      border-radius: 12px;
+      overflow: hidden;
+      position: relative;
+      height: 175px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .selfie-box {
+      border: 2px solid var(--brand);
+    }
+
+    .selfie-box img, .profile-compare-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .photo-tag {
+      position: absolute;
+      top: 6px;
+      left: 6px;
+      background: rgba(5, 6, 10, 0.88);
+      font-size: 9px;
+      font-weight: 800;
+      padding: 2px 7px;
+      border-radius: 5px;
+      letter-spacing: 0.5px;
+      z-index: 2;
+    }
+
+    .photo-tag.tag-selfie {
+      color: #FCD34D;
+      border: 1px solid rgba(252, 211, 77, 0.3);
+    }
+
+    .photo-tag.tag-profile {
+      color: #38BDF8;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+
+    .photo-pager-bar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(180deg, transparent, rgba(3, 4, 8, 0.94) 40%);
+      padding: 6px 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 2;
+    }
+
+    .pager-mini-btn {
+      background: rgba(255, 255, 255, 0.16);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      color: #FFF;
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 5px;
+      cursor: pointer;
+      line-height: 1;
+      font-weight: 700;
+      transition: background 0.15s;
+    }
+
+    .pager-mini-btn:hover:not(:disabled) {
+      background: var(--brand);
+      border-color: var(--brand);
+    }
+
+    .pager-mini-btn:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+
+    .pager-count-badge {
+      font-size: 10px;
+      font-weight: 700;
+      color: #E2E8F0;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Ticket Remarks History Styles */
+    .remarks-timeline {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: 280px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .remark-item {
+      background: rgba(255, 255, 255, 0.03);
+      border-left: 3px solid var(--brand);
+      border-radius: 0 8px 8px 0;
+      padding: 8px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .remark-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .remark-body {
+      font-size: 13px;
+      color: #F1F5F9;
+      line-height: 1.4;
+      white-space: pre-wrap;
+    }
+
+    /* Full-Screen Centered 360° Profile Modal */
+    .drawer-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(3, 4, 8, 0.84);
+      backdrop-filter: blur(8px);
+      z-index: 50;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .drawer-backdrop.open {
+      display: flex;
+    }
+
+    .inspector-drawer {
+      width: 100%;
+      max-width: 1180px;
+      max-height: 92vh;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-strong);
+      border-radius: 24px;
+      box-shadow: 0 30px 90px rgba(0, 0, 0, 0.85);
+      overflow-y: auto;
+      padding: 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+    }
+
+    .profile-360-grid {
+      display: grid;
+      grid-template-columns: 1.05fr 1.15fr;
+      gap: 22px;
+      align-items: start;
+    }
+
+    @media (max-width: 960px) {
+      .profile-360-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .inspector-photo-strip {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .inspector-photo-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-strong);
+      border-radius: 14px;
+      overflow: hidden;
+      position: relative;
+      aspect-ratio: 0.78;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .inspector-photo-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      cursor: zoom-in;
+      transition: transform 0.2s ease;
+    }
+
+    .inspector-photo-card img:hover {
+      transform: scale(1.03);
+    }
+
+    .inspector-photo-del {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      background: rgba(239, 68, 68, 0.9);
+      color: #FFF;
+      border: none;
+      border-radius: 6px;
+      padding: 3px 6px;
+      font-size: 10px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .profile-badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .profile-chip {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border-strong);
+      border-radius: 99px;
+      padding: 5px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .toast-box {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #1E293B;
+      border: 1px solid var(--emerald);
+      color: #FFF;
+      padding: 12px 18px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 700;
+      z-index: 100;
+      display: none;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    @media (max-width: 900px) {
+      .layout-grid {
+        grid-template-columns: 1fr;
+      }
+      .sidebar {
+        height: auto;
+        position: relative;
+      }
+      .global-search {
+        width: 200px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ==================== 1. SECURE ADMIN LOGIN GATE ==================== -->
+  <div id="login-screen">
+    <div class="login-card">
+      <div class="brand-row">
+        <div class="brand-logo">B</div>
+        <div>
+          <div class="brand-title">BlunderR Command Center</div>
+          <div class="brand-sub">Internal Admin & Trust Portal</div>
+        </div>
+      </div>
+
+      <div class="security-pill">
+        🔒 HMAC-SHA256 Signed • Role-Based Access • Audit Logged
+      </div>
+
+      <form id="login-form" onsubmit="handleAdminLogin(event)">
+        <div class="form-group">
+          <label class="form-label">Admin / Support Email</label>
+          <input type="email" id="login-email" class="form-input" placeholder="admin@blunderr.in or support@blunderr.in" autocomplete="username" required />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input type="password" id="login-password" class="form-input" placeholder="Enter your password" autocomplete="current-password" required />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">2FA Security PIN</label>
+          <input type="password" id="login-pin" class="form-input" placeholder="Enter your 4-6 digit security PIN" autocomplete="one-time-code" required />
+        </div>
+
+        <div id="login-error" style="color: #FCA5A5; font-size: 12px; font-weight: 700; margin-bottom: 12px; display: none;"></div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 13px;">
+          🚀 Authenticate & Enter Command Center
+        </button>
+      </form>
+
+      <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border); font-size: 11px; color: var(--text-dim); text-align: center;">
+        🔐 Accounts & roles (<code>SUPER_ADMIN</code> / <code>SUPPORT_AGENT</code>) are verified directly against PostgreSQL <code>admin_accounts</code>.
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 2. 3-PANE ADMIN COMMAND CENTER ==================== -->
+  <div id="app-shell">
+    <div class="layout-grid">
+      <!-- LEFT SIDEBAR -->
+      <aside class="sidebar">
+        <div class="brand-row" style="margin-bottom: 10px;">
+          <div class="brand-logo" style="width: 36px; height: 36px; font-size: 18px;">B</div>
+          <div>
+            <div style="font-size: 16px; font-weight: 900;">BlunderR</div>
+            <div style="font-size: 10px; color: #6EE7B7; font-weight: 800;">● PROD LIVE</div>
+          </div>
+        </div>
+
+        <nav class="nav-list">
+          <div class="nav-item active" data-tab="overview" onclick="switchTab('overview')">
+            <span>📊 Executive Pulse</span>
+          </div>
+          <div class="nav-item" data-tab="verification" onclick="switchTab('verification')">
+            <span>🪪 Selfie & KYC Queue</span>
+            <span class="nav-badge amber" id="badge-pending-selfie">0</span>
+          </div>
+          <div class="nav-item" data-tab="users" onclick="switchTab('users')">
+            <span>👥 360° User Directory</span>
+            <span class="nav-badge" id="badge-total-users" style="background: rgba(255,255,255,0.12);">0</span>
+          </div>
+          <div class="nav-item" data-tab="safety" onclick="switchTab('safety')">
+            <span>🛡️ Trust & ShadowShield</span>
+          </div>
+          <div class="nav-item" data-tab="payments" onclick="switchTab('payments')">
+            <span>💳 Payments & Revenue</span>
+          </div>
+          <div class="nav-item" data-tab="tickets" onclick="switchTab('tickets')">
+            <span>🎧 Support Ticket Desk</span>
+            <span class="nav-badge" id="badge-open-tickets">0</span>
+          </div>
+          <div class="nav-item" data-tab="cms" onclick="switchTab('cms')">
+            <span>🏙️ Tribes & Safe-Date CMS</span>
+          </div>
+          <div class="nav-item" data-tab="broadcast" onclick="switchTab('broadcast')">
+            <span>📣 Broadcast & Audit Logs</span>
+          </div>
+          <div class="nav-item" data-tab="marketing" onclick="switchTab('marketing')">
+            <span>🎁 Marketing & Offer Emails</span>
+            <span class="nav-badge" id="badge-opted-in-users" style="background:#10B981;">0</span>
+          </div>
+        </nav>
+
+        <div style="padding-top: 14px; border-top: 1px solid var(--border); font-size: 11px; color: var(--text-dim);">
+          <div id="admin-user-label" style="color: #FFF; font-weight: 700; margin-bottom: 4px;">admin@blunderr.in</div>
+          <button class="btn btn-ghost btn-sm" style="width: 100%; margin-top: 8px;" onclick="handleLogout()">
+            🔒 Sign Out
+          </button>
+        </div>
+      </aside>
+
+      <!-- CENTER MAIN WORKSPACE -->
+      <div class="main-area">
+        <!-- TOPBAR -->
+        <header class="topbar">
+          <div class="global-search">
+            <span>🔍</span>
+            <input
+              type="text"
+              id="global-search-input"
+              placeholder="Search user by name, phone (+91...), city, tribe..."
+              onkeydown="if(event.key==='Enter'){ switchTab('users'); loadUsers(); }"
+            />
+          </div>
+
+          <div class="topbar-right">
+            <span class="role-pill" id="topbar-role-badge">SUPER_ADMIN</span>
+            <button class="btn btn-ghost btn-sm" onclick="refreshCurrentTab()">🔄 Refresh</button>
+            <a href="https://blunderr.in" target="_blank" class="btn btn-ghost btn-sm" style="text-decoration: none;">🌐 Website ↗</a>
+          </div>
+        </header>
+
+        <!-- MODULE PANES -->
+        <main class="content-body">
+
+          <!-- MODULE 1: OVERVIEW -->
+          <section id="pane-overview" class="module-pane active">
+            <div class="section-header">
+              <div>
+                <h1 class="section-title">📊 Executive Pulse Dashboard</h1>
+                <p class="section-sub">Real-time user growth, background AI selfie verification health, and revenue metrics.</p>
+              </div>
+            </div>
+
+            <div class="kpi-grid" id="overview-kpi-grid"></div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1.6fr; gap: 18px;">
+              <div class="panel-card">
+                <div class="panel-title">🏙️ Active Singles by City</div>
+                <div id="overview-cities-list"></div>
+              </div>
+
+              <div class="panel-card">
+                <div class="panel-title">
+                  <span>🆕 Recent User Signups</span>
+                  <button class="btn btn-ghost btn-sm" onclick="switchTab('users')">View All ➔</button>
+                </div>
+                <div class="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>User</th>
+                        <th>City / Tribe</th>
+                        <th>Photos</th>
+                        <th>Selfie Status</th>
+                        <th>Inspect</th>
+                      </tr>
+                    </thead>
+                    <tbody id="overview-recent-users"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- MODULE 2: SELFIE & KYC MODERATION QUEUE -->
+          <section id="pane-verification" class="module-pane">
+            <div class="section-header">
+              <div>
+                <h1 class="section-title">🪪 Selfie & Biometric FaceMatch Queue</h1>
+                <p class="section-sub">Review pending background AI selfie verifications side-by-side against uploaded profile photos.</p>
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <button class="btn btn-primary btn-sm" id="btn-vq-PENDING" onclick="loadVerificationQueue('PENDING')">⏳ Pending Only</button>
+                <button class="btn btn-ghost btn-sm" id="btn-vq-WITH_SELFIE" onclick="loadVerificationQueue('WITH_SELFIE')">📸 Has Selfie</button>
+                <button class="btn btn-ghost btn-sm" id="btn-vq-VERIFIED" onclick="loadVerificationQueue('VERIFIED')">✓ Verified</button>
+                <button class="btn btn-ghost btn-sm" id="btn-vq-REJECTED" onclick="loadVerificationQueue('REJECTED')">⚠️ Rejected</button>
+                <button class="btn btn-ghost btn-sm" id="btn-vq-ALL" onclick="loadVerificationQueue('ALL')">All</button>
+              </div>
+            </div>
+
+            <div class="mod-grid" id="verification-mod-grid"></div>
+          </section>
+
+          <!-- MODULE 3: 360° USER DIRECTORY -->
+          <section id="pane-users" class="module-pane">
+            <div class="section-header">
+              <div>
+                <h1 class="section-title">👥 360° User & Profile Directory</h1>
+                <p class="section-sub">Inspect any user's 6 photo slots, selfie, Kundali chart, credits, or moderate accounts.</p>
+              </div>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <select id="user-status-filter" class="form-select" style="width: 160px;" onchange="loadUsers()">
+                  <option value="ALL">All Statuses</option>
+                  <option value="VERIFIED">✓ Selfie Verified</option>
+                  <option value="PENDING">⏳ Pending Verification</option>
+                  <option value="REJECTED">⚠️ Rejected</option>
+                  <option value="UNVERIFIED">Unverified</option>
+                  <option value="VIP">👑 Active VIP Pass</option>
+                  <option value="SHADOWBANNED">👻 Shadowbanned</option>
+                </select>
+                <button class="btn btn-primary btn-sm" onclick="loadUsers()">Filter Users</button>
+              </div>
+            </div>
+
+            <div class="panel-card">
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>User</th>
+                      <th>Phone (Masked)</th>
+                      <th>City & Neighborhood Tribe</th>
+                      <th>Photos</th>
+                      <th>Verification</th>
+                      <th>Karma / Credits</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="users-table-body"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <!-- MODULE 4: TRUST, SAFETY & SHADOWSHIELD -->
+          <section id="pane-safety" class="module-pane">
+            <div class="section-header">
+              <div>
+                <h1 class="section-title">🛡️ Trust, Safety & ShadowShield Center</h1>
+                <p class="section-sub">Zero-Knowledge contact shielding telemetry, corporate domain blocks, and flagged/shadowbanned accounts.</p>
+              </div>
+            </div>
+
+            <div class="kpi-grid" id="safety-kpi-grid"></div>
+
+            <div class="panel-card">
+              <div class="panel-title">👻 Shadowbanned & Low-Karma Accounts</div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>User</th>
+                      <th>City</th>
+                      <th>Karma Score</th>
+                      <th>Shadowban Status</th>
+                      <th>Quick Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="safety-flagged-body"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <!-- MODULE 5: PAYMENTS & REVENUE AUDIT -->
+          <section id="pane-payments" class="module-pane">
+            <div class="section-header">
+              <div>
+                <h1 class="section-title">💳 Payments, Micro-Sachets & Forensic Audit</h1>
+                <p class="section-sub">Track Razorpay UPI, Cashfree, and IAP orders plus real-time AOP execution logs.</p>
+              </div>
+            </div>
+
+            <div class="kpi-grid" id="payments-kpi-grid"></div>
+
+            <div class="panel-card">
+              <div class="panel-title">🧾 UPI & Store Orders</div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Order ID</th>
+                      <th>Customer Name & Phone</th>
+                      <th>SKU</th>
+                      <th>Amount</th>
+                      <th>Provider</th>
+                      <th>Status</th>
+                      <th>Created At</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="payments-orders-body"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="panel-card">
+              <div class="panel-title">⚡ AOP Payment Execution Logs (Last 50)</div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Timestamp</th>
+                      <th>Action</th>
+                      <th>Order ID</th>
+                      <th>Status</th>
+                      <th>Latency</th>
+                      <th>Summary</th>
+                    </tr>
+                  </thead>
+                  <tbody id="payments-logs-body"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <!-- MODULE 6: SUPPORT TICKET DESK -->
+          <section id="pane-tickets" class="module-pane">
+            <div class="section-header">
+              <div>
+                <h1 class="section-title">🎧 Customer Support Ticket Desk</h1>
+                <p class="section-sub">Resolve user tickets and send instant in-app updates.</p>
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <button class="btn btn-ghost btn-sm" onclick="loadTickets('ALL')">All</button>
+                <button class="btn btn-ghost btn-sm" onclick="loadTickets('PENDING')">Pending</button>
+                <button class="btn btn-ghost btn-sm" onclick="loadTickets('IN_PROGRESS')">In Progress</button>
+                <button class="btn btn-ghost btn-sm" onclick="loadTickets('RESOLVED')">Resolved</button>
+              </div>
+            </div>
+
+            <div class="panel-card">
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Ticket #</th>
+                      <th>Customer</th>
+                      <th>Category</th>
+                      <th>Subject & Description</th>
+                      <th>Activity & Earlier Remarks</th>
+                      <th>Status</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tickets-table-body"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <!-- MODULE 7: TRIBES & SAFE-DATE CMS -->
+          <section id="pane-cms" class="module-pane">
+            <div class="section-header">
+              <div>
+                <h1 class="section-title">🏙️ Neighborhood Tribes & Safe-Date Cafes CMS</h1>
+                <p class="section-sub">Add new city-wise Micro-Circles and O2O Safe-Date partner cafes live without an app update.</p>
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 18px;">
+              <!-- Add New Micro-Circle -->
+              <div class="panel-card">
+                <div class="panel-title">➕ Add City Micro-Circle (Tribe)</div>
+                <form onsubmit="handleCreateCircle(event)">
+                  <div class="form-group">
+                    <label class="form-label">City</label>
+                    <input type="text" id="cms-circle-city" class="form-input" placeholder="e.g. Bengaluru, Mumbai, Delhi NCR" required />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Circle / Tribe Name</label>
+                    <input type="text" id="cms-circle-name" class="form-input" placeholder="e.g. HSR Layout AI Founders" required />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Tagline / Description</label>
+                    <input type="text" id="cms-circle-tagline" class="form-input" placeholder="Late-night filter coffee & startup builders" required />
+                  </div>
+                  <button type="submit" class="btn btn-primary btn-sm">✨ Publish Micro-Circle</button>
+                </form>
+              </div>
+
+              <!-- Add New Safe-Date Cafe -->
+              <div class="panel-card">
+                <div class="panel-title">☕ Add Partner Safe-Date Spot</div>
+                <form onsubmit="handleCreateSafeSpot(event)">
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div class="form-group">
+                      <label class="form-label">Venue Name</label>
+                      <input type="text" id="cms-spot-name" class="form-input" placeholder="Blue Tokai Indiranagar" required />
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">City</label>
+                      <input type="text" id="cms-spot-city" class="form-input" placeholder="Bengaluru" required />
+                    </div>
+                  </div>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div class="form-group">
+                      <label class="form-label">Neighborhood</label>
+                      <input type="text" id="cms-spot-hood" class="form-input" placeholder="100 Feet Road" required />
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Coupon Code (15% Off)</label>
+                      <input type="text" id="cms-spot-coupon" class="form-input" value="BLUNDERR15" required />
+                    </div>
+                  </div>
+                  <button type="submit" class="btn btn-primary btn-sm">🛡️ Publish Safe-Date Cafe</button>
+                </form>
+              </div>
+            </div>
+
+            <div class="panel-card">
+              <div class="panel-title">📍 Active Neighborhood Micro-Circles</div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>City</th>
+                      <th>Circle Name</th>
+                      <th>Tagline</th>
+                      <th>Members</th>
+                      <th>Delete</th>
+                    </tr>
+                  </thead>
+                  <tbody id="cms-circles-body"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="panel-card">
+              <div class="panel-title">☕ Active Safe-Date Partner Cafes</div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>City</th>
+                      <th>Venue</th>
+                      <th>Neighborhood</th>
+                      <th>Discount & Coupon</th>
+                      <th>Delete</th>
+                    </tr>
+                  </thead>
+                  <tbody id="cms-spots-body"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <!-- MODULE 8: BROADCAST CAMPAIGNS & IMMUTABLE AUDIT LOGS -->
+          <section id="pane-broadcast" class="module-pane">
+            <div class="section-header">
+              <div>
+                <h1 class="section-title">📣 City Broadcasts & Security Audit Trail</h1>
+                <p class="section-sub">Send targeted in-app notifications and inspect the immutable admin security log.</p>
+              </div>
+            </div>
+
+            <div class="panel-card">
+              <div class="panel-title">📣 Send In-App Notification Campaign</div>
+              <form onsubmit="handleSendBroadcast(event)" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div class="form-group">
+                  <label class="form-label">Target Segment</label>
+                  <select id="bc-audience" class="form-select">
+                    <option value="ALL_USERS">All Registered Users</option>
+                    <option value="PENDING_SELFIE">Users with Pending Selfie Verification</option>
+                    <option value="UNVERIFIED_SELFIE">Unverified Users (Nudge to Verify)</option>
+                    <option value="CITY">Specific City Only</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">City Filter (if City selected)</label>
+                  <input type="text" id="bc-city" class="form-input" placeholder="e.g. Bengaluru" />
+                </div>
+                <div class="form-group" style="grid-column: span 2;">
+                  <label class="form-label">Notification Title</label>
+                  <input type="text" id="bc-title" class="form-input" placeholder="⚡ Friday Peak Hour in Indiranagar & Koramangala!" required />
+                </div>
+                <div class="form-group" style="grid-column: span 2;">
+                  <label class="form-label">Notification Message</label>
+                  <input type="text" id="bc-body" class="form-input" placeholder="Open BlunderR now to check your 36-Guna Cosmic & Meme DNA matches." required />
+                </div>
+                <div style="grid-column: span 2;">
+                  <button type="submit" class="btn btn-primary">🚀 Send Broadcast Now</button>
+                </div>
+              </form>
+            </div>
+
+            <div class="panel-card">
+              <div class="panel-title">🔒 Immutable Admin Security Audit Log</div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Audit ID</th>
+                      <th>Timestamp</th>
+                      <th>Admin</th>
+                      <th>Role</th>
+                      <th>Action</th>
+                      <th>Target</th>
+                      <th>Details</th>
+                      <th>IP Address</th>
+                    </tr>
+                  </thead>
+                  <tbody id="audit-logs-body"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <!-- MODULE 9: MARKETING & OFFER EMAIL ENGINE (OPT-IN SUBSCRIBERS) -->
+          <section id="pane-marketing" class="module-pane">
+            <div class="section-header">
+              <div>
+                <h1 class="section-title">🎁 Marketing & Offer Email Engine</h1>
+                <p class="section-sub">Send exclusive promotional offers, discounts, and coupons strictly to users who opted in to receive marketing emails.</p>
+              </div>
+              <div style="display:flex;gap:8px;">
+                <button class="btn btn-ghost btn-sm" onclick="toggleSmtpPanel()">⚙️ Configure SMTP Server</button>
+                <button class="btn btn-primary btn-sm" onclick="loadMarketing()">🔄 Refresh Data</button>
+              </div>
+            </div>
+
+            <div class="kpi-grid" id="marketing-kpi-grid"></div>
+
+            <!-- SMTP Config Panel (Collapsible) -->
+            <div class="panel-card" id="smtp-config-card" style="display:none;background:#0d111e;border-color:var(--violet);">
+              <div class="panel-title" style="color:#DDD6FE;">⚙️ SMTP Outgoing Mail Server Configuration</div>
+              <form onsubmit="handleUpdateSmtp(event)" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;">
+                <div class="form-group" style="grid-column:span 2;">
+                  <label class="form-label">SMTP Host</label>
+                  <input type="text" id="smtp-host" class="form-input" placeholder="e.g. smtp.gmail.com or smtp.resend.com" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">SMTP Port</label>
+                  <input type="number" id="smtp-port" class="form-input" placeholder="587" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">From Email Address</label>
+                  <input type="email" id="smtp-from" class="form-input" placeholder="offers@blunderr.in" />
+                </div>
+                <div class="form-group" style="grid-column:span 2;">
+                  <label class="form-label">Username / API Key</label>
+                  <input type="text" id="smtp-user" class="form-input" placeholder="SMTP Username or API Key" />
+                </div>
+                <div class="form-group" style="grid-column:span 2;">
+                  <label class="form-label">Password / Secret</label>
+                  <input type="password" id="smtp-pass" class="form-input" placeholder="SMTP Password (leave blank to keep unchanged)" />
+                </div>
+                <div style="grid-column:span 4;display:flex;justify-content:flex-end;gap:8px;">
+                  <button type="button" class="btn btn-ghost btn-sm" onclick="toggleSmtpPanel()">Cancel</button>
+                  <button type="submit" class="btn btn-primary btn-sm">💾 Save SMTP Settings</button>
+                </div>
+              </form>
+            </div>
+
+            <!-- Offer Email Campaign Composer -->
+            <div class="panel-card">
+              <div class="panel-title">✉️ Compose & Dispatch Marketing / Offer Email</div>
+              <form onsubmit="handleSendMarketingEmail(event)" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                <div class="form-group">
+                  <label class="form-label">Audience Filter (Strictly Opted-In Users Only)</label>
+                  <select id="mkt-audience" class="form-select" onchange="toggleMktCity()">
+                    <option value="OPTED_IN_ALL">All Opted-In Users with Valid Email</option>
+                    <option value="OPTED_IN_NON_VIP">Opted-In Free Users (Non-VIP) • Convert to VIP</option>
+                    <option value="OPTED_IN_CITY">Opted-In Users in Specific City</option>
+                  </select>
+                </div>
+                <div class="form-group" id="mkt-city-group" style="display:none;">
+                  <label class="form-label">Target City</label>
+                  <input type="text" id="mkt-city" class="form-input" placeholder="e.g. Bengaluru, Delhi NCR, Mumbai" />
+                </div>
+                <div class="form-group" style="grid-column:span 2;">
+                  <label class="form-label">Email Subject Line</label>
+                  <input type="text" id="mkt-subject" class="form-input" placeholder="⚡ Weekend Special: Flat 50% OFF BlunderR VIP Pass!" required />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Offer / Discount Badge (Optional)</label>
+                  <input type="text" id="mkt-badge" class="form-input" placeholder="e.g. 50% OFF FLASH OFFER or 15% OFF CAFE DATES" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Coupon Code (Optional)</label>
+                  <input type="text" id="mkt-coupon" class="form-input" placeholder="e.g. BLUNDERR50" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">CTA Button Label</label>
+                  <input type="text" id="mkt-cta-text" class="form-input" value="Claim Offer on BlunderR ➔" required />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">CTA Button Target Link</label>
+                  <input type="text" id="mkt-cta-url" class="form-input" value="https://blunderr.in/app/" required />
+                </div>
+                <div class="form-group" style="grid-column:span 2;">
+                  <label class="form-label">Offer Message Body (Multi-line text or description)</label>
+                  <textarea id="mkt-body" class="form-textarea" rows="4" placeholder="Upgrade your dating game this weekend! Get unlimited Cosmic Chemistry match reveals, priority profile spotlight in your city, and 15% off at all verified Safe-Date partner cafes." required></textarea>
+                </div>
+                <div style="grid-column:span 2;display:flex;gap:10px;justify-content:flex-end;">
+                  <button type="button" class="btn btn-ghost" onclick="previewMarketingEmail()">👁️ Preview HTML Email</button>
+                  <button type="submit" class="btn btn-primary" id="btn-send-mkt">🚀 Send Offer Email to Opted-In Users</button>
+                </div>
+              </form>
+            </div>
+
+            <!-- Sent Campaigns History -->
+            <div class="panel-card">
+              <div class="panel-title">📜 Marketing Email Campaigns History</div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Timestamp</th>
+                      <th>Subject</th>
+                      <th>Badge / Coupon</th>
+                      <th>Audience</th>
+                      <th>Opted-In Recipients</th>
+                      <th>SMTP Delivered</th>
+                      <th>In-App Delivered</th>
+                      <th>Sent By</th>
+                    </tr>
+                  </thead>
+                  <tbody id="mkt-campaigns-body"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+        </main>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 3. RIGHT SLIDE-OVER 360° USER INSPECTOR ==================== -->
+  <div id="inspector-backdrop" class="drawer-backdrop" onclick="if(event.target===this) closeInspector()">
+    <div class="inspector-drawer" id="inspector-content"></div>
+  </div>
+
+  <!-- ==================== 4. PAYMENT & REVENUE INSPECTOR MODAL ==================== -->
+  <div id="payment-inspector-backdrop" class="drawer-backdrop" onclick="if(event.target===this) closePaymentInspector()">
+    <div class="inspector-drawer" style="max-width: 820px;" id="payment-inspector-content"></div>
+  </div>
+
+  <!-- ==================== 5. SUPPORT TICKET REMARKS & ACTION MODAL ==================== -->
+  <div id="ticket-modal-backdrop" class="drawer-backdrop" onclick="if(event.target===this) closeTicketModal()">
+    <div class="inspector-drawer" style="max-width: 740px;" id="ticket-modal-content"></div>
+  </div>
+
+  <div id="toast-box" class="toast-box"></div>
+
+  <script>
+    const API_BASE = '/v1/admin';
+    let adminToken = localStorage.getItem('blunderr_admin_token') || '';
+    let adminRole = localStorage.getItem('blunderr_admin_role') || '';
+    let adminEmail = localStorage.getItem('blunderr_admin_email') || '';
+    let currentTab = 'overview';
+
+    function showToast(msg) {
+      const el = document.getElementById('toast-box');
+      el.textContent = msg;
+      el.style.display = 'block';
+      setTimeout(() => { el.style.display = 'none'; }, 3200);
+    }
+
+    async function apiCall(path, options = {}) {
+      const headers = Object.assign({
+        'Content-Type': 'application/json',
+        'X-Admin-Token': adminToken
+      }, options.headers || {});
+
+      const res = await fetch(API_BASE + path, Object.assign({}, options, { headers }));
+      if (res.status === 401) {
+        handleLogout();
+        throw new Error('Session expired. Please sign in again.');
+      }
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(errText || ('HTTP ' + res.status));
+      }
+      return res.json();
+    }
+
+    async function handleAdminLogin(e) {
+      e.preventDefault();
+      const errEl = document.getElementById('login-error');
+      errEl.style.display = 'none';
+
+      const email = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value.trim();
+      const pin = document.getElementById('login-pin').value.trim();
+
+      try {
+        const res = await fetch(API_BASE + '/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password, pin })
+        });
+        if (!res.ok) {
+          const msg = await res.json().catch(() => ({ message: 'Invalid credentials or PIN' }));
+          throw new Error(msg.message || 'Authentication failed');
+        }
+        const data = await res.json();
+        adminToken = data.token;
+        adminRole = data.role;
+        adminEmail = data.email;
+        localStorage.setItem('blunderr_admin_token', adminToken);
+        localStorage.setItem('blunderr_admin_role', adminRole);
+        localStorage.setItem('blunderr_admin_email', adminEmail);
+        enterCommandCenter();
+      } catch (err) {
+        errEl.textContent = '⚠️ ' + err.message;
+        errEl.style.display = 'block';
+      }
+    }
+
+    function handleLogout() {
+      adminToken = '';
+      localStorage.removeItem('blunderr_admin_token');
+      document.getElementById('app-shell').style.display = 'none';
+      document.getElementById('login-screen').style.display = 'flex';
+    }
+
+    function enterCommandCenter() {
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('app-shell').style.display = 'block';
+      document.getElementById('admin-user-label').textContent = adminEmail;
+      document.getElementById('topbar-role-badge').textContent = adminRole;
+
+      const isSupport = adminRole === 'SUPPORT_AGENT';
+      const supportAllowedTabs = ['tickets', 'users', 'payments'];
+
+      document.querySelectorAll('.nav-item').forEach(el => {
+        const tab = el.getAttribute('data-tab');
+        if (isSupport && !supportAllowedTabs.includes(tab)) {
+          el.style.display = 'none';
+        } else {
+          el.style.display = 'flex';
+        }
+      });
+
+      if (isSupport) {
+        switchTab('tickets');
+      } else {
+        switchTab('overview');
+      }
+    }
+
+    function switchTab(tab) {
+      if (adminRole === 'SUPPORT_AGENT' && !['tickets', 'users', 'payments'].includes(tab)) {
+        tab = 'tickets';
+      }
+      currentTab = tab;
+      document.querySelectorAll('.nav-item').forEach(el => {
+        el.classList.toggle('active', el.getAttribute('data-tab') === tab);
+      });
+      document.querySelectorAll('.module-pane').forEach(el => {
+        el.classList.toggle('active', el.id === 'pane-' + tab);
+      });
+      refreshCurrentTab();
+    }
+
+    function refreshCurrentTab() {
+      if (currentTab === 'overview') loadOverview();
+      else if (currentTab === 'verification') loadVerificationQueue(currentVerFilter || 'PENDING');
+      else if (currentTab === 'users') loadUsers();
+      else if (currentTab === 'safety') loadSafety();
+      else if (currentTab === 'payments') loadPayments();
+      else if (currentTab === 'tickets') loadTickets(currentTicketFilter || 'ALL');
+      else if (currentTab === 'cms') loadCms();
+      else if (currentTab === 'broadcast') loadAuditLogs();
+      else if (currentTab === 'marketing') loadMarketing();
+    }
+
+    // ==================== 1. OVERVIEW ====================
+    async function loadOverview() {
+      try {
+        const d = await apiCall('/overview');
+        document.getElementById('badge-pending-selfie').textContent = d.pendingSelfie || 0;
+        document.getElementById('badge-total-users').textContent = d.totalUsers || 0;
+        document.getElementById('badge-open-tickets').textContent = d.openTickets || 0;
+
+        const kpis = [
+          { label: 'Total Users', value: d.totalUsers, meta: `+${d.signups24h} in last 24h • +${d.signups7d} in 7d`, color: '#FFF' },
+          { label: 'Selfie Verified ✓', value: d.verifiedSelfie, meta: `${d.pendingSelfie} Pending • ${d.rejectedSelfie} Rejected`, color: '#6EE7B7' },
+          { label: '2+ Photos Ready 📸', value: d.twoOrMorePhotos, meta: `DigiLocker Verified: ${d.digilockerVerified}`, color: '#38BDF8' },
+          { label: 'Total Matches & Chats', value: d.totalMatches, meta: `${d.totalMessages} encrypted messages`, color: '#F472B6' },
+          { label: 'Captured Revenue (INR)', value: '₹' + Number(d.totalRevenueInr || 0).toLocaleString(), meta: `${d.capturedOrders} paid orders • ${d.activeVipPasses} VIP Passes`, color: '#FCD34D' },
+          { label: 'Tribes & Safe Cafes', value: d.totalCircles, meta: `${d.totalSafeSpots} partner Safe-Date spots`, color: '#C4B5FD' }
+        ];
+
+        document.getElementById('overview-kpi-grid').innerHTML = kpis.map(k => `
+          <div class="kpi-card">
+            <div class="kpi-label">${k.label}</div>
+            <div class="kpi-value" style="color:${k.color}">${k.value}</div>
+            <div class="kpi-meta">${k.meta}</div>
+          </div>
+        `).join('');
+
+        document.getElementById('overview-cities-list').innerHTML = (d.topCities || []).map(c => `
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.06);">
+            <span style="font-weight:700;font-size:13px;">🏙️ ${c.city}</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-weight:800;color:#FF6B8B;">${c.users} users</span>
+          </div>
+        `).join('') || '<div style="color:var(--text-dim);font-size:13px;">No city data yet.</div>';
+
+        document.getElementById('overview-recent-users').innerHTML = (d.recentUsers || []).map(u => `
+          <tr>
+            <td>
+              <div style="font-weight:800;">${escapeHtml(u.displayName)}</div>
+              <div style="font-size:11px;color:var(--text-dim);">${u.phoneMasked}</div>
+            </td>
+            <td>
+              <div style="font-weight:700;">${escapeHtml(u.city)}</div>
+              <div style="font-size:11px;color:var(--text-muted);">${escapeHtml(u.microCircle)}</div>
+            </td>
+            <td><span class="status-pill ${u.photoCount >= 2 ? 'status-VERIFIED' : 'status-PENDING'}">📸 ${u.photoCount}/6</span></td>
+            <td><span class="status-pill status-${u.verificationStatus}">${u.verificationStatus}</span></td>
+            <td><button class="btn btn-ghost btn-sm" onclick="openInspector('${u.userId}')">🔍 Inspect</button></td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        showToast('⚠️ ' + e.message);
+      }
+    }
+
+    // ==================== 2. SELFIE & KYC QUEUE ====================
+    let currentVerFilter = 'PENDING';
+    const queuePhotosCache = {};
+    const queuePhotoIndex = {};
+
+    function cycleQueuePhoto(userId, dir) {
+      const photos = queuePhotosCache[userId] || [];
+      if (photos.length <= 1) return;
+      let idx = (queuePhotoIndex[userId] || 0) + dir;
+      if (idx < 0) idx = photos.length - 1;
+      if (idx >= photos.length) idx = 0;
+      queuePhotoIndex[userId] = idx;
+
+      const imgEl = document.getElementById('qimg-' + userId);
+      const idxEl = document.getElementById('qidx-' + userId);
+      if (imgEl) imgEl.src = photos[idx];
+      if (idxEl) idxEl.textContent = (idx + 1);
+    }
+
+    async function loadVerificationQueue(filter = currentVerFilter || 'PENDING') {
+      currentVerFilter = filter;
+      ['PENDING', 'WITH_SELFIE', 'VERIFIED', 'REJECTED', 'ALL'].forEach(f => {
+        const btn = document.getElementById('btn-vq-' + f);
+        if (btn) {
+          btn.className = (f === filter) ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm';
+        }
+      });
+
+      try {
+        const list = await apiCall('/verification-queue?statusFilter=' + encodeURIComponent(filter));
+        const grid = document.getElementById('verification-mod-grid');
+        if (!list || !list.length) {
+          grid.innerHTML = `<div class="panel-card" style="grid-column:1/-1;text-align:center;padding:36px;color:var(--text-muted);">
+            <div style="font-size:24px;margin-bottom:8px;">🎉</div>
+            <div style="font-weight:700;font-size:15px;color:#FFF;">No users in "${filter}" verification queue.</div>
+            <div style="font-size:12px;margin-top:4px;">All pending biometric face checks are up to date!</div>
+          </div>`;
+          return;
+        }
+
+        grid.innerHTML = list.map(u => {
+          const rawPhotos = (u.photos || []).filter(p => !!p && typeof p === 'string' && p.trim() !== '');
+          queuePhotosCache[u.userId] = rawPhotos;
+          queuePhotoIndex[u.userId] = 0;
+
+          const totalPhotos = rawPhotos.length;
+          const primaryPhoto = totalPhotos > 0 ? rawPhotos[0] : '';
+          const hasMultiple = totalPhotos > 1;
+
+          return `
+            <div class="mod-card" id="ver-card-${u.userId}">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                  <div style="font-weight:900;font-size:14px;color:#FFF;">${escapeHtml(u.displayName || 'User')}</div>
+                  <div style="font-size:11px;color:var(--text-muted);">📍 ${escapeHtml(u.city || 'India')} • ${escapeHtml(u.microCircle || 'General')}</div>
+                </div>
+                <span class="status-pill status-${u.verificationStatus}">${u.verificationStatus}</span>
+              </div>
+
+              <div class="mod-photos-compare">
+                <div class="selfie-box">
+                  ${u.selfieUrl
+                    ? `<img src="${u.selfieUrl}" alt="Live Selfie" />`
+                    : `<span style="font-size:11px;color:var(--text-dim);text-align:center;padding:8px;">No Selfie</span>`}
+                  <span class="photo-tag tag-selfie">🤳 SELFIE</span>
+                </div>
+
+                <div class="profile-compare-box">
+                  ${primaryPhoto
+                    ? `<img id="qimg-${u.userId}" src="${primaryPhoto}" alt="Profile Photo" />`
+                    : `<span style="font-size:11px;color:var(--text-dim);text-align:center;padding:8px;">No Photo</span>`}
+                  <span class="photo-tag tag-profile">📸 PROFILE PHOTO</span>
+                  <div class="photo-pager-bar">
+                    <button class="pager-mini-btn" onclick="cycleQueuePhoto('${u.userId}', -1)" ${hasMultiple ? '' : 'disabled'}>◀ Prev</button>
+                    <span class="pager-count-badge"><span id="qidx-${u.userId}">${totalPhotos > 0 ? 1 : 0}</span> of ${totalPhotos}</span>
+                    <button class="pager-mini-btn" onclick="cycleQueuePhoto('${u.userId}', 1)" ${hasMultiple ? '' : 'disabled'}>Next ▶</button>
+                  </div>
+                </div>
+              </div>
+
+              <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--text-muted);">
+                <span>📸 ${totalPhotos}/6 Photos</span>
+                <span>Liveness: ${(Number(u.livenessScore || 0) * 100).toFixed(0)}%</span>
+              </div>
+
+              <div style="display:flex;gap:6px;">
+                <button class="btn btn-emerald btn-sm" style="flex:1;padding:7px 10px;" onclick="decideSelfie('${u.userId}','APPROVE')">✓ Approve</button>
+                <button class="btn btn-danger btn-sm" style="flex:1;padding:7px 10px;" onclick="decideSelfie('${u.userId}','REJECT')">✕ Reject</button>
+                <button class="btn btn-ghost btn-sm" title="View Full Profile" onclick="openInspector('${u.userId}')">🔍</button>
+              </div>
+            </div>
+          `;
+        }).join('');
+      } catch (e) {
+        showToast('⚠️ ' + e.message);
+      }
+    }
+
+    async function decideSelfie(userId, decision) {
+      let reason = '';
+      if (decision === 'REJECT') {
+        reason = prompt('Reason for rejecting selfie (sent to user):', 'Please take a clear, well-lit selfie matching your profile photos.') || '';
+        if (!reason) return;
+      }
+      try {
+        await apiCall(`/verification/${userId}/decision`, {
+          method: 'POST',
+          body: JSON.stringify({ decision, reason })
+        });
+        showToast(decision === 'APPROVE' ? '✅ Selfie Approved & User Notified!' : '⚠️ Selfie Marked Rejected & User Notified');
+
+        const cardEl = document.getElementById('ver-card-' + userId);
+        if (cardEl) {
+          cardEl.style.opacity = '0';
+          cardEl.style.transform = 'scale(0.92)';
+          setTimeout(() => {
+            if (cardEl) cardEl.remove();
+            const grid = document.getElementById('verification-mod-grid');
+            if (grid && grid.querySelectorAll('.mod-card').length === 0) {
+              loadVerificationQueue(currentVerFilter);
+            }
+          }, 240);
+        } else {
+          loadVerificationQueue(currentVerFilter);
+        }
+        loadOverview();
+      } catch (e) {
+        showToast('⚠️ ' + e.message);
+      }
+    }
+
+    // ==================== 3. USERS DIRECTORY ====================
+    async function loadUsers() {
+      try {
+        const q = document.getElementById('global-search-input').value.trim();
+        const status = document.getElementById('user-status-filter').value;
+        const list = await apiCall(`/users?q=${encodeURIComponent(q)}&status=${encodeURIComponent(status)}`);
+        document.getElementById('badge-total-users').textContent = list.length;
+        document.getElementById('users-table-body').innerHTML = list.map(u => `
+          <tr>
+            <td>
+              <div style="font-weight:800;">${escapeHtml(u.displayName)}</div>
+              <div style="font-size:10px;color:var(--text-dim);font-family:'JetBrains Mono',monospace;">${u.userId}</div>
+            </td>
+            <td style="font-family:'JetBrains Mono',monospace;font-size:12px;">${u.phoneMasked}</td>
+            <td>
+              <div style="font-weight:700;">${escapeHtml(u.city)}</div>
+              <div style="font-size:11px;color:var(--text-muted);">📍 ${escapeHtml(u.microCircle)}</div>
+            </td>
+            <td>
+              <span class="status-pill ${u.photoCount >= 2 ? 'status-VERIFIED' : 'status-PENDING'}">📸 ${u.photoCount} / 6</span>
+            </td>
+            <td>
+              <span class="status-pill status-${u.verificationStatus}">${u.verificationStatus}</span>
+              ${u.digilockerVerified ? '<span class="status-pill status-VERIFIED" style="margin-left:4px;">🪪 Gov ID</span>' : ''}
+              ${u.isShadowbanned ? '<span class="status-pill status-REJECTED" style="margin-left:4px;">👻 Shadowbanned</span>' : ''}
+            </td>
+            <td style="font-size:12px;">
+              ⚖️ Karma: <b>${u.karmaScore}</b> • ⚡ ${u.sparksBalance} Sparks
+              ${u.hasActivePass ? '<span class="status-pill status-VERIFIED" style="margin-left:4px;">👑 VIP</span>' : ''}
+            </td>
+            <td>
+              <button class="btn btn-primary btn-sm" onclick="openInspector('${u.userId}')">360° Details & Payments</button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        showToast('⚠️ ' + e.message);
+      }
+    }
+
+    // ==================== 4. FULL 360° USER PROFILE STUDIO ====================
+    async function openInspector(userId) {
+      try {
+        const u = await apiCall('/users/' + userId);
+        const drawer = document.getElementById('inspector-content');
+        const astro = u.astrology || {};
+        const slots = [u.photo1, u.photo2, u.photo3, u.photo4, u.photo5, u.photo6];
+        const isSuperAdmin = adminRole === 'SUPER_ADMIN';
+        const userOrders = u.orders || [];
+        const userLogs = u.paymentLogs || [];
+        const userTickets = u.tickets || [];
+        const primaryPhoto = slots.find(Boolean) || (u.photos && u.photos[0]) || '';
+
+        drawer.innerHTML = `
+          <!-- TOP FULL-PROFILE HEADER BANNER -->
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;background:var(--bg-card);border:1px solid var(--border-strong);border-radius:18px;padding:18px 22px;">
+            <div style="display:flex;align-items:center;gap:16px;">
+              <div style="width:68px;height:68px;border-radius:18px;overflow:hidden;border:2px solid var(--brand);background:#070912;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                ${primaryPhoto
+                  ? `<img src="${primaryPhoto}" style="width:100%;height:100%;object-fit:cover;" />`
+                  : `<span style="font-size:24px;font-weight:900;color:var(--brand);">${escapeHtml((u.displayName || 'U').charAt(0))}</span>`}
+              </div>
+              <div>
+                <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                  <span style="font-size:22px;font-weight:900;">${escapeHtml(u.displayName)}</span>
+                  <span class="status-pill status-${u.verificationStatus}">${u.verificationStatus}</span>
+                  ${u.digilockerVerified ? '<span class="status-pill status-VERIFIED">🪪 DigiLocker ID</span>' : ''}
+                  ${u.hasActivePass ? '<span class="status-pill status-VERIFIED">👑 VIP PASS</span>' : ''}
+                  ${u.isShadowbanned ? '<span class="status-pill status-REJECTED">👻 SHADOWBANNED</span>' : ''}
+                </div>
+                <div style="font-size:13px;color:var(--text-muted);margin-top:4px;">
+                  📍 <b>${escapeHtml(u.city || 'Not specified')}</b> • Neighborhood Tribe: <b style="color:#FF6B8B;">${escapeHtml(u.microCircle || 'Unassigned')}</b> • Gender: <b>${escapeHtml(u.genderDisplay || u.gender || 'Not specified')}</b>
+                </div>
+                <div style="font-size:11px;color:var(--text-dim);font-family:'JetBrains Mono',monospace;margin-top:3px;">
+                  UUID: ${u.userId} • Joined: ${(u.createdAt || '').toString().slice(0, 16).replace('T', ' ')}
+                </div>
+              </div>
+            </div>
+
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+              <div style="background:var(--bg-surface);border:1px solid var(--border);border-radius:12px;padding:8px 14px;display:flex;align-items:center;gap:10px;">
+                <div>
+                  <div style="font-size:9px;font-weight:800;color:var(--text-dim);letter-spacing:0.6px;">REGISTERED PHONE</div>
+                  <div id="insp-phone-val" style="font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:800;">${u.phoneMasked}</div>
+                </div>
+                <button class="btn btn-ghost btn-sm" onclick="revealPhone('${u.userId}')">🔓 Reveal</button>
+              </div>
+              <button class="btn btn-ghost" onclick="closeInspector()">✕ Close Profile</button>
+            </div>
+          </div>
+
+          <!-- 2-COLUMN FULL 360° PROFILE WORKSPACE -->
+          <div class="profile-360-grid">
+
+            <!-- LEFT COLUMN: FULL DATING PROFILE, PHOTOS, BIO & VEDIC KUNDALI -->
+            <div style="display:flex;flex-direction:column;gap:18px;">
+
+              <!-- 6-Photo Showcase Grid -->
+              <div class="panel-card" style="margin-bottom:0;">
+                <div class="panel-title">
+                  <span>📸 6-Photo Profile Showcase (${u.photoCount}/6 Uploaded)</span>
+                  <span style="font-size:11px;color:var(--text-muted);">Click any photo to view full size</span>
+                </div>
+
+                ${isSuperAdmin ? `
+                  <div style="display:flex;gap:14px;align-items:center;margin-bottom:14px;background:#070912;padding:12px;border-radius:14px;border:1px solid var(--border-strong);">
+                    <div style="width:76px;height:94px;border-radius:10px;overflow:hidden;border:2px solid var(--brand);background:#111;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                      ${u.selfieUrl ? `<img src="${u.selfieUrl}" style="width:100%;height:100%;object-fit:cover;cursor:zoom-in;" onclick="window.open('${u.selfieUrl}','_blank')" />` : '<span style="font-size:10px;color:#64748B;">No Selfie</span>'}
+                    </div>
+                    <div style="flex:1;">
+                      <div style="font-size:13px;font-weight:800;">🤳 Live Verification Selfie (Liveness: ${(Number(u.livenessScore || 0) * 100).toFixed(0)}%)</div>
+                      <div style="font-size:11px;color:var(--text-muted);margin:4px 0 8px;">Compare selfie with the 6 profile photos below (Super Admin only):</div>
+                      <div style="display:flex;gap:8px;">
+                        <button class="btn btn-emerald btn-sm" onclick="userAction('${u.userId}',{action:'VERIFY_SELFIE'})">✓ Mark Verified</button>
+                        <button class="btn btn-danger btn-sm" onclick="userAction('${u.userId}',{action:'REJECT_SELFIE'})">✕ Mark Rejected</button>
+                      </div>
+                    </div>
+                  </div>
+                ` : ''}
+
+                <div class="inspector-photo-strip">
+                  ${slots.map((url, i) => `
+                    <div class="inspector-photo-card">
+                      ${url ? `
+                        <img src="${url}" alt="Slot ${i+1}" onclick="window.open('${url}','_blank')" title="Click to open full photo #${i+1}" />
+                        <span style="position:absolute;bottom:6px;left:6px;background:rgba(5,6,10,0.8);color:#FFF;font-size:10px;font-weight:800;padding:2px 7px;border-radius:6px;">#${i+1}</span>
+                        ${isSuperAdmin ? `<button class="inspector-photo-del" onclick="userAction('${u.userId}',{action:'REMOVE_PHOTO',photoSlot:${i+1}})">🗑️ Delete</button>` : ''}
+                      ` : `<span style="font-size:11px;color:var(--text-dim);">Slot #${i+1} Empty</span>`}
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+
+              <!-- Full Bio, Career, Education & Lifestyle Details -->
+              <div class="panel-card" style="margin-bottom:0;">
+                <div class="panel-title">👤 Bio, Career & Lifestyle Details</div>
+                <div style="background:#070912;border:1px solid var(--border);border-radius:12px;padding:12px 14px;font-size:13px;line-height:1.6;color:var(--text);margin-bottom:14px;">
+                  ${u.bio ? escapeHtml(u.bio) : '<span style="color:var(--text-dim);font-style:italic;">No bio written yet.</span>'}
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:12px;">
+                  <div style="background:var(--bg-surface);padding:10px 12px;border-radius:10px;border:1px solid var(--border);">
+                    <div style="color:var(--text-dim);font-size:10px;font-weight:800;text-transform:uppercase;">💼 Work / Role</div>
+                    <div style="font-weight:700;margin-top:3px;">${escapeHtml(u.job || 'Not specified')}</div>
+                  </div>
+                  <div style="background:var(--bg-surface);padding:10px 12px;border-radius:10px;border:1px solid var(--border);">
+                    <div style="color:var(--text-dim);font-size:10px;font-weight:800;text-transform:uppercase;">🎓 Education / Alma Mater</div>
+                    <div style="font-weight:700;margin-top:3px;">${escapeHtml(u.institute || 'Not specified')}</div>
+                  </div>
+                  <div style="background:var(--bg-surface);padding:10px 12px;border-radius:10px;border:1px solid var(--border);">
+                    <div style="color:var(--text-dim);font-size:10px;font-weight:800;text-transform:uppercase;">💘 Relationship Intent</div>
+                    <div style="font-weight:700;margin-top:3px;">${escapeHtml(u.relationshipIntent || 'Not specified')}</div>
+                  </div>
+                  <div style="background:var(--bg-surface);padding:10px 12px;border-radius:10px;border:1px solid var(--border);">
+                    <div style="color:var(--text-dim);font-size:10px;font-weight:800;text-transform:uppercase;">🗣️ Languages Spoken</div>
+                    <div style="font-weight:700;margin-top:3px;">${escapeHtml(u.languagesSpoken || 'Not specified')}</div>
+                  </div>
+                </div>
+
+                <div class="profile-badge-row">
+                  ${u.height ? `<span class="profile-chip">📏 ${escapeHtml(u.height)}</span>` : ''}
+                  ${u.dietaryPref ? `<span class="profile-chip">🥗 ${escapeHtml(u.dietaryPref)}</span>` : ''}
+                  ${u.drinkingHabit ? `<span class="profile-chip">🍷 ${escapeHtml(u.drinkingHabit)}</span>` : ''}
+                  ${u.smokingHabit ? `<span class="profile-chip">🚬 ${escapeHtml(u.smokingHabit)}</span>` : ''}
+                  ${u.genderPreferenceDisplay ? `<span class="profile-chip">🎯 Interested in: ${escapeHtml(u.genderPreferenceDisplay)}</span>` : ''}
+                </div>
+              </div>
+
+              <!-- Vedic Janampatri & Kundali Summary -->
+              <div class="panel-card" style="margin-bottom:0;">
+                <div class="panel-title">🪐 36-Guna Vedic Janampatri & Kundali</div>
+                <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;font-size:12px;">
+                  <div style="background:#070912;padding:10px 12px;border-radius:10px;border:1px solid var(--border);">
+                    <span style="color:var(--text-dim);font-size:10px;font-weight:800;">🌙 MOON RASHI</span>
+                    <div style="font-weight:800;color:#FCD34D;margin-top:2px;">${(astro && astro.chandraRashi) ? escapeHtml(astro.chandraRashi) : '<span style="color:var(--text-dim);font-weight:400;">Not calculated</span>'}</div>
+                  </div>
+                  <div style="background:#070912;padding:10px 12px;border-radius:10px;border:1px solid var(--border);">
+                    <span style="color:var(--text-dim);font-size:10px;font-weight:800;">⭐ NAKSHATRA</span>
+                    <div style="font-weight:800;color:#C4B5FD;margin-top:2px;">${(astro && astro.nakshatraName) ? (escapeHtml(astro.nakshatraName) + (astro.nakshatraPada ? ' (Pada ' + astro.nakshatraPada + ')' : '')) : '<span style="color:var(--text-dim);font-weight:400;">Not calculated</span>'}</div>
+                  </div>
+                  <div style="background:#070912;padding:10px 12px;border-radius:10px;border:1px solid var(--border);">
+                    <span style="color:var(--text-dim);font-size:10px;font-weight:800;">☀️ SUN SIGN & GANA</span>
+                    <div style="font-weight:800;color:#FFF;margin-top:2px;">${(astro && (astro.sunSign || astro.gana)) ? (escapeHtml(astro.sunSign || '—') + (astro.gana ? ' • ' + escapeHtml(astro.gana) : '')) : '<span style="color:var(--text-dim);font-weight:400;">Not calculated</span>'}</div>
+                  </div>
+                  <div style="background:#070912;padding:10px 12px;border-radius:10px;border:1px solid var(--border);">
+                    <span style="color:var(--text-dim);font-size:10px;font-weight:800;">🛡️ SHADOWSHIELD HASHES</span>
+                    <div style="font-weight:800;color:#6EE7B7;margin-top:2px;">${u.shieldedContactsCount || 0} Contacts Shielded</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- RIGHT COLUMN: WALLET, PAYMENTS, LOGS, TICKETS & SUPER ADMIN CONTROLS -->
+            <div style="display:flex;flex-direction:column;gap:18px;">
+
+              <!-- Account Balances & Karma Strip -->
+              <div class="panel-card" style="margin-bottom:0;">
+                <div class="panel-title">⚡ Account Wallet, Karma & Entitlements</div>
+                <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;text-align:center;">
+                  <div style="background:#070912;padding:12px 8px;border-radius:12px;border:1px solid var(--border);">
+                    <div style="font-size:10px;color:var(--text-muted);font-weight:800;">⚖️ KARMA</div>
+                    <div style="font-size:20px;font-weight:900;color:#6EE7B7;margin-top:4px;">${u.karmaScore}</div>
+                  </div>
+                  <div style="background:#070912;padding:12px 8px;border-radius:12px;border:1px solid var(--border);">
+                    <div style="font-size:10px;color:var(--text-muted);font-weight:800;">⚡ SPARKS</div>
+                    <div style="font-size:20px;font-weight:900;color:#FCD34D;margin-top:4px;">${u.sparksBalance}</div>
+                  </div>
+                  <div style="background:#070912;padding:12px 8px;border-radius:12px;border:1px solid var(--border);">
+                    <div style="font-size:10px;color:var(--text-muted);font-weight:800;">🚀 BOOSTS</div>
+                    <div style="font-size:20px;font-weight:900;color:#38BDF8;margin-top:4px;">${u.boostsBalance}</div>
+                  </div>
+                  <div style="background:#070912;padding:12px 8px;border-radius:12px;border:1px solid var(--border);">
+                    <div style="font-size:10px;color:var(--text-muted);font-weight:800;">💬 DIRECT DMs</div>
+                    <div style="font-size:20px;font-weight:900;color:#F472B6;margin-top:4px;">${u.directDmsBalance}</div>
+                  </div>
+                </div>
+
+                ${isSuperAdmin ? `
+                  <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:8px;">
+                    <button class="btn btn-ghost btn-sm" onclick="userAction('${u.userId}',{action:'TOGGLE_DIGILOCKER'})">
+                      🪪 ${u.digilockerVerified ? 'Revoke DigiLocker' : 'Grant DigiLocker Badge'}
+                    </button>
+                    <button class="btn ${u.isShadowbanned ? 'btn-emerald' : 'btn-danger'} btn-sm" onclick="userAction('${u.userId}',{action:'TOGGLE_SHADOWBAN'})">
+                      👻 ${u.isShadowbanned ? 'Remove Shadowban' : 'Shadowban User'}
+                    </button>
+                    <button class="btn btn-primary btn-sm" onclick="userAction('${u.userId}',{action:'GRANT_CREDITS',sparksDelta:5,boostsDelta:2,directDmsDelta:2,grantVipPass:true})">
+                      🎁 Gift +5 Sparks, +2 Boosts & 30d VIP
+                    </button>
+                  </div>
+                  <div style="margin-top:12px;padding:12px;background:#070912;border:1px solid var(--border);border-radius:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+                    <div>
+                      <div style="font-size:10px;font-weight:800;color:var(--text-dim);text-transform:uppercase;">EMAIL & MARKETING STATUS</div>
+                      <div style="font-size:13px;font-weight:700;margin-top:2px;color:#FFF;">
+                        ${escapeHtml(u.email || 'No email configured')} •
+                        <span class="status-pill ${u.marketingOptIn ? 'status-VERIFIED' : 'status-UNVERIFIED'}">${u.marketingOptIn ? '✓ OPTED IN FOR OFFERS' : '✕ NOT OPTED IN'}</span>
+                      </div>
+                    </div>
+                    <button class="btn btn-ghost btn-sm" onclick="promptEditMarketingEmail('${u.userId}','${escapeHtml(u.email || '')}',${u.marketingOptIn ? 'true' : 'false'})">✏️ Edit Email / Opt-In</button>
+                  </div>
+                ` : ''}
+              </div>
+
+              <!-- User Payment Orders & Execution Logs (Visible to Support & Super Admin) -->
+              <div class="panel-card" style="margin-bottom:0;">
+                <div class="panel-title">
+                  <span>💳 User Payments & Orders (${userOrders.length})</span>
+                  <span style="font-size:11px;color:var(--text-muted);">Execution Logs: ${userLogs.length}</span>
+                </div>
+                ${userOrders.length ? `
+                  <div class="table-wrap" style="margin-bottom:12px;">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Order ID</th>
+                          <th>SKU</th>
+                          <th>Amount</th>
+                          <th>Provider</th>
+                          <th>Status</th>
+                          <th>Date</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${userOrders.map(o => `
+                          <tr>
+                            <td style="font-family:'JetBrains Mono',monospace;font-size:11px;">${o.orderId}</td>
+                            <td><b>${escapeHtml(o.sku)}</b></td>
+                            <td>₹${((o.amountPaise || 0) / 100).toFixed(0)}</td>
+                            <td>${escapeHtml(o.paymentProvider || 'UPI')}</td>
+                            <td><span class="status-pill status-${o.status}">${o.status}</span></td>
+                            <td style="font-size:11px;color:var(--text-muted);">${(o.createdAt || '').toString().slice(0,16).replace('T',' ')}</td>
+                          </tr>
+                        `).join('')}
+                      </tbody>
+                    </table>
+                  </div>
+                ` : `<div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">No payment orders found for this user.</div>`}
+
+                ${userLogs.length ? `
+                  <div style="font-size:11px;font-weight:800;color:var(--text-muted);margin:8px 0 6px;text-transform:uppercase;">AOP Payment Execution Logs</div>
+                  <div style="max-height:170px;overflow-y:auto;border:1px solid var(--border);border-radius:10px;padding:10px;background:#070912;">
+                    ${userLogs.map(l => `
+                      <div style="font-size:11px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+                        <span class="status-pill status-${l.status}" style="font-size:9px;padding:1px 5px;">${l.status}</span>
+                        <b>${escapeHtml(l.action)}</b> • <span style="font-family:'JetBrains Mono',monospace;">${escapeHtml(l.orderId || '—')}</span>
+                        <span style="color:var(--text-dim);float:right;">${(l.createdAt || '').toString().slice(0,19).replace('T',' ')}</span>
+                        <div style="color:var(--text-muted);margin-top:3px;">${escapeHtml(l.summary || '')}</div>
+                      </div>
+                    `).join('')}
+                  </div>
+                ` : ''}
+              </div>
+
+              <!-- User Support Tickets (Support & Super Admin can resolve directly) -->
+              <div class="panel-card" style="margin-bottom:0;">
+                <div class="panel-title">
+                  <span>🎧 User Support Tickets (${userTickets.length})</span>
+                </div>
+                ${userTickets.length ? userTickets.map(t => `
+                  <div style="padding:12px;border:1px solid var(--border);border-radius:12px;background:#070912;margin-bottom:10px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                      <span style="font-family:'JetBrains Mono',monospace;font-weight:800;font-size:12px;color:#FCD34D;">${t.ticketNumber}</span>
+                      <span class="status-pill status-${t.status}">${t.status}</span>
+                    </div>
+                    <div style="font-weight:800;font-size:13px;margin-top:5px;">${escapeHtml(t.subject)}</div>
+                    <div style="font-size:12px;color:var(--text-muted);margin-top:3px;">${escapeHtml(t.description)}</div>
+                    ${t.resolutionNotes ? `<div style="font-size:11px;color:#6EE7B7;margin-top:5px;">✓ Resolution Note: ${escapeHtml(t.resolutionNotes)}</div>` : ''}
+                    <div style="margin-top:10px;display:flex;gap:8px;">
+                      <button class="btn btn-ghost btn-sm" onclick="markTicketInProgress('${t.id}','${t.ticketNumber}')">⏳ Mark In Progress</button>
+                      <button class="btn btn-emerald btn-sm" onclick="resolveTicketPrompt('${t.id}','${t.ticketNumber}','${u.userId}')">✓ Resolve Ticket</button>
+                    </div>
+                  </div>
+                `).join('') : `<div style="font-size:12px;color:var(--text-dim);">No support tickets raised by this user.</div>`}
+              </div>
+
+            </div>
+          </div>
+        `;
+
+        document.getElementById('inspector-backdrop').classList.add('open');
+      } catch (e) {
+        showToast('⚠️ ' + e.message);
+      }
+    }
+
+    function closeInspector() {
+      document.getElementById('inspector-backdrop').classList.remove('open');
+    }
+
+    async function revealPhone(userId) {
+      try {
+        const res = await apiCall(`/users/${userId}/reveal-phone`, { method: 'POST' });
+        document.getElementById('insp-phone-val').textContent = res.phoneE164;
+        document.getElementById('insp-phone-val').style.color = '#FCD34D';
+        showToast('🔓 Phone revealed & recorded in Admin Audit Log');
+      } catch (e) {
+        showToast('⚠️ ' + e.message);
+      }
+    }
+
+    async function userAction(userId, payload) {
+      try {
+        await apiCall(`/users/${userId}/action`, {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        });
+        showToast('✅ Action applied & logged!');
+        openInspector(userId);
+        refreshCurrentTab();
+      } catch (e) {
+        showToast('⚠️ ' + e.message);
+      }
+    }
+
+    // ==================== 5. SAFETY & SHADOWSHIELD ====================
+    async function loadSafety() {
+      try {
+        const d = await apiCall('/safety');
+        document.getElementById('safety-kpi-grid').innerHTML = `
+          <div class="kpi-card">
+            <div class="kpi-label">Shielded Contact Hashes</div>
+            <div class="kpi-value" style="color:#6EE7B7">${d.totalShieldedHashes || 0}</div>
+            <div class="kpi-meta">${d.uniqueUsersUsingShield || 0} users with active ShadowShield</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Corporate Domains Shielded</div>
+            <div class="kpi-value" style="color:#38BDF8">${(d.corporateDomainsBlocked || []).length}</div>
+            <div class="kpi-meta">${(d.corporateDomainsBlocked || []).join(', ') || 'None configured'}</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Flagged / Shadowbanned</div>
+            <div class="kpi-value" style="color:#FCA5A5">${(d.flaggedUsers || []).length}</div>
+            <div class="kpi-meta">Hidden from discovery feed</div>
+          </div>
+        `;
+
+        document.getElementById('safety-flagged-body').innerHTML = (d.flaggedUsers || []).map(u => `
+          <tr>
+            <td><b>${escapeHtml(u.displayName)}</b> <span style="color:var(--text-dim);font-size:11px;">(${u.phoneMasked})</span></td>
+            <td>${escapeHtml(u.city)}</td>
+            <td>${u.karmaScore}</td>
+            <td><span class="status-pill ${u.isShadowbanned ? 'status-REJECTED' : 'status-PENDING'}">${u.isShadowbanned ? 'SHADOWBANNED' : 'LOW KARMA'}</span></td>
+            <td><button class="btn btn-ghost btn-sm" onclick="openInspector('${u.userId}')">Manage</button></td>
+          </tr>
+        `).join('') || '<tr><td colspan="5" style="color:var(--text-dim);text-align:center;">Zero flagged or shadowbanned accounts.</td></tr>';
+      } catch (e) {
+        showToast('⚠️ ' + e.message);
+      }
+    }
+
+    // ==================== 6. PAYMENTS & REVENUE ====================
+    let paymentsCache = {};
+
+    async function loadPayments() {
+      try {
+        const d = await apiCall('/payments');
+        paymentsCache = {};
+        (d.orders || []).forEach(o => { paymentsCache[o.orderId] = o; });
+
+        document.getElementById('payments-kpi-grid').innerHTML = `
+          <div class="kpi-card">
+            <div class="kpi-label">Captured Revenue</div>
+            <div class="kpi-value" style="color:#6EE7B7">₹${Number(d.totalRevenueInr || 0).toLocaleString()}</div>
+            <div class="kpi-meta">${d.capturedCount} captured orders</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Pending Orders</div>
+            <div class="kpi-value" style="color:#FCD34D">${d.pendingCount || 0}</div>
+            <div class="kpi-meta">Awaiting UPI webhook / reconciliation</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Failed Orders</div>
+            <div class="kpi-value" style="color:#FCA5A5">${d.failedCount || 0}</div>
+            <div class="kpi-meta">Total orders: ${d.totalOrders || 0}</div>
+          </div>
+        `;
+
+        document.getElementById('payments-orders-body').innerHTML = (d.orders || []).map(o => {
+          const amtInr = Number(o.amountInr || ((o.amountPaise || 0) / 100)).toFixed(0);
+          return `
+            <tr style="cursor:pointer;" onclick="openPaymentInspector('${o.orderId}')">
+              <td style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;color:#38BDF8;">${o.orderId}</td>
+              <td>
+                <div style="font-weight:700;color:#FFF;">${escapeHtml(o.userName || 'User')}</div>
+                <div style="font-size:11px;color:var(--text-dim);">${escapeHtml(o.userPhoneMasked || '—')}</div>
+              </td>
+              <td><b>${escapeHtml(o.sku)}</b></td>
+              <td style="font-weight:800;color:#FCD34D;">₹${amtInr}</td>
+              <td>${escapeHtml(o.paymentProvider || 'UPI')}</td>
+              <td><span class="status-pill status-${o.status}">${o.status}</span></td>
+              <td style="font-size:11px;color:var(--text-muted);">${(o.createdAt || '').toString().slice(0,16).replace('T',' ')}</td>
+              <td onclick="event.stopPropagation()">
+                <div style="display:flex;gap:6px;align-items:center;">
+                  <button class="btn btn-ghost btn-sm" onclick="openPaymentInspector('${o.orderId}')">🔍 Inspect</button>
+                  ${o.status === 'CAPTURED'
+                    ? '<span style="color:#6EE7B7;font-size:11px;font-weight:700;">✓ Credited</span>'
+                    : `<button class="btn btn-emerald btn-sm" onclick="handleMarkPaymentSuccess('${o.orderId}')">⚡ Mark Success</button>`
+                  }
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('') || '<tr><td colspan="8" style="text-align:center;color:var(--text-dim);">No orders recorded yet.</td></tr>';
+
+        document.getElementById('payments-logs-body').innerHTML = (d.executionLogs || []).map(l => `
+          <tr>
+            <td style="font-size:11px;color:var(--text-muted);">${(l.createdAt || '').toString().slice(0,19).replace('T',' ')}</td>
+            <td><b>${l.action}</b></td>
+            <td style="font-family:'JetBrains Mono',monospace;font-size:11px;">${l.orderId || '—'}</td>
+            <td><span class="status-pill status-${l.status}">${l.status}</span></td>
+            <td>${l.executionTimeMs || 0} ms</td>
+            <td style="font-size:12px;color:var(--text-muted);">${escapeHtml(l.summary || '')}</td>
+          </tr>
+        `).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--text-dim);">No AOP execution logs yet.</td></tr>';
+      } catch (e) {
+        showToast('⚠️ ' + e.message);
+      }
+    }
+
+    async function openPaymentInspector(orderId) {
+      try {
+        const o = await apiCall('/payments/' + encodeURIComponent(orderId));
+        const amtInr = Number(o.amountInr || ((o.amountPaise || 0) / 100)).toFixed(0);
+        const drawer = document.getElementById('payment-inspector-content');
+
+        drawer.innerHTML = `
+          <!-- Header -->
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid var(--border);padding-bottom:16px;">
+            <div>
+              <div style="font-size:11px;color:var(--brand);font-weight:800;letter-spacing:1px;">DIGITAL PAYMENT & ORDER AUDIT</div>
+              <div style="font-size:22px;font-weight:900;margin-top:2px;">Order #${o.orderId}</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Provider: <b>${escapeHtml(o.paymentProvider || 'UPI')}</b> • Created: ${(o.createdAt || '').toString().slice(0,19).replace('T',' ')}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span class="status-pill status-${o.status}" style="font-size:12px;padding:5px 12px;">${o.status}</span>
+              <button class="btn btn-ghost btn-sm" onclick="closePaymentInspector()">✕</button>
+            </div>
+          </div>
+
+          <!-- Section 1: Payment Details Grid -->
+          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(160px, 1fr));gap:12px;margin-top:16px;">
+            <div class="kpi-card" style="padding:12px;">
+              <div class="kpi-label">Order Amount</div>
+              <div class="kpi-value" style="color:#FCD34D;font-size:24px;">₹${amtInr}</div>
+              <div class="kpi-meta">${o.amountPaise || 0} paise</div>
+            </div>
+            <div class="kpi-card" style="padding:12px;">
+              <div class="kpi-label">Item / SKU</div>
+              <div class="kpi-value" style="color:#38BDF8;font-size:18px;">${escapeHtml(o.sku)}</div>
+              <div class="kpi-meta">Digital In-App Sachet</div>
+            </div>
+            <div class="kpi-card" style="padding:12px;">
+              <div class="kpi-label">Buyer Name</div>
+              <div class="kpi-value" style="font-size:17px;color:#FFF;">${escapeHtml(o.userName || 'User')}</div>
+              <div class="kpi-meta">${escapeHtml(o.userPhoneMasked || o.userPhone || '—')}</div>
+            </div>
+            <div class="kpi-card" style="padding:12px;">
+              <div class="kpi-label">Payment City</div>
+              <div class="kpi-value" style="font-size:17px;color:#FFF;">${escapeHtml(o.userCity || '—')}</div>
+              <div class="kpi-meta">Registered location</div>
+            </div>
+          </div>
+
+          <!-- Section 2: Gateway Details & Identifiers -->
+          <div class="panel-card" style="margin-top:14px;background:rgba(255,255,255,0.02);">
+            <div class="panel-title">💳 Gateway & Forensic Identifiers</div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));gap:10px;font-size:12px;">
+              <div><span style="color:var(--text-muted);">Gateway Order / Payment ID:</span><br/><code style="color:#FFF;">${escapeHtml(o.razorpayPaymentId || 'N/A')}</code></div>
+              <div><span style="color:var(--text-muted);">Internal Order ID:</span><br/><code style="color:#FFF;">${o.orderId}</code></div>
+              <div><span style="color:var(--text-muted);">User Account ID:</span><br/><code style="color:#FFF;">${o.userId}</code></div>
+              <div><span style="color:var(--text-muted);">Provider Status:</span><br/><b>${o.status}</b></div>
+            </div>
+          </div>
+
+          <!-- Section 3: Payment Recovery / Mark Success Action -->
+          <div class="panel-card" style="margin-top:14px;border-color:${o.status === 'CAPTURED' ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)'};">
+            <div class="panel-title" style="display:flex;justify-content:space-between;align-items:center;">
+              <span>⚡ Transaction Fulfillment & Account Credit</span>
+              <span class="status-pill status-${o.status}">${o.status}</span>
+            </div>
+            ${o.status === 'CAPTURED'
+              ? `<div style="color:#6EE7B7;font-size:13px;display:flex;align-items:center;gap:8px;">
+                  <span style="font-size:18px;">✓</span>
+                  <div><b>Transaction is Active & Credited.</b> All perks associated with <b>${escapeHtml(o.sku)}</b> are active on this account.</div>
+                </div>`
+              : `<div style="display:flex;flex-direction:column;gap:10px;">
+                  <div style="font-size:13px;color:#FCA5A5;">
+                    ⚠️ <b>Order is currently marked as ${o.status}.</b> In case of payment gateway failure or if money was debited from user's UPI, click below to mark this transaction as <b>Success / Active / Credited</b>. This captures the payment and instantly credits user benefits (VIP Pass, Sparks, or Boosts).
+                  </div>
+                  <div>
+                    <button class="btn btn-emerald" style="padding:10px 18px;font-weight:800;" onclick="handleMarkPaymentSuccess('${o.orderId}')">
+                      ⚡ Mark as Success / Active / Credited (Grant Benefits)
+                    </button>
+                  </div>
+                </div>`
+            }
+          </div>
+
+          <!-- Section 4: Separate User Dating Profile Details -->
+          <div class="panel-card" style="margin-top:14px;background:rgba(255,255,255,0.02);border:1px dashed var(--border-strong);">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+              <div>
+                <div style="font-weight:900;font-size:15px;color:#FFF;">👤 User Dating Profile Details</div>
+                <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">
+                  Customer: <b>${escapeHtml(o.userName || 'User')}</b> • City: <b>${escapeHtml(o.userCity || '—')}</b> • ID: <code>${String(o.userId).slice(0,8)}...</code>
+                </div>
+              </div>
+              <button class="btn btn-primary" onclick="closePaymentInspector(); openInspector('${o.userId}')">
+                👤 Open Full 360° Profile Inspector ➔
+              </button>
+            </div>
+          </div>
+
+          <!-- Section 5: Decrypted Audit Timeline (if available) -->
+          ${(o.auditLogs && o.auditLogs.length > 0) ? `
+            <div class="panel-card" style="margin-top:14px;">
+              <div class="panel-title">🛡️ Decrypted Cryptographic Audit Trail</div>
+              <div style="font-size:12px;display:flex;flex-direction:column;gap:8px;">
+                ${o.auditLogs.map(a => `
+                  <div style="padding:8px 12px;background:rgba(255,255,255,0.03);border-radius:8px;">
+                    <div style="display:flex;justify-content:space-between;color:var(--text-muted);font-size:11px;">
+                      <span><b>${escapeHtml(a.eventType || 'EVENT')}</b></span>
+                      <span>${escapeHtml(a.timestamp || '')}</span>
+                    </div>
+                    <div style="margin-top:4px;color:#FFF;">${escapeHtml(a.details || a.decryptedPayload || '')}</div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          ` : ''}
+        `;
+
+        document.getElementById('payment-inspector-backdrop').classList.add('open');
+      } catch (e) {
+        showToast('⚠️ ' + e.message);
+      }
+    }
+
+    function closePaymentInspector() {
+      document.getElementById('payment-inspector-backdrop').classList.remove('open');
+    }
+
+    async function handleMarkPaymentSuccess(orderId) {
+      const note = prompt(`Mark order #${orderId} as Success / Active / Credited:\nEnter UTR or manual reconciliation note:`, 'Verified bank transaction & manually credited');
+      if (note === null) return;
+      try {
+        await apiCall(`/payments/${orderId}/reconcile`, {
+          method: 'POST',
+          body: JSON.stringify({ status: 'CAPTURED', grantPerks: true, adminNotes: note || 'Manual reconciliation' })
+        });
+        showToast('✅ Transaction marked as Success / Active / Credited and user benefits granted!');
+        if (document.getElementById('payment-inspector-backdrop').classList.contains('open')) {
+          openPaymentInspector(orderId);
+        }
+        loadPayments();
+      } catch (e) {
+        showToast('⚠️ ' + e.message);
+      }
+    }
+
+    // ==================== 7. SUPPORT TICKETS ====================
+    let currentTicketFilter = 'ALL';
+    let ticketsCache = {};
+
+    async function loadTickets(status = currentTicketFilter || 'ALL') {
+      currentTicketFilter = status;
+      try {
+        const list = await apiCall('/tickets?status=' + encodeURIComponent(status));
+        ticketsCache = {};
+        (list || []).forEach(t => { ticketsCache[t.id] = t; });
+
+        const openCount = (list || []).filter(t => t.status === 'PENDING' || t.status === 'IN_PROGRESS').length;
+        document.getElementById('badge-open-tickets').textContent = openCount;
+
+        document.getElementById('tickets-table-body').innerHTML = (list || []).map(t => {
+          const remarks = t.remarksHistory || [];
+          const remarksCount = remarks.length;
+          const latestRemark = remarksCount > 0 ? remarks[0] : null;
+
+          return `
+            <tr>
+              <td style="font-family:'JetBrains Mono',monospace;font-weight:800;color:#38BDF8;">${t.ticketNumber}</td>
+              <td>
+                <div style="font-weight:700;color:#FFF;">${escapeHtml(t.userName || 'User')}</div>
+                <div style="font-size:11px;color:var(--text-dim);">${escapeHtml(t.userPhoneMasked || '—')}</div>
+                <button class="btn btn-ghost btn-sm" style="margin-top:4px;font-size:10px;padding:2px 7px;" onclick="openInspector('${t.userId}')">🔍 Profile</button>
+              </td>
+              <td><span class="status-pill status-UNVERIFIED">${escapeHtml(t.category)}</span></td>
+              <td>
+                <div style="font-weight:800;color:#FFF;">${escapeHtml(t.subject)}</div>
+                <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">${escapeHtml(t.description)}</div>
+              </td>
+              <td>
+                ${remarksCount > 0
+                  ? `<div style="font-size:11px;color:#38BDF8;font-weight:700;">💬 ${remarksCount} remark(s) recorded</div>
+                     <div style="font-size:11px;color:var(--text-muted);margin-top:2px;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                       Latest: ${escapeHtml(latestRemark.remark)}
+                     </div>`
+                  : (t.resolutionNotes
+                      ? `<div style="font-size:11px;color:#6EE7B7;">✓ ${escapeHtml(t.resolutionNotes)}</div>`
+                      : '<span style="font-size:11px;color:var(--text-dim);">No remarks yet</span>')
+                }
+              </td>
+              <td><span class="status-pill status-${t.status}">${t.status}</span></td>
+              <td>
+                <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                  <button class="btn btn-primary btn-sm" onclick="openTicketModal('${t.id}')">💬 Remarks & Actions</button>
+                  ${t.status !== 'RESOLVED' ? `<button class="btn btn-emerald btn-sm" onclick="openTicketModal('${t.id}', 'RESOLVED')">✓ Resolve</button>` : ''}
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--text-dim);">No support tickets found.</td></tr>';
+      } catch (e) {
+        showToast('⚠️ ' + e.message);
+      }
+    }
+
+    function openTicketModal(ticketId, suggestedStatus) {
+      const t = ticketsCache[ticketId];
+      if (!t) return;
+      const targetStatus = suggestedStatus || t.status;
+      const remarks = t.remarksHistory || [];
+      const drawer = document.getElementById('ticket-modal-content');
+
+      drawer.innerHTML = `
+        <!-- Header -->
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid var(--border);padding-bottom:14px;">
+          <div>
+            <div style="font-size:11px;color:var(--brand);font-weight:800;letter-spacing:1px;">CUSTOMER SUPPORT DESK</div>
+            <div style="font-size:20px;font-weight:900;margin-top:2px;">Ticket #${t.ticketNumber}</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">
+              Customer: <b>${escapeHtml(t.userName || 'User')}</b> (${escapeHtml(t.userPhoneMasked || '—')}) • Category: <b>${escapeHtml(t.category)}</b>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="status-pill status-${t.status}">${t.status}</span>
+            <button class="btn btn-ghost btn-sm" onclick="closeTicketModal()">✕</button>
+          </div>
+        </div>
+
+        <!-- Issue Details Card -->
+        <div class="panel-card" style="margin-top:14px;background:rgba(0,0,0,0.35);">
+          <div style="font-weight:800;font-size:15px;color:#FFF;">${escapeHtml(t.subject)}</div>
+          <div style="font-size:13px;color:var(--text-muted);margin-top:6px;line-height:1.5;white-space:pre-wrap;">${escapeHtml(t.description)}</div>
+          <div style="margin-top:10px;display:flex;gap:8px;">
+            <button class="btn btn-ghost btn-sm" style="font-size:11px;" onclick="closeTicketModal(); openInspector('${t.userId}')">
+              🔍 Inspect Customer 360° Profile & Payments
+            </button>
+          </div>
+        </div>
+
+        <!-- Earlier Remarks & Activity History -->
+        <div class="panel-card" style="margin-top:14px;">
+          <div class="panel-title" style="display:flex;justify-content:space-between;align-items:center;">
+            <span>📜 Activity & Remarks History (What has been done earlier)</span>
+            <span style="font-size:11px;color:var(--text-muted);">${remarks.length} remark(s) recorded</span>
+          </div>
+          <div class="remarks-timeline">
+            ${remarks.length > 0
+              ? remarks.map(r => `
+                  <div class="remark-item">
+                    <div class="remark-header">
+                      <span><b>${escapeHtml(r.admin || 'Support Agent')}</b> • <span class="status-pill status-${r.status || t.status}" style="font-size:9px;padding:1px 6px;">${r.status || 'UPDATE'}</span></span>
+                      <span>${escapeHtml(r.timestamp || '')}</span>
+                    </div>
+                    <div class="remark-body">${escapeHtml(r.remark || '')}</div>
+                  </div>
+                `).join('')
+              : (t.resolutionNotes
+                  ? `<div class="remark-item"><div class="remark-body">${escapeHtml(t.resolutionNotes)}</div></div>`
+                  : '<div style="font-size:12px;color:var(--text-dim);text-align:center;padding:16px;">No earlier remarks or actions recorded yet.</div>'
+                )
+            }
+          </div>
+        </div>
+
+        <!-- Add New Remark & Update Status Form -->
+        <form onsubmit="handleSaveTicketRemark(event, '${t.id}', '${t.ticketNumber}')" style="margin-top:14px;">
+          <div class="panel-card">
+            <div class="panel-title">💬 Add New Remark / Comment</div>
+            <div class="form-group">
+              <label class="form-label">Ticket Status</label>
+              <select id="ticket-modal-status" class="form-select">
+                <option value="IN_PROGRESS" ${targetStatus === 'IN_PROGRESS' ? 'selected' : ''}>⏳ IN_PROGRESS (Investigation Underway)</option>
+                <option value="RESOLVED" ${targetStatus === 'RESOLVED' ? 'selected' : ''}>✓ RESOLVED (Issue Fixed / Credited)</option>
+                <option value="PENDING" ${targetStatus === 'PENDING' ? 'selected' : ''}>⏳ PENDING (Awaiting User / Third Party)</option>
+                <option value="CLOSED" ${targetStatus === 'CLOSED' ? 'selected' : ''}>🔒 CLOSED (Archived)</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin-top:10px;">
+              <label class="form-label">Remark / Investigation Notes (Immutable log)</label>
+              <textarea id="ticket-modal-remark" class="form-input" rows="3" placeholder="Explain what has been verified, steps taken, or communication with user..." required></textarea>
+            </div>
+            <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px;">
+              <button type="button" class="btn btn-ghost" onclick="closeTicketModal()">Cancel</button>
+              <button type="submit" class="btn btn-primary">💾 Save Remark & Update Status</button>
+            </div>
+          </div>
+        </form>
+      `;
+
+      document.getElementById('ticket-modal-backdrop').classList.add('open');
+      setTimeout(() => {
+        const txt = document.getElementById('ticket-modal-remark');
+        if (txt) txt.focus();
+      }, 100);
+    }
+
+    function closeTicketModal() {
+      document.getElementById('ticket-modal-backdrop').classList.remove('open');
+    }
+
+    async function handleSaveTicketRemark(event, ticketId, ticketNumber) {
+      event.preventDefault();
+      const status = document.getElementById('ticket-modal-status').value;
+      const remark = document.getElementById('ticket-modal-remark').value.trim();
+      if (!remark) return;
+
+      try {
+        await apiCall(`/tickets/${ticketId}/status`, {
+          method: 'POST',
+          body: JSON.stringify({ status, resolutionNotes: remark })
+        });
+        showToast(`✅ Remark recorded & ticket #${ticketNumber} updated to ${status}!`);
+        closeTicketModal();
+        loadTickets(currentTicketFilter || 'ALL');
+      } catch (e) {
+        showToast('⚠️ ' + e.message);
+      }
+    }
+
+    // ==================== 8. CMS (CIRCLES & SAFE SPOTS) ====================
+    async function loadCms() {
+      try {
+        const [circles, spots] = await Promise.all([
+          apiCall('/cms/circles'),
+          apiCall('/cms/safe-dates')
+        ]);
+
+        document.getElementById('cms-circles-body').innerHTML = circles.map(c => `
+          <tr>
+            <td><b>🏙️ ${escapeHtml(c.city)}</b></td>
+            <td style="font-weight:800;color:#FF6B8B;">${escapeHtml(c.name)}</td>
+            <td style="color:var(--text-muted);font-size:12px;">${escapeHtml(c.tagline || '')}</td>
+            <td>👥 ${c.activeMembersCount || 0}</td>
+            <td><button class="btn btn-danger btn-sm" onclick="deleteCircle('${c.id}')">🗑️</button></td>
+          </tr>
+        `).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--text-dim);">No micro-circles configured.</td></tr>';
+
+        document.getElementById('cms-spots-body').innerHTML = spots.map(s => `
+          <tr>
+            <td><b>${escapeHtml(s.city)}</b></td>
+            <td style="font-weight:800;">☕ ${escapeHtml(s.name)}</td>
+            <td style="color:var(--text-muted);">${escapeHtml(s.neighborhood || s.address || '—')}</td>
+            <td><span class="status-pill status-VERIFIED">${s.discountPercent}% OFF • ${escapeHtml(s.couponCode || '—')}</span></td>
+            <td><button class="btn btn-danger btn-sm" onclick="deleteSafeSpot('${s.id}')">🗑️</button></td>
+          </tr>
+        `).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--text-dim);">No partner Safe-Date cafes added yet.</td></tr>';
+      } catch (e) {
+        showToast('⚠️ ' + e.message);
+      }
+    }
+
+    async function handleCreateCircle(e) {
+      e.preventDefault();
+      try {
+        await apiCall('/cms/circles', {
+          method: 'POST',
+          body: JSON.stringify({
+            city: document.getElementById('cms-circle-city').value,
+            name: document.getElementById('cms-circle-name').value,
+            tagline: document.getElementById('cms-circle-tagline').value
+          })
+        });
+        document.getElementById('cms-circle-name').value = '';
+        document.getElementById('cms-circle-tagline').value = '';
+        showToast('✨ Micro-Circle published live!');
+        loadCms();
+      } catch (err) {
+        showToast('⚠️ ' + err.message);
+      }
+    }
+
+    async function deleteCircle(id) {
+      if (!confirm('Delete this Micro-Circle?')) return;
+      await apiCall('/cms/circles/' + id, { method: 'DELETE' });
+      showToast('🗑️ Micro-Circle removed');
+      loadCms();
+    }
+
+    async function handleCreateSafeSpot(e) {
+      e.preventDefault();
+      try {
+        await apiCall('/cms/safe-dates', {
+          method: 'POST',
+          body: JSON.stringify({
+            name: document.getElementById('cms-spot-name').value,
+            brand: document.getElementById('cms-spot-name').value.split(' ')[0],
+            city: document.getElementById('cms-spot-city').value,
+            neighborhood: document.getElementById('cms-spot-hood').value,
+            address: document.getElementById('cms-spot-hood').value,
+            couponCode: document.getElementById('cms-spot-coupon').value,
+            discountPercent: 15
+          })
+        });
+        document.getElementById('cms-spot-name').value = '';
+        showToast('🛡️ Safe-Date Spot published!');
+        loadCms();
+      } catch (err) {
+        showToast('⚠️ ' + err.message);
+      }
+    }
+
+    async function deleteSafeSpot(id) {
+      if (!confirm('Remove this Safe-Date spot?')) return;
+      await apiCall('/cms/safe-dates/' + id, { method: 'DELETE' });
+      showToast('🗑️ Safe-Date spot removed');
+      loadCms();
+    }
+
+    // ==================== 9. BROADCAST & AUDIT LOGS ====================
+    async function handleSendBroadcast(e) {
+      e.preventDefault();
+      try {
+        const res = await apiCall('/broadcast', {
+          method: 'POST',
+          body: JSON.stringify({
+            audience: document.getElementById('bc-audience').value,
+            city: document.getElementById('bc-city').value,
+            title: document.getElementById('bc-title').value,
+            body: document.getElementById('bc-body').value
+          })
+        });
+        showToast(`🚀 Broadcast delivered to ${res.recipientsCount} users!`);
+        document.getElementById('bc-title').value = '';
+        document.getElementById('bc-body').value = '';
+        loadAuditLogs();
+      } catch (err) {
+        showToast('⚠️ ' + err.message);
+      }
+    }
+
+    async function loadAuditLogs() {
+      try {
+        const logs = await apiCall('/audit-logs');
+        document.getElementById('audit-logs-body').innerHTML = logs.map(l => `
+          <tr>
+            <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#FCD34D;">${l.id}</td>
+            <td style="font-size:11px;color:var(--text-muted);">${l.timestamp}</td>
+            <td style="font-weight:700;">${escapeHtml(l.adminEmail)}</td>
+            <td><span class="status-pill status-UNVERIFIED">${l.adminRole}</span></td>
+            <td style="font-weight:800;color:#FF6B8B;">${l.action}</td>
+            <td style="font-family:'JetBrains Mono',monospace;font-size:11px;">${escapeHtml(l.targetId || '')}</td>
+            <td style="font-size:12px;color:var(--text-muted);">${escapeHtml(l.details || '')}</td>
+            <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-dim);">${l.ipAddress}</td>
+          </tr>
+        `).join('') || '<tr><td colspan="8" style="text-align:center;color:var(--text-dim);">No audit events recorded yet.</td></tr>';
+      } catch (e) {
+        showToast('⚠️ ' + e.message);
+      }
+    }
+
+    // ==================== 10. MARKETING & OFFER EMAIL ENGINE ====================
+    async function loadMarketing() {
+      try {
+        const d = await apiCall('/marketing/overview');
+        document.getElementById('badge-opted-in-users').textContent = d.totalOptedIn || 0;
+
+        document.getElementById('marketing-kpi-grid').innerHTML = `
+          <div class="kpi-card">
+            <div class="kpi-label">Opted-In Subscribers</div>
+            <div class="kpi-value" style="color:#10B981">${d.totalOptedIn || 0}</div>
+            <div class="kpi-meta">Eligible to receive marketing & offer emails</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Users With Email</div>
+            <div class="kpi-value" style="color:#38BDF8">${d.totalWithEmail || 0}</div>
+            <div class="kpi-meta">Out of ${d.totalUsers || 0} registered accounts</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">SMTP Delivery Status</div>
+            <div class="kpi-value" style="color:${d.smtpConfigured ? '#6EE7B7' : '#FCD34D'}">${d.smtpConfigured ? '🟢 Live SMTP' : '⚠️ In-App Only'}</div>
+            <div class="kpi-meta">${d.smtpConfigured ? (d.smtpHost + ' • ' + d.smtpFrom) : 'Click Configure SMTP to link email gateway'}</div>
+          </div>
+        `;
+
+        if (d.smtpHost) document.getElementById('smtp-host').value = d.smtpHost;
+        if (d.smtpPort) document.getElementById('smtp-port').value = d.smtpPort;
+        if (d.smtpUsername) document.getElementById('smtp-user').value = d.smtpUsername;
+        if (d.smtpFrom) document.getElementById('smtp-from').value = d.smtpFrom;
+
+
+
+        document.getElementById('mkt-campaigns-body').innerHTML = (d.campaigns || []).map(c => `
+          <tr>
+            <td style="font-size:11px;color:var(--text-muted);">${(c.createdAt || '').slice(0, 19).replace('T', ' ')}</td>
+            <td style="font-weight:800;">${escapeHtml(c.subject)}</td>
+            <td>
+              ${c.offerBadge ? `<span class="profile-chip" style="font-size:10px;padding:2px 7px;">${escapeHtml(c.offerBadge)}</span>` : ''}
+              ${c.couponCode ? `<b style="font-family:'JetBrains Mono',monospace;color:#FCD34D;margin-left:4px;">${escapeHtml(c.couponCode)}</b>` : '—'}
+            </td>
+            <td><span class="status-pill status-UNVERIFIED">${escapeHtml(c.audienceFilter || 'OPTED_IN_ALL')}</span></td>
+            <td style="font-weight:800;color:#6EE7B7;font-family:'JetBrains Mono',monospace;">${c.recipientsCount || 0}</td>
+            <td style="font-family:'JetBrains Mono',monospace;">${c.smtpDeliveredCount || 0}</td>
+            <td style="font-family:'JetBrains Mono',monospace;">${c.inAppDeliveredCount || 0}</td>
+            <td style="font-size:11px;color:var(--text-dim);">${escapeHtml(c.sentByEmail || '')}</td>
+          </tr>
+        `).join('') || '<tr><td colspan="8" style="text-align:center;color:var(--text-dim);">No marketing campaigns sent yet.</td></tr>';
+
+      } catch (e) {
+        showToast('⚠️ ' + e.message);
+      }
+    }
+
+    function toggleSmtpPanel() {
+      const el = document.getElementById('smtp-config-card');
+      el.style.display = el.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function toggleMktCity() {
+      const aud = document.getElementById('mkt-audience').value;
+      document.getElementById('mkt-city-group').style.display = (aud === 'OPTED_IN_CITY') ? 'block' : 'none';
+    }
+
+    async function handleUpdateSmtp(e) {
+      e.preventDefault();
+      try {
+        const payload = {
+          host: document.getElementById('smtp-host').value.trim(),
+          port: parseInt(document.getElementById('smtp-port').value || '587', 10),
+          username: document.getElementById('smtp-user').value.trim(),
+          password: document.getElementById('smtp-pass').value.trim(),
+          fromEmail: document.getElementById('smtp-from').value.trim()
+        };
+        await apiCall('/marketing/smtp-config', {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        });
+        showToast('✅ SMTP outgoing mail settings saved!');
+        toggleSmtpPanel();
+        loadMarketing();
+      } catch (err) {
+        showToast('⚠️ ' + err.message);
+      }
+    }
+
+    async function handleSendMarketingEmail(e) {
+      e.preventDefault();
+      const btn = document.getElementById('btn-send-mkt');
+      const origText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = '⏳ Dispatching Campaign...';
+
+      try {
+        const payload = {
+          audience: document.getElementById('mkt-audience').value,
+          city: document.getElementById('mkt-city').value.trim(),
+          subject: document.getElementById('mkt-subject').value.trim(),
+          offerBadge: document.getElementById('mkt-badge').value.trim(),
+          couponCode: document.getElementById('mkt-coupon').value.trim(),
+          ctaText: document.getElementById('mkt-cta-text').value.trim(),
+          ctaUrl: document.getElementById('mkt-cta-url').value.trim(),
+          body: document.getElementById('mkt-body').value.trim()
+        };
+
+        const res = await apiCall('/marketing/send-email', {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        });
+
+        showToast(`🎉 Campaign delivered to ${res.recipientsCount} opted-in subscribers (${res.smtpDeliveredCount} via SMTP, ${res.inAppDeliveredCount} in-app)!`);
+        document.getElementById('mkt-subject').value = '';
+        document.getElementById('mkt-badge').value = '';
+        document.getElementById('mkt-coupon').value = '';
+        document.getElementById('mkt-body').value = '';
+        loadMarketing();
+      } catch (err) {
+        showToast('⚠️ ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = origText;
+      }
+    }
+
+    async function promptEditMarketingEmail(userId, curEmail, curOptIn) {
+      const email = prompt('Enter recipient email address for user:', curEmail || '');
+      if (email === null) return;
+      const optIn = confirm('Opt-in this user to receive marketing & offer emails?\nClick OK for YES, Cancel for NO.');
+      try {
+        await apiCall(`/users/${userId}/action`, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'UPDATE_MARKETING_EMAIL',
+            email: email.trim(),
+            marketingOptIn: optIn
+          })
+        });
+        showToast('✅ Marketing email & opt-in status updated!');
+        if (currentTab === 'marketing') loadMarketing();
+        openInspector(userId);
+      } catch (err) {
+        showToast('⚠️ ' + err.message);
+      }
+    }
+
+    function previewMarketingEmail() {
+      const subject = document.getElementById('mkt-subject').value || '⚡ Weekend Special: Flat 50% OFF BlunderR VIP Pass!';
+      const badge = document.getElementById('mkt-badge').value || '🔥 50% OFF FLASH OFFER';
+      const coupon = document.getElementById('mkt-coupon').value || 'BLUNDERR50';
+      const ctaText = document.getElementById('mkt-cta-text').value || 'Claim Offer on BlunderR ➔';
+      const ctaUrl = document.getElementById('mkt-cta-url').value || 'https://blunderr.in/app/';
+      const body = document.getElementById('mkt-body').value || 'Upgrade your dating game this weekend! Get unlimited Cosmic Chemistry match reveals, priority profile spotlight in your city, and 15% off at all verified Safe-Date partner cafes.';
+
+      const badgeHtml = badge ? `<div style="display:inline-block;background:rgba(255,56,92,0.18);border:1px solid #FF385C;color:#FDA4AF;font-size:11px;font-weight:800;padding:5px 12px;border-radius:99px;margin-bottom:14px;letter-spacing:0.6px;text-transform:uppercase;">🔥 ${escapeHtml(badge)}</div>` : '';
+      const couponHtml = coupon ? `
+        <div style="margin:20px 0;padding:16px;background:#070912;border:1px dashed #F59E0B;border-radius:14px;text-align:center;">
+          <div style="font-size:10px;color:#94A3B8;letter-spacing:1px;text-transform:uppercase;font-weight:700;">USE EXCLUSIVE COUPON CODE</div>
+          <div style="font-size:22px;font-weight:900;color:#FCD34D;letter-spacing:2px;margin-top:4px;font-family:monospace;">${escapeHtml(coupon)}</div>
+        </div>
+      ` : '';
+
+      const html = `
+        <div style="background:#111422;border:1px solid rgba(255,255,255,0.14);border-radius:24px;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#F8FAFC;">
+          <div style="background:linear-gradient(135deg,#FF385C,#7C3AED);padding:22px 28px;">
+            <div style="font-size:20px;font-weight:900;color:#FFF;">BlunderR • Exclusive Member Offer</div>
+          </div>
+          <div style="padding:28px;">
+            ${badgeHtml}
+            <h2 style="margin:0 0 12px;font-size:20px;color:#FFF;">${escapeHtml(subject)}</h2>
+            <p style="font-size:14px;color:#CBD5E1;margin:0 0 14px;">Hi <b>[Member Name]</b>,</p>
+            <div style="font-size:14px;line-height:1.65;color:#E2E8F0;">${escapeHtml(body).replace(/\n/g, '<br/>')}</div>
+            ${couponHtml}
+            <div style="margin-top:24px;text-align:center;">
+              <a href="${escapeHtml(ctaUrl)}" target="_blank" style="display:inline-block;background:linear-gradient(135deg,#FF385C,#E11D48);color:#FFF;text-decoration:none;font-weight:800;font-size:14px;padding:13px 26px;border-radius:12px;">${escapeHtml(ctaText)}</a>
+            </div>
+          </div>
+          <div style="padding:16px 28px;background:#0B0D16;border-top:1px solid rgba(255,255,255,0.08);font-size:11px;color:#64748B;text-align:center;line-height:1.5;">
+            You are receiving this email because you opted in to receive exclusive offers & marketing updates from BlunderR.<br/>
+            <span style="color:#94A3B8;text-decoration:underline;cursor:pointer;">Unsubscribe with 1 click</span> • <a href="https://blunderr.in" style="color:#94A3B8;text-decoration:none;">BlunderR.in</a>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('email-preview-container').innerHTML = html;
+      document.getElementById('email-preview-backdrop').classList.add('open');
+    }
+
+    function closePreviewModal() {
+      document.getElementById('email-preview-backdrop').classList.remove('open');
+    }
+
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    // Auto-resume session if token present
+    if (adminToken) {
+      apiCall('/auth/me')
+        .then(d => {
+          adminEmail = d.email;
+          adminRole = d.role;
+          enterCommandCenter();
+        })
+        .catch(() => handleLogout());
+    }
+  </script>
+
+  <!-- ==================== 4. EMAIL PREVIEW MODAL ==================== -->
+  <div id="email-preview-backdrop" class="drawer-backdrop" onclick="if(event.target===this) closePreviewModal()">
+    <div style="width:100%;max-width:620px;max-height:92vh;background:var(--bg-surface);border:1px solid var(--border-strong);border-radius:24px;padding:24px;display:flex;flex-direction:column;gap:14px;overflow-y:auto;">
+      <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);padding-bottom:10px;">
+        <div style="font-size:16px;font-weight:800;">👁️ Live HTML Email Preview (Recipient View)</div>
+        <button class="btn btn-ghost btn-sm" onclick="closePreviewModal()">✕ Close</button>
+      </div>
+      <div id="email-preview-container" style="border-radius:18px;overflow:hidden;"></div>
+    </div>
+  </div>
+</body>
+</html>
