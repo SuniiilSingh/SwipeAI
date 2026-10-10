@@ -788,6 +788,10 @@
           <div class="nav-item" data-tab="broadcast" onclick="switchTab('broadcast')">
             <span>📣 Broadcast & Audit Logs</span>
           </div>
+          <div class="nav-item" data-tab="marketing" onclick="switchTab('marketing')">
+            <span>🎁 Marketing & Offer Emails</span>
+            <span class="nav-badge" id="badge-opted-in-users" style="background:#10B981;">0</span>
+          </div>
         </nav>
 
         <div style="padding-top: 14px; border-top: 1px solid var(--border); font-size: 11px; color: var(--text-dim);">
@@ -1195,6 +1199,146 @@
             </div>
           </section>
 
+          <!-- MODULE 9: MARKETING & OFFER EMAIL ENGINE (OPT-IN SUBSCRIBERS) -->
+          <section id="pane-marketing" class="module-pane">
+            <div class="section-header">
+              <div>
+                <h1 class="section-title">🎁 Marketing & Offer Email Engine</h1>
+                <p class="section-sub">Send exclusive promotional offers, discounts, and coupons strictly to users who opted in to receive marketing emails.</p>
+              </div>
+              <div style="display:flex;gap:8px;">
+                <button class="btn btn-ghost btn-sm" onclick="toggleSmtpPanel()">⚙️ Configure SMTP Server</button>
+                <button class="btn btn-primary btn-sm" onclick="loadMarketing()">🔄 Refresh Data</button>
+              </div>
+            </div>
+
+            <div class="kpi-grid" id="marketing-kpi-grid"></div>
+
+            <!-- SMTP Config Panel (Collapsible) -->
+            <div class="panel-card" id="smtp-config-card" style="display:none;background:#0d111e;border-color:var(--violet);">
+              <div class="panel-title" style="color:#DDD6FE;">⚙️ SMTP Outgoing Mail Server Configuration</div>
+              <form onsubmit="handleUpdateSmtp(event)" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;">
+                <div class="form-group" style="grid-column:span 2;">
+                  <label class="form-label">SMTP Host</label>
+                  <input type="text" id="smtp-host" class="form-input" placeholder="e.g. smtp.gmail.com or smtp.resend.com" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">SMTP Port</label>
+                  <input type="number" id="smtp-port" class="form-input" placeholder="587" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">From Email Address</label>
+                  <input type="email" id="smtp-from" class="form-input" placeholder="offers@blunderr.in" />
+                </div>
+                <div class="form-group" style="grid-column:span 2;">
+                  <label class="form-label">Username / API Key</label>
+                  <input type="text" id="smtp-user" class="form-input" placeholder="SMTP Username or API Key" />
+                </div>
+                <div class="form-group" style="grid-column:span 2;">
+                  <label class="form-label">Password / Secret</label>
+                  <input type="password" id="smtp-pass" class="form-input" placeholder="SMTP Password (leave blank to keep unchanged)" />
+                </div>
+                <div style="grid-column:span 4;display:flex;justify-content:flex-end;gap:8px;">
+                  <button type="button" class="btn btn-ghost btn-sm" onclick="toggleSmtpPanel()">Cancel</button>
+                  <button type="submit" class="btn btn-primary btn-sm">💾 Save SMTP Settings</button>
+                </div>
+              </form>
+            </div>
+
+            <!-- Offer Email Campaign Composer -->
+            <div class="panel-card">
+              <div class="panel-title">✉️ Compose & Dispatch Marketing / Offer Email</div>
+              <form onsubmit="handleSendMarketingEmail(event)" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                <div class="form-group">
+                  <label class="form-label">Audience Filter (Strictly Opted-In Users Only)</label>
+                  <select id="mkt-audience" class="form-select" onchange="toggleMktCity()">
+                    <option value="OPTED_IN_ALL">All Opted-In Users with Valid Email</option>
+                    <option value="OPTED_IN_NON_VIP">Opted-In Free Users (Non-VIP) • Convert to VIP</option>
+                    <option value="OPTED_IN_CITY">Opted-In Users in Specific City</option>
+                  </select>
+                </div>
+                <div class="form-group" id="mkt-city-group" style="display:none;">
+                  <label class="form-label">Target City</label>
+                  <input type="text" id="mkt-city" class="form-input" placeholder="e.g. Bengaluru, Delhi NCR, Mumbai" />
+                </div>
+                <div class="form-group" style="grid-column:span 2;">
+                  <label class="form-label">Email Subject Line</label>
+                  <input type="text" id="mkt-subject" class="form-input" placeholder="⚡ Weekend Special: Flat 50% OFF BlunderR VIP Pass!" required />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Offer / Discount Badge (Optional)</label>
+                  <input type="text" id="mkt-badge" class="form-input" placeholder="e.g. 50% OFF FLASH OFFER or 15% OFF CAFE DATES" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Coupon Code (Optional)</label>
+                  <input type="text" id="mkt-coupon" class="form-input" placeholder="e.g. BLUNDERR50" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">CTA Button Label</label>
+                  <input type="text" id="mkt-cta-text" class="form-input" value="Claim Offer on BlunderR ➔" required />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">CTA Button Target Link</label>
+                  <input type="text" id="mkt-cta-url" class="form-input" value="https://blunderr.in/app/" required />
+                </div>
+                <div class="form-group" style="grid-column:span 2;">
+                  <label class="form-label">Offer Message Body (Multi-line text or description)</label>
+                  <textarea id="mkt-body" class="form-textarea" rows="4" placeholder="Upgrade your dating game this weekend! Get unlimited Cosmic Chemistry match reveals, priority profile spotlight in your city, and 15% off at all verified Safe-Date partner cafes." required></textarea>
+                </div>
+                <div style="grid-column:span 2;display:flex;gap:10px;justify-content:flex-end;">
+                  <button type="button" class="btn btn-ghost" onclick="previewMarketingEmail()">👁️ Preview HTML Email</button>
+                  <button type="submit" class="btn btn-primary" id="btn-send-mkt">🚀 Send Offer Email to Opted-In Users</button>
+                </div>
+              </form>
+            </div>
+
+            <!-- Opt-In Subscribers Directory -->
+            <div class="panel-card">
+              <div class="panel-title">
+                <span>📋 Registered Users & Marketing Opt-In Status</span>
+                <span style="font-size:11px;color:var(--text-muted);">Users can toggle opt-in in their app profile or admin can set email</span>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>User</th>
+                      <th>Phone</th>
+                      <th>Email Address</th>
+                      <th>City</th>
+                      <th>Marketing Status</th>
+                      <th>Opt-In Date</th>
+                      <th>Manage</th>
+                    </tr>
+                  </thead>
+                  <tbody id="mkt-subscribers-body"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Sent Campaigns History -->
+            <div class="panel-card">
+              <div class="panel-title">📜 Marketing Email Campaigns History</div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Timestamp</th>
+                      <th>Subject</th>
+                      <th>Badge / Coupon</th>
+                      <th>Audience</th>
+                      <th>Opted-In Recipients</th>
+                      <th>SMTP Delivered</th>
+                      <th>In-App Delivered</th>
+                      <th>Sent By</th>
+                    </tr>
+                  </thead>
+                  <tbody id="mkt-campaigns-body"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
         </main>
       </div>
     </div>
@@ -1333,6 +1477,7 @@
       else if (currentTab === 'tickets') loadTickets('ALL');
       else if (currentTab === 'cms') loadCms();
       else if (currentTab === 'broadcast') loadAuditLogs();
+      else if (currentTab === 'marketing') loadMarketing();
     }
 
     // ==================== 1. OVERVIEW ====================
@@ -1686,6 +1831,16 @@
                     <button class="btn btn-primary btn-sm" onclick="userAction('${u.userId}',{action:'GRANT_CREDITS',sparksDelta:5,boostsDelta:2,directDmsDelta:2,grantVipPass:true})">
                       🎁 Gift +5 Sparks, +2 Boosts & 30d VIP
                     </button>
+                  </div>
+                  <div style="margin-top:12px;padding:12px;background:#070912;border:1px solid var(--border);border-radius:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+                    <div>
+                      <div style="font-size:10px;font-weight:800;color:var(--text-dim);text-transform:uppercase;">EMAIL & MARKETING STATUS</div>
+                      <div style="font-size:13px;font-weight:700;margin-top:2px;color:#FFF;">
+                        ${escapeHtml(u.email || 'No email configured')} •
+                        <span class="status-pill ${u.marketingOptIn ? 'status-VERIFIED' : 'status-UNVERIFIED'}">${u.marketingOptIn ? '✓ OPTED IN FOR OFFERS' : '✕ NOT OPTED IN'}</span>
+                      </div>
+                    </div>
+                    <button class="btn btn-ghost btn-sm" onclick="promptEditMarketingEmail('${u.userId}','${escapeHtml(u.email || '')}',${u.marketingOptIn ? 'true' : 'false'})">✏️ Edit Email / Opt-In</button>
                   </div>
                 ` : ''}
               </div>
@@ -2112,6 +2267,215 @@
       }
     }
 
+    // ==================== 10. MARKETING & OFFER EMAIL ENGINE ====================
+    async function loadMarketing() {
+      try {
+        const d = await apiCall('/marketing/overview');
+        document.getElementById('badge-opted-in-users').textContent = d.totalOptedIn || 0;
+
+        document.getElementById('marketing-kpi-grid').innerHTML = `
+          <div class="kpi-card">
+            <div class="kpi-label">Opted-In Subscribers</div>
+            <div class="kpi-value" style="color:#10B981">${d.totalOptedIn || 0}</div>
+            <div class="kpi-meta">Eligible to receive marketing & offer emails</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Users With Email</div>
+            <div class="kpi-value" style="color:#38BDF8">${d.totalWithEmail || 0}</div>
+            <div class="kpi-meta">Out of ${d.totalUsers || 0} registered accounts</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">SMTP Delivery Status</div>
+            <div class="kpi-value" style="color:${d.smtpConfigured ? '#6EE7B7' : '#FCD34D'}">${d.smtpConfigured ? '🟢 Live SMTP' : '⚠️ In-App Only'}</div>
+            <div class="kpi-meta">${d.smtpConfigured ? (d.smtpHost + ' • ' + d.smtpFrom) : 'Click Configure SMTP to link email gateway'}</div>
+          </div>
+        `;
+
+        if (d.smtpHost) document.getElementById('smtp-host').value = d.smtpHost;
+        if (d.smtpPort) document.getElementById('smtp-port').value = d.smtpPort;
+        if (d.smtpUsername) document.getElementById('smtp-user').value = d.smtpUsername;
+        if (d.smtpFrom) document.getElementById('smtp-from').value = d.smtpFrom;
+
+        document.getElementById('mkt-subscribers-body').innerHTML = (d.subscribers || []).map(s => `
+          <tr>
+            <td>
+              <div style="font-weight:800;">${escapeHtml(s.displayName)}</div>
+              <div style="font-size:10px;color:var(--text-dim);font-family:'JetBrains Mono',monospace;">${s.userId}</div>
+            </td>
+            <td style="font-family:'JetBrains Mono',monospace;font-size:12px;">${s.phoneMasked}</td>
+            <td style="font-family:'JetBrains Mono',monospace;font-size:12px;color:${s.email ? '#FFF' : 'var(--text-dim)'};">${escapeHtml(s.email || '—')}</td>
+            <td>${escapeHtml(s.city || 'Bengaluru')}</td>
+            <td>
+              <span class="status-pill ${s.marketingOptIn ? 'status-VERIFIED' : 'status-UNVERIFIED'}">
+                ${s.marketingOptIn ? '✓ OPTED IN' : '✕ OPTED OUT'}
+              </span>
+              ${s.hasActivePass ? '<span class="status-pill status-VERIFIED" style="margin-left:4px;">👑 VIP</span>' : ''}
+            </td>
+            <td style="font-size:11px;color:var(--text-muted);">${s.marketingOptInAt ? s.marketingOptInAt.slice(0, 16).replace('T', ' ') : '—'}</td>
+            <td>
+              <button class="btn btn-ghost btn-sm" onclick="promptEditMarketingEmail('${s.userId}','${escapeHtml(s.email || '')}',${s.marketingOptIn})">✏️ Edit</button>
+            </td>
+          </tr>
+        `).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--text-dim);">No users found.</td></tr>';
+
+        document.getElementById('mkt-campaigns-body').innerHTML = (d.campaigns || []).map(c => `
+          <tr>
+            <td style="font-size:11px;color:var(--text-muted);">${(c.createdAt || '').slice(0, 19).replace('T', ' ')}</td>
+            <td style="font-weight:800;">${escapeHtml(c.subject)}</td>
+            <td>
+              ${c.offerBadge ? `<span class="profile-chip" style="font-size:10px;padding:2px 7px;">${escapeHtml(c.offerBadge)}</span>` : ''}
+              ${c.couponCode ? `<b style="font-family:'JetBrains Mono',monospace;color:#FCD34D;margin-left:4px;">${escapeHtml(c.couponCode)}</b>` : '—'}
+            </td>
+            <td><span class="status-pill status-UNVERIFIED">${escapeHtml(c.audienceFilter || 'OPTED_IN_ALL')}</span></td>
+            <td style="font-weight:800;color:#6EE7B7;font-family:'JetBrains Mono',monospace;">${c.recipientsCount || 0}</td>
+            <td style="font-family:'JetBrains Mono',monospace;">${c.smtpDeliveredCount || 0}</td>
+            <td style="font-family:'JetBrains Mono',monospace;">${c.inAppDeliveredCount || 0}</td>
+            <td style="font-size:11px;color:var(--text-dim);">${escapeHtml(c.sentByEmail || '')}</td>
+          </tr>
+        `).join('') || '<tr><td colspan="8" style="text-align:center;color:var(--text-dim);">No marketing campaigns sent yet.</td></tr>';
+
+      } catch (e) {
+        showToast('⚠️ ' + e.message);
+      }
+    }
+
+    function toggleSmtpPanel() {
+      const el = document.getElementById('smtp-config-card');
+      el.style.display = el.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function toggleMktCity() {
+      const aud = document.getElementById('mkt-audience').value;
+      document.getElementById('mkt-city-group').style.display = (aud === 'OPTED_IN_CITY') ? 'block' : 'none';
+    }
+
+    async function handleUpdateSmtp(e) {
+      e.preventDefault();
+      try {
+        const payload = {
+          host: document.getElementById('smtp-host').value.trim(),
+          port: parseInt(document.getElementById('smtp-port').value || '587', 10),
+          username: document.getElementById('smtp-user').value.trim(),
+          password: document.getElementById('smtp-pass').value.trim(),
+          fromEmail: document.getElementById('smtp-from').value.trim()
+        };
+        await apiCall('/marketing/smtp-config', {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        });
+        showToast('✅ SMTP outgoing mail settings saved!');
+        toggleSmtpPanel();
+        loadMarketing();
+      } catch (err) {
+        showToast('⚠️ ' + err.message);
+      }
+    }
+
+    async function handleSendMarketingEmail(e) {
+      e.preventDefault();
+      const btn = document.getElementById('btn-send-mkt');
+      const origText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = '⏳ Dispatching Campaign...';
+
+      try {
+        const payload = {
+          audience: document.getElementById('mkt-audience').value,
+          city: document.getElementById('mkt-city').value.trim(),
+          subject: document.getElementById('mkt-subject').value.trim(),
+          offerBadge: document.getElementById('mkt-badge').value.trim(),
+          couponCode: document.getElementById('mkt-coupon').value.trim(),
+          ctaText: document.getElementById('mkt-cta-text').value.trim(),
+          ctaUrl: document.getElementById('mkt-cta-url').value.trim(),
+          body: document.getElementById('mkt-body').value.trim()
+        };
+
+        const res = await apiCall('/marketing/send-email', {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        });
+
+        showToast(`🎉 Campaign delivered to ${res.recipientsCount} opted-in subscribers (${res.smtpDeliveredCount} via SMTP, ${res.inAppDeliveredCount} in-app)!`);
+        document.getElementById('mkt-subject').value = '';
+        document.getElementById('mkt-badge').value = '';
+        document.getElementById('mkt-coupon').value = '';
+        document.getElementById('mkt-body').value = '';
+        loadMarketing();
+      } catch (err) {
+        showToast('⚠️ ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = origText;
+      }
+    }
+
+    async function promptEditMarketingEmail(userId, curEmail, curOptIn) {
+      const email = prompt('Enter recipient email address for user:', curEmail || '');
+      if (email === null) return;
+      const optIn = confirm('Opt-in this user to receive marketing & offer emails?\nClick OK for YES, Cancel for NO.');
+      try {
+        await apiCall(`/users/${userId}/action`, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'UPDATE_MARKETING_EMAIL',
+            email: email.trim(),
+            marketingOptIn: optIn
+          })
+        });
+        showToast('✅ Marketing email & opt-in status updated!');
+        if (currentTab === 'marketing') loadMarketing();
+        openInspector(userId);
+      } catch (err) {
+        showToast('⚠️ ' + err.message);
+      }
+    }
+
+    function previewMarketingEmail() {
+      const subject = document.getElementById('mkt-subject').value || '⚡ Weekend Special: Flat 50% OFF BlunderR VIP Pass!';
+      const badge = document.getElementById('mkt-badge').value || '🔥 50% OFF FLASH OFFER';
+      const coupon = document.getElementById('mkt-coupon').value || 'BLUNDERR50';
+      const ctaText = document.getElementById('mkt-cta-text').value || 'Claim Offer on BlunderR ➔';
+      const ctaUrl = document.getElementById('mkt-cta-url').value || 'https://blunderr.in/app/';
+      const body = document.getElementById('mkt-body').value || 'Upgrade your dating game this weekend! Get unlimited Cosmic Chemistry match reveals, priority profile spotlight in your city, and 15% off at all verified Safe-Date partner cafes.';
+
+      const badgeHtml = badge ? `<div style="display:inline-block;background:rgba(255,56,92,0.18);border:1px solid #FF385C;color:#FDA4AF;font-size:11px;font-weight:800;padding:5px 12px;border-radius:99px;margin-bottom:14px;letter-spacing:0.6px;text-transform:uppercase;">🔥 ${escapeHtml(badge)}</div>` : '';
+      const couponHtml = coupon ? `
+        <div style="margin:20px 0;padding:16px;background:#070912;border:1px dashed #F59E0B;border-radius:14px;text-align:center;">
+          <div style="font-size:10px;color:#94A3B8;letter-spacing:1px;text-transform:uppercase;font-weight:700;">USE EXCLUSIVE COUPON CODE</div>
+          <div style="font-size:22px;font-weight:900;color:#FCD34D;letter-spacing:2px;margin-top:4px;font-family:monospace;">${escapeHtml(coupon)}</div>
+        </div>
+      ` : '';
+
+      const html = `
+        <div style="background:#111422;border:1px solid rgba(255,255,255,0.14);border-radius:24px;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#F8FAFC;">
+          <div style="background:linear-gradient(135deg,#FF385C,#7C3AED);padding:22px 28px;">
+            <div style="font-size:20px;font-weight:900;color:#FFF;">BlunderR • Exclusive Member Offer</div>
+          </div>
+          <div style="padding:28px;">
+            ${badgeHtml}
+            <h2 style="margin:0 0 12px;font-size:20px;color:#FFF;">${escapeHtml(subject)}</h2>
+            <p style="font-size:14px;color:#CBD5E1;margin:0 0 14px;">Hi <b>Priya</b>,</p>
+            <div style="font-size:14px;line-height:1.65;color:#E2E8F0;">${escapeHtml(body).replace(/\n/g, '<br/>')}</div>
+            ${couponHtml}
+            <div style="margin-top:24px;text-align:center;">
+              <a href="${escapeHtml(ctaUrl)}" target="_blank" style="display:inline-block;background:linear-gradient(135deg,#FF385C,#E11D48);color:#FFF;text-decoration:none;font-weight:800;font-size:14px;padding:13px 26px;border-radius:12px;">${escapeHtml(ctaText)}</a>
+            </div>
+          </div>
+          <div style="padding:16px 28px;background:#0B0D16;border-top:1px solid rgba(255,255,255,0.08);font-size:11px;color:#64748B;text-align:center;line-height:1.5;">
+            You are receiving this email because you opted in to receive exclusive offers & marketing updates from BlunderR.<br/>
+            <span style="color:#94A3B8;text-decoration:underline;cursor:pointer;">Unsubscribe with 1 click</span> • <a href="https://blunderr.in" style="color:#94A3B8;text-decoration:none;">BlunderR.in</a>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('email-preview-container').innerHTML = html;
+      document.getElementById('email-preview-backdrop').classList.add('open');
+    }
+
+    function closePreviewModal() {
+      document.getElementById('email-preview-backdrop').classList.remove('open');
+    }
+
     function escapeHtml(str) {
       if (str === null || str === undefined) return '';
       return String(str)
@@ -2132,5 +2496,16 @@
         .catch(() => handleLogout());
     }
   </script>
+
+  <!-- ==================== 4. EMAIL PREVIEW MODAL ==================== -->
+  <div id="email-preview-backdrop" class="drawer-backdrop" onclick="if(event.target===this) closePreviewModal()">
+    <div style="width:100%;max-width:620px;max-height:92vh;background:var(--bg-surface);border:1px solid var(--border-strong);border-radius:24px;padding:24px;display:flex;flex-direction:column;gap:14px;overflow-y:auto;">
+      <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);padding-bottom:10px;">
+        <div style="font-size:16px;font-weight:800;">👁️ Live HTML Email Preview (Recipient View)</div>
+        <button class="btn btn-ghost btn-sm" onclick="closePreviewModal()">✕ Close</button>
+      </div>
+      <div id="email-preview-container" style="border-radius:18px;overflow:hidden;"></div>
+    </div>
+  </div>
 </body>
 </html>

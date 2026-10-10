@@ -68,6 +68,16 @@ public class ProfileService {
         if (request.getBirthDate() != null) user.setBirthDate(request.getBirthDate());
         if (request.getLatitude() != null) user.setLatitude(request.getLatitude());
         if (request.getLongitude() != null) user.setLongitude(request.getLongitude());
+        if (request.getEmail() != null) {
+            String cleanEmail = sanitize(request.getEmail().toLowerCase(), 150);
+            user.setEmail(cleanEmail != null && cleanEmail.isBlank() ? null : cleanEmail);
+        }
+        if (request.getMarketingOptIn() != null) {
+            user.setMarketingOptIn(request.getMarketingOptIn());
+            if (Boolean.TRUE.equals(request.getMarketingOptIn())) {
+                user.setMarketingOptInAt(OffsetDateTime.now());
+            }
+        }
         userRepository.save(user);
 
         Profile profile = profileRepository.findById(userId)
@@ -506,6 +516,8 @@ public class ProfileService {
         return ProfileDto.ProfileResponse.builder()
                 .userId(user.getId())
                 .phoneE164(user.getPhoneE164())
+                .email(user.getEmail())
+                .marketingOptIn(Boolean.TRUE.equals(user.getMarketingOptIn()))
                 .displayName(profile.getDisplayName() != null ? profile.getDisplayName() : "")
                 .fullName(profile.getDisplayName() != null ? profile.getDisplayName() : "")
                 .bio(profile.getBio())

@@ -78,6 +78,8 @@ public class ProfileDto {
         private String voicePromptText;
         private String selectedMemeUrl;
         private String selectedMemeTitle;
+        private String email;
+        private Boolean marketingOptIn;
     }
 
     /**
@@ -103,6 +105,8 @@ public class ProfileDto {
     public static class ProfileResponse {
         private UUID userId;
         private String phoneE164;
+        private String email;
+        private boolean marketingOptIn;
         private String displayName;
         private String fullName;
         private String bio;

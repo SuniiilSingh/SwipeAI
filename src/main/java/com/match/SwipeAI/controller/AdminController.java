@@ -9,6 +9,7 @@ import com.match.SwipeAI.model.*;
 import com.match.SwipeAI.repository.*;
 import com.match.SwipeAI.service.integration.PaymentAuditService;
 import jakarta.annotation.PostConstruct;
+import jakarta.mail.internet.MimeMessage;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -18,7 +19,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mail.javamail.JavaMailSenderImpl;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
@@ -59,6 +63,7 @@ public class AdminController {
     private final SafeDateSpotRepository safeDateSpotRepository;
     private final UserContactShieldRepository contactShieldRepository;
     private final UserNotificationRepository notificationRepository;
+    private final MarketingEmailCampaignRepository marketingEmailCampaignRepository;
     private final PaymentAuditService paymentAuditService;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder(10);
@@ -74,6 +79,21 @@ public class AdminController {
 
     @Value("${admin.pin:2026}")
     private String admin2faPin;
+
+    @Value("${smtp.host:}")
+    private String smtpHost;
+
+    @Value("${smtp.port:587}")
+    private int smtpPort;
+
+    @Value("${smtp.username:}")
+    private String smtpUsername;
+
+    @Value("${smtp.password:}")
+    private String smtpPassword;
+
+    @Value("${smtp.from:offers@blunderr.in}")
+    private String smtpFrom;
 
     // Brute-force protection: IP -> list of failed login timestamps (epoch ms)
     private final Map<String, List<Long>> failedLoginTracker = new ConcurrentHashMap<>();
@@ -145,13 +165,15 @@ public class AdminController {
 
     @Data
     public static class UserActionRequest {
-        private String action; // VERIFY_SELFIE, REJECT_SELFIE, TOGGLE_DIGILOCKER, TOGGLE_SHADOWBAN, GRANT_CREDITS, UPDATE_KARMA, REMOVE_PHOTO
+        private String action; // VERIFY_SELFIE, REJECT_SELFIE, TOGGLE_DIGILOCKER, TOGGLE_SHADOWBAN, GRANT_CREDITS, UPDATE_KARMA, REMOVE_PHOTO, UPDATE_MARKETING_EMAIL
         private Integer sparksDelta;
         private Integer boostsDelta;
         private Integer directDmsDelta;
         private Boolean grantVipPass;
         private Integer karmaScore;
         private Integer photoSlot; // 1..6
+        private String email;
+        private Boolean marketingOptIn;
         private String reason;
     }
 
@@ -191,6 +213,27 @@ public class AdminController {
         private String city;
         private String title;
         private String body;
+    }
+
+    @Data
+    public static class MarketingEmailRequest {
+        private String audience; // OPTED_IN_ALL, OPTED_IN_CITY, OPTED_IN_NON_VIP
+        private String city;
+        private String subject;
+        private String offerBadge; // e.g. "FLAT 50% OFF VIP PASS"
+        private String couponCode; // e.g. "BLUNDERR50"
+        private String ctaText;    // e.g. "Claim Offer in BlunderR"
+        private String ctaUrl;     // e.g. "https://blunderr.in/app/"
+        private String body;
+    }
+
+    @Data
+    public static class SmtpConfigRequest {
+        private String host;
+        private Integer port;
+        private String username;
+        private String password;
+        private String fromEmail;
     }
 
     // =========================================================================
@@ -683,6 +726,19 @@ public class AdminController {
                     auditDetail = "Removed photo in slot #" + slot;
                 }
             }
+            case "UPDATE_MARKETING_EMAIL" -> {
+                if (req.getEmail() != null) {
+                    String cleanEmail = req.getEmail().trim().toLowerCase();
+                    user.setEmail(cleanEmail.isEmpty() ? null : cleanEmail);
+                }
+                if (req.getMarketingOptIn() != null) {
+                    user.setMarketingOptIn(req.getMarketingOptIn());
+                    if (Boolean.TRUE.equals(req.getMarketingOptIn())) {
+                        user.setMarketingOptInAt(OffsetDateTime.now());
+                    }
+                }
+                auditDetail = String.format("Updated marketing email=%s, optIn=%s", user.getEmail(), user.getMarketingOptIn());
+            }
             default -> throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unknown action: " + action);
         }
 
@@ -1057,6 +1113,308 @@ public class AdminController {
     }
 
     // =========================================================================
+    // 10. MODULE 9: MARKETING & OFFER EMAIL CAMPAIGN ENGINE (OPT-IN SUBSCRIBERS)
+    // =========================================================================
+
+    @GetMapping("/marketing/overview")
+    public ResponseEntity<Map<String, Object>> getMarketingOverview(HttpServletRequest request) {
+        requireAdmin(request, "SUPER_ADMIN");
+
+        List<User> allUsers = userRepository.findAll();
+        Map<UUID, Profile> profileMap = profileRepository.findAll().stream()
+                .collect(Collectors.toMap(Profile::getUserId, p -> p, (a, b) -> a));
+
+        long totalWithEmail = 0;
+        long totalOptedIn = 0;
+        List<Map<String, Object>> subscribers = new ArrayList<>();
+
+        for (User u : allUsers) {
+            boolean hasEmail = u.getEmail() != null && !u.getEmail().isBlank();
+            boolean optedIn = Boolean.TRUE.equals(u.getMarketingOptIn());
+            if (hasEmail) totalWithEmail++;
+            if (hasEmail && optedIn) totalOptedIn++;
+
+            Profile p = profileMap.get(u.getId());
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("userId", u.getId());
+            row.put("displayName", p != null && p.getDisplayName() != null ? p.getDisplayName() : "User");
+            row.put("phoneMasked", maskPhone(u.getPhoneE164()));
+            row.put("email", u.getEmail() != null ? u.getEmail() : "");
+            row.put("marketingOptIn", optedIn);
+            row.put("marketingOptInAt", u.getMarketingOptInAt() != null ? u.getMarketingOptInAt().toString() : "");
+            row.put("city", p != null && p.getCity() != null ? p.getCity() : "Bengaluru");
+            row.put("hasActivePass", Boolean.TRUE.equals(u.getHasActivePass()));
+            subscribers.add(row);
+        }
+
+        // Show opted-in with email first
+        subscribers.sort((a, b) -> {
+            boolean oa = Boolean.TRUE.equals(a.get("marketingOptIn")) && !String.valueOf(a.get("email")).isBlank();
+            boolean ob = Boolean.TRUE.equals(b.get("marketingOptIn")) && !String.valueOf(b.get("email")).isBlank();
+            return Boolean.compare(ob, oa);
+        });
+
+        boolean smtpReady = smtpHost != null && !smtpHost.isBlank() && smtpUsername != null && !smtpUsername.isBlank();
+
+        Map<String, Object> res = new LinkedHashMap<>();
+        res.put("totalUsers", allUsers.size());
+        res.put("totalWithEmail", totalWithEmail);
+        res.put("totalOptedIn", totalOptedIn);
+        res.put("smtpConfigured", smtpReady);
+        res.put("smtpHost", smtpHost != null ? smtpHost : "");
+        res.put("smtpPort", smtpPort);
+        res.put("smtpUsername", smtpUsername != null ? smtpUsername : "");
+        res.put("smtpFrom", smtpFrom != null ? smtpFrom : "offers@blunderr.in");
+        res.put("subscribers", subscribers);
+        res.put("campaigns", marketingEmailCampaignRepository.findTop30ByOrderByCreatedAtDesc());
+        return ResponseEntity.ok(res);
+    }
+
+    @PostMapping("/marketing/smtp-config")
+    public ResponseEntity<Map<String, Object>> updateSmtpConfig(
+            @RequestBody SmtpConfigRequest req,
+            HttpServletRequest request) {
+        AdminSession session = requireAdmin(request, "SUPER_ADMIN");
+        String ip = extractClientIp(request);
+
+        if (req.getHost() != null) this.smtpHost = req.getHost().trim();
+        if (req.getPort() != null && req.getPort() > 0) this.smtpPort = req.getPort();
+        if (req.getUsername() != null) this.smtpUsername = req.getUsername().trim();
+        if (req.getPassword() != null && !req.getPassword().isBlank()) this.smtpPassword = req.getPassword().trim();
+        if (req.getFromEmail() != null && !req.getFromEmail().isBlank()) this.smtpFrom = req.getFromEmail().trim();
+
+        recordAudit(session.email, session.role, "SMTP_CONFIG_UPDATED", this.smtpHost,
+                "Updated SMTP sender config (" + this.smtpFrom + ")", ip);
+
+        return ResponseEntity.ok(Map.of(
+                "status", "updated",
+                "smtpConfigured", !this.smtpHost.isBlank() && !this.smtpUsername.isBlank(),
+                "smtpHost", this.smtpHost,
+                "smtpPort", this.smtpPort,
+                "smtpFrom", this.smtpFrom
+        ));
+    }
+
+    @PostMapping("/marketing/send-email")
+    public ResponseEntity<Map<String, Object>> sendMarketingOfferEmail(
+            @RequestBody MarketingEmailRequest req,
+            HttpServletRequest request) {
+        AdminSession session = requireAdmin(request, "SUPER_ADMIN");
+        String ip = extractClientIp(request);
+
+        if (req.getSubject() == null || req.getSubject().isBlank() || req.getBody() == null || req.getBody().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email Subject and Message Body are required");
+        }
+
+        String audience = req.getAudience() != null ? req.getAudience().trim().toUpperCase() : "OPTED_IN_ALL";
+        String cityFilter = req.getCity() != null ? req.getCity().trim().toLowerCase() : "";
+
+        List<User> allUsers = userRepository.findAll();
+        Map<UUID, Profile> profileMap = profileRepository.findAll().stream()
+                .collect(Collectors.toMap(Profile::getUserId, p -> p, (a, b) -> a));
+
+        // Strictly filter ONLY users who have opted in for marketing/offer emails AND have a valid email address
+        List<User> recipients = new ArrayList<>();
+        for (User u : allUsers) {
+            if (!Boolean.TRUE.equals(u.getMarketingOptIn())) continue;
+            if (u.getEmail() == null || u.getEmail().isBlank() || !u.getEmail().contains("@")) continue;
+
+            Profile p = profileMap.get(u.getId());
+            if ("OPTED_IN_NON_VIP".equals(audience) && Boolean.TRUE.equals(u.getHasActivePass())) {
+                continue;
+            }
+            if ("OPTED_IN_CITY".equals(audience) && !cityFilter.isEmpty()) {
+                String c = p != null && p.getCity() != null ? p.getCity().toLowerCase() : "";
+                String mc = p != null && p.getMicroCircle() != null ? p.getMicroCircle().toLowerCase() : "";
+                if (!c.contains(cityFilter) && !mc.contains(cityFilter)) continue;
+            }
+            recipients.add(u);
+        }
+
+        boolean smtpReady = smtpHost != null && !smtpHost.isBlank() && smtpUsername != null && !smtpUsername.isBlank();
+        JavaMailSenderImpl mailSender = null;
+        if (smtpReady) {
+            mailSender = new JavaMailSenderImpl();
+            mailSender.setHost(smtpHost);
+            mailSender.setPort(smtpPort);
+            mailSender.setUsername(smtpUsername);
+            mailSender.setPassword(smtpPassword);
+            Properties props = mailSender.getJavaMailProperties();
+            props.put("mail.transport.protocol", "smtp");
+            props.put("mail.smtp.auth", "true");
+            props.put("mail.smtp.starttls.enable", "true");
+            props.put("mail.smtp.connectiontimeout", "6000");
+            props.put("mail.smtp.timeout", "6000");
+        }
+
+        int smtpDelivered = 0;
+        List<UserNotification> inAppOffers = new ArrayList<>();
+
+        for (User u : recipients) {
+            Profile p = profileMap.get(u.getId());
+            String name = p != null && p.getDisplayName() != null && !p.getDisplayName().isBlank()
+                    ? p.getDisplayName()
+                    : "There";
+
+            String htmlMail = buildBrandedOfferEmailHtml(
+                    name,
+                    u.getEmail(),
+                    req.getSubject().trim(),
+                    req.getOfferBadge(),
+                    req.getCouponCode(),
+                    req.getBody().trim(),
+                    req.getCtaText(),
+                    req.getCtaUrl()
+            );
+
+            if (mailSender != null) {
+                try {
+                    MimeMessage mime = mailSender.createMimeMessage();
+                    MimeMessageHelper helper = new MimeMessageHelper(mime, false, "UTF-8");
+                    helper.setFrom(smtpFrom != null && !smtpFrom.isBlank() ? smtpFrom : "offers@blunderr.in");
+                    helper.setTo(u.getEmail().trim());
+                    helper.setSubject(req.getSubject().trim());
+                    helper.setText(htmlMail, true);
+                    mailSender.send(mime);
+                    smtpDelivered++;
+                } catch (Exception e) {
+                    log.warn("SMTP send failed for {}: {}", u.getEmail(), e.getMessage());
+                }
+            }
+
+            String inAppBody = req.getBody().trim();
+            if (req.getCouponCode() != null && !req.getCouponCode().isBlank()) {
+                inAppBody += " | Use Coupon Code: " + req.getCouponCode().trim();
+            }
+            inAppOffers.add(UserNotification.builder()
+                    .userId(u.getId())
+                    .type("OFFER")
+                    .title("🎁 " + req.getSubject().trim())
+                    .body(inAppBody)
+                    .isRead(false)
+                    .build());
+        }
+
+        if (!inAppOffers.isEmpty()) {
+            notificationRepository.saveAll(inAppOffers);
+        }
+
+        MarketingEmailCampaign savedCampaign = marketingEmailCampaignRepository.save(MarketingEmailCampaign.builder()
+                .subject(req.getSubject().trim())
+                .offerBadge(req.getOfferBadge() != null ? req.getOfferBadge().trim() : null)
+                .couponCode(req.getCouponCode() != null ? req.getCouponCode().trim() : null)
+                .ctaText(req.getCtaText() != null ? req.getCtaText().trim() : "Claim Offer in BlunderR")
+                .ctaUrl(req.getCtaUrl() != null ? req.getCtaUrl().trim() : "https://blunderr.in/app/")
+                .bodyText(req.getBody().trim())
+                .audienceFilter(audience)
+                .cityFilter(req.getCity())
+                .recipientsCount(recipients.size())
+                .smtpDeliveredCount(smtpDelivered)
+                .inAppDeliveredCount(inAppOffers.size())
+                .sentByEmail(session.email)
+                .build());
+
+        recordAudit(session.email, session.role, "MARKETING_EMAIL_SENT", savedCampaign.getId().toString(),
+                String.format("Subject='%s' | Opted-In Recipients=%d | SMTP=%d | InApp=%d",
+                        savedCampaign.getSubject(), recipients.size(), smtpDelivered, inAppOffers.size()), ip);
+
+        return ResponseEntity.ok(Map.of(
+                "status", "sent",
+                "campaignId", savedCampaign.getId(),
+                "recipientsCount", recipients.size(),
+                "smtpDeliveredCount", smtpDelivered,
+                "inAppDeliveredCount", inAppOffers.size(),
+                "smtpConfigured", smtpReady
+        ));
+    }
+
+    @GetMapping(value = "/marketing/unsubscribe", produces = MediaType.TEXT_HTML_VALUE)
+    public ResponseEntity<String> unsubscribeFromMarketing(@RequestParam String email) {
+        String clean = email != null ? email.trim().toLowerCase() : "";
+        int updated = 0;
+        if (!clean.isEmpty()) {
+            for (User u : userRepository.findAll()) {
+                if (u.getEmail() != null && u.getEmail().trim().equalsIgnoreCase(clean)) {
+                    u.setMarketingOptIn(false);
+                    userRepository.save(u);
+                    updated++;
+                }
+            }
+        }
+        String html = """
+                <!DOCTYPE html>
+                <html><head><meta charset="UTF-8"><title>Unsubscribed • BlunderR</title></head>
+                <body style="background:#05060A;color:#F8FAFC;font-family:-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;">
+                  <div style="background:#111422;border:1px solid rgba(255,255,255,0.15);border-radius:20px;padding:32px;max-width:420px;text-align:center;">
+                    <div style="font-size:32px;margin-bottom:10px;">✅</div>
+                    <h2 style="margin:0 0 8px;">You Have Been Unsubscribed</h2>
+                    <p style="color:#94A3B8;font-size:14px;line-height:1.5;">
+                      <b>%s</b> has been removed from BlunderR promotional & offer emails.
+                    </p>
+                    <a href="https://blunderr.in" style="display:inline-block;margin-top:16px;color:#FF385C;text-decoration:none;font-weight:700;">← Return to BlunderR.in</a>
+                  </div>
+                </body></html>
+                """.formatted(clean.replace("<", "&lt;"));
+        return ResponseEntity.ok(html);
+    }
+
+    private String buildBrandedOfferEmailHtml(
+            String name,
+            String recipientEmail,
+            String subject,
+            String offerBadge,
+            String couponCode,
+            String bodyText,
+            String ctaText,
+            String ctaUrl) {
+        String safeBody = bodyText
+                .replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\n", "<br/>");
+        String badgeHtml = (offerBadge != null && !offerBadge.isBlank())
+                ? "<div style=\"display:inline-block;background:rgba(255,56,92,0.18);border:1px solid #FF385C;color:#FDA4AF;font-size:11px;font-weight:800;padding:5px 12px;border-radius:99px;margin-bottom:14px;letter-spacing:0.6px;text-transform:uppercase;\">🔥 " + offerBadge.trim() + "</div>"
+                : "";
+        String couponHtml = (couponCode != null && !couponCode.isBlank())
+                ? "<div style=\"margin:20px 0;padding:16px;background:#070912;border:1px dashed #F59E0B;border-radius:14px;text-align:center;\">" +
+                  "<div style=\"font-size:10px;color:#94A3B8;letter-spacing:1px;text-transform:uppercase;font-weight:700;\">USE EXCLUSIVE COUPON CODE</div>" +
+                  "<div style=\"font-size:22px;font-weight:900;color:#FCD34D;letter-spacing:2px;margin-top:4px;font-family:monospace;\">" + couponCode.trim() + "</div>" +
+                  "</div>"
+                : "";
+        String btnLabel = (ctaText != null && !ctaText.isBlank()) ? ctaText.trim() : "Claim Offer on BlunderR ➔";
+        String btnHref = (ctaUrl != null && !ctaUrl.isBlank()) ? ctaUrl.trim() : "https://blunderr.in/app/";
+        String unsubUrl = "https://admin.blunderr.in/v1/admin/marketing/unsubscribe?email=" +
+                java.net.URLEncoder.encode(recipientEmail, StandardCharsets.UTF_8);
+
+        return """
+                <!DOCTYPE html>
+                <html>
+                <body style="margin:0;padding:24px;background-color:#05060A;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#F8FAFC;">
+                  <div style="max-width:560px;margin:0 auto;background:#111422;border:1px solid rgba(255,255,255,0.14);border-radius:24px;overflow:hidden;">
+                    <div style="background:linear-gradient(135deg,#FF385C,#7C3AED);padding:22px 28px;display:flex;align-items:center;">
+                      <div style="font-size:22px;font-weight:900;color:#FFFFFF;letter-spacing:-0.3px;">BlunderR • Exclusive Member Offer</div>
+                    </div>
+                    <div style="padding:28px;">
+                      %s
+                      <h2 style="margin:0 0 12px;font-size:22px;color:#FFFFFF;">%s</h2>
+                      <p style="font-size:14px;color:#CBD5E1;margin:0 0 14px;">Hi <b>%s</b>,</p>
+                      <div style="font-size:14px;line-height:1.65;color:#E2E8F0;">%s</div>
+                      %s
+                      <div style="margin-top:24px;text-align:center;">
+                        <a href="%s" style="display:inline-block;background:linear-gradient(135deg,#FF385C,#E11D48);color:#FFFFFF;text-decoration:none;font-weight:800;font-size:14px;padding:13px 26px;border-radius:12px;">%s</a>
+                      </div>
+                    </div>
+                    <div style="padding:16px 28px;background:#0B0D16;border-top:1px solid rgba(255,255,255,0.08);font-size:11px;color:#64748B;text-align:center;line-height:1.5;">
+                      You are receiving this email because you opted in to receive exclusive offers & marketing updates from BlunderR.<br/>
+                      <a href="%s" style="color:#94A3B8;text-decoration:underline;">Unsubscribe with 1 click</a> • <a href="https://blunderr.in" style="color:#94A3B8;text-decoration:none;">BlunderR.in</a>
+                    </div>
+                  </div>
+                </body>
+                </html>
+                """.formatted(badgeHtml, subject, name, safeBody, couponHtml, btnHref, btnLabel, unsubUrl);
+    }
+
+    // =========================================================================
     // HELPER & CRYPTOGRAPHIC TOKEN METHODS
     // =========================================================================
 
@@ -1066,6 +1424,8 @@ public class AdminController {
         row.put("userId", u.getId());
         row.put("displayName", p != null && p.getDisplayName() != null ? p.getDisplayName() : "New User");
         row.put("phoneMasked", maskPhone ? maskPhone(u.getPhoneE164()) : u.getPhoneE164());
+        row.put("email", u.getEmail() != null ? u.getEmail() : "");
+        row.put("marketingOptIn", Boolean.TRUE.equals(u.getMarketingOptIn()));
         row.put("gender", u.getGender() != null ? u.getGender().name() : (p != null ? p.getGenderDisplay() : "UNSPECIFIED"));
         row.put("city", p != null && p.getCity() != null ? p.getCity() : "Bengaluru");
         row.put("microCircle", p != null && p.getMicroCircle() != null ? p.getMicroCircle() : "Unassigned");

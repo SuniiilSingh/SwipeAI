@@ -119,6 +119,16 @@ public class User {
     @Column(name = "pass_expiry")
     private OffsetDateTime passExpiry;
 
+    @Column(name = "email", length = 150)
+    private String email;
+
+    @Builder.Default
+    @Column(name = "marketing_opt_in")
+    private Boolean marketingOptIn = false;
+
+    @Column(name = "marketing_opt_in_at")
+    private OffsetDateTime marketingOptInAt;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private OffsetDateTime createdAt;
