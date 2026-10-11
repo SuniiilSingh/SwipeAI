@@ -253,7 +253,11 @@ public class PushNotificationService {
         } else {
             list = userNotificationRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable);
         }
-        return list.stream().map(this::mapToDto).collect(Collectors.toList());
+        // Never return read chat message history in notifications list
+        return list.stream()
+                .filter(n -> !("CHAT".equalsIgnoreCase(n.getType()) && n.isRead()))
+                .map(this::mapToDto)
+                .collect(Collectors.toList());
     }
 
     public long getUnreadCount(UUID userId) {
@@ -274,9 +278,11 @@ public class PushNotificationService {
     public int markMatchNotificationsAsRead(UUID userId, UUID matchId) {
         if (userId == null || matchId == null) return 0;
         String pattern = "%" + matchId.toString() + "%";
-        int count = userNotificationRepository.markMatchNotificationsAsRead(userId, pattern);
-        log.info("Marked {} notifications as read for match {} and user {}", count, matchId, userId);
-        return count;
+        // Once chat is read, purge all chat notifications for this match so no chat history lingers
+        int deleted = userNotificationRepository.deleteChatNotificationsForMatch(userId, pattern);
+        int marked = userNotificationRepository.markMatchNotificationsAsRead(userId, pattern);
+        log.info("Purged {} chat notifications and marked {} match notifications as read for match {} and user {}", deleted, marked, matchId, userId);
+        return deleted + marked;
     }
 
     @Transactional
