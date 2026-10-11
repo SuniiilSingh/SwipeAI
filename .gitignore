@@ -38,6 +38,8 @@ out/
 
 # Local Environment Variables
 .env
+website/app/
+website/webview/
 .env.*
 !.env.prod.example
 *.env
