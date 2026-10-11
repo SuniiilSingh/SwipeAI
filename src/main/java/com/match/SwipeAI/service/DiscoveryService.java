@@ -353,6 +353,15 @@ public class DiscoveryService {
                 }
             }
 
+            // Incoming Like Priority Bonus: If candidate already liked the viewer, boost their position to top of feed
+            Optional<Interaction> incomingLike = interactionRepository.findByActorIdAndTargetId(candidate.getId(), viewerId);
+            if (incomingLike.isPresent() && (
+                    incomingLike.get().getActionType() == ActionType.LIKE ||
+                    incomingLike.get().getActionType() == ActionType.SUPER_CHAI ||
+                    incomingLike.get().getActionType() == ActionType.SUPER_SPARK)) {
+                compScore = Math.min(100, compScore + 30);
+            }
+
             candidateCards.add(buildCandidateCard(viewerId, candidate, candidateProfile, distanceKm, compScore,
                     desireScorePercent, desireHighlights));
         }
@@ -473,6 +482,10 @@ public class DiscoveryService {
                     String actorName = profileRepository.findById(actorId).map(Profile::getDisplayName).orElse("Your match");
                     String targetName = profileRepository.findById(request.getTargetId()).map(Profile::getDisplayName).orElse("Your match");
                     pushNotificationService.sendMatchNotification(actorId, request.getTargetId(), matchId, actorName, targetName);
+                } else {
+                    // Single-sided like: actor liked target, target has not liked actor yet
+                    String actorName = profileRepository.findById(actorId).map(Profile::getDisplayName).orElse("Someone");
+                    pushNotificationService.sendLikeNotification(actorId, request.getTargetId(), actorName, request.getActionType().name());
                 }
             }
         }
@@ -759,5 +772,39 @@ public class DiscoveryService {
         }
 
         return true;
+    }
+
+    public List<DiscoveryDto.CandidateCardDto> getLikesReceived(UUID targetId) {
+        List<Interaction> interactions = interactionRepository.findByTargetIdAndActionTypeInOrderByCreatedAtDesc(
+                targetId,
+                List.of(ActionType.LIKE, ActionType.SUPER_CHAI, ActionType.SUPER_SPARK)
+        );
+        if (interactions.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<DiscoveryDto.CandidateCardDto> result = new ArrayList<>();
+        Set<UUID> seenActorIds = new HashSet<>();
+
+        for (Interaction inter : interactions) {
+            UUID actorId = inter.getActorId();
+            if (actorId == null || !seenActorIds.add(actorId)) {
+                continue;
+            }
+
+            // If already matched, skip
+            Optional<Match> existingMatch = matchRepository.findMatchBetween(actorId, targetId);
+            if (existingMatch.isPresent() && existingMatch.get().getStatus() != MatchStatus.UNMATCHED) {
+                continue;
+            }
+
+            User actor = userRepository.findById(actorId).orElse(null);
+            if (actor == null) continue;
+            Profile profile = profileRepository.findById(actorId).orElse(null);
+
+            result.add(buildCandidateCard(targetId, actor, profile, 2.5, 95, 95, List.of("Liked Your Profile! ✨")));
+        }
+
+        return result;
     }
 }

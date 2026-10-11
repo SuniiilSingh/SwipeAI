@@ -7,6 +7,7 @@ import com.match.SwipeAI.model.PushToken;
 import com.match.SwipeAI.model.UserNotification;
 import com.match.SwipeAI.repository.PushTokenRepository;
 import com.match.SwipeAI.repository.UserNotificationRepository;
+import com.match.SwipeAI.websocket.ChatWebSocketHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -31,6 +32,7 @@ public class PushNotificationService {
     private static final String EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
     private final PushTokenRepository pushTokenRepository;
     private final UserNotificationRepository userNotificationRepository;
+    private final ChatWebSocketHandler chatWebSocketHandler;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private final HttpClient httpClient = HttpClient.newBuilder()
@@ -137,6 +139,69 @@ public class PushNotificationService {
 
         // Notify target via push
         sendPushToUser(targetId, title, targetBody, data);
+
+        // Dispatch instant WebSocket notifications if users are online
+        try {
+            Map<String, Object> actorWs = new HashMap<>(data);
+            actorWs.put("title", title);
+            actorWs.put("body", actorBody);
+            actorWs.put("partnerName", targetName);
+            chatWebSocketHandler.sendMessageToUser(actorId.toString(), actorWs);
+
+            Map<String, Object> targetWs = new HashMap<>(data);
+            targetWs.put("title", title);
+            targetWs.put("body", targetBody);
+            targetWs.put("partnerName", actorName);
+            chatWebSocketHandler.sendMessageToUser(targetId.toString(), targetWs);
+            log.info("Dispatched live WS Match event for match {} between {} and {}", matchId, actorId, targetId);
+        } catch (Exception e) {
+            log.warn("Failed to dispatch WS match event: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Dispatches notification when someone likes / super-likes a user's profile.
+     */
+    public void sendLikeNotification(UUID actorId, UUID targetId, String actorName, String actionType) {
+        String title;
+        String body;
+        String name = (actorName != null && !actorName.isBlank()) ? actorName : "Someone";
+
+        if ("SUPER_SPARK".equalsIgnoreCase(actionType)) {
+            title = "⚡ Super Spark Alert!";
+            body = name + " sent you a Super Spark on BlunderR!";
+        } else if ("SUPER_CHAI".equalsIgnoreCase(actionType)) {
+            title = "☕ Virtual Chai Invite!";
+            body = name + " sent you a Virtual Chai on BlunderR!";
+        } else {
+            title = "New Spark on BlunderR! ✨";
+            body = name + " liked your profile! Open BlunderR to discover them.";
+        }
+
+        Map<String, Object> data = Map.of(
+                "type", "LIKE",
+                "actorId", actorId != null ? actorId.toString() : "",
+                "actorName", name,
+                "actionType", actionType != null ? actionType : "LIKE",
+                "url", "/(tabs)/matches"
+        );
+
+        // Persist in-app notification
+        saveNotification(targetId, "LIKE", title, body, data);
+
+        // Dispatch Expo push notification
+        sendPushToUser(targetId, title, body, data);
+
+        // Dispatch instant real-time WebSocket event
+        try {
+            Map<String, Object> wsPayload = new HashMap<>(data);
+            wsPayload.put("title", title);
+            wsPayload.put("body", body);
+            chatWebSocketHandler.sendMessageToUser(targetId.toString(), wsPayload);
+            log.info("Dispatched live WS Like event from {} ({}) to {}", name, actorId, targetId);
+        } catch (Exception e) {
+            log.warn("Failed to dispatch WS like event: {}", e.getMessage());
+        }
     }
 
     /**

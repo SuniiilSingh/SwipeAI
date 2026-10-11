@@ -17,6 +17,7 @@ import java.util.UUID;
 public interface InteractionRepository extends JpaRepository<Interaction, Long> {
     Optional<Interaction> findByActorIdAndTargetId(UUID actorId, UUID targetId);
     List<Interaction> findByTargetIdAndActionType(UUID targetId, ActionType actionType);
+    List<Interaction> findByTargetIdAndActionTypeInOrderByCreatedAtDesc(UUID targetId, java.util.Collection<ActionType> actionTypes);
     List<Interaction> findByActorId(UUID actorId);
     long countByActorIdAndCreatedAtAfter(UUID actorId, OffsetDateTime since);
 }

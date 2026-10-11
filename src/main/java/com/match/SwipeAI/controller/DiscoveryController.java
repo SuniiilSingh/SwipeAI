@@ -67,4 +67,14 @@ public class DiscoveryController {
         List<DiscoveryDto.CircleDto> circles = discoveryService.getMicroCircles(city);
         return ResponseEntity.ok(circles);
     }
+
+    /**
+     * Retrieve profiles of users who liked the authenticated user (incoming sparks/likes).
+     */
+    @GetMapping("/likes-received")
+    public ResponseEntity<List<DiscoveryDto.CandidateCardDto>> getLikesReceived(
+            @AuthenticationPrincipal UUID userId) {
+        List<DiscoveryDto.CandidateCardDto> likes = discoveryService.getLikesReceived(userId);
+        return ResponseEntity.ok(likes);
+    }
 }
