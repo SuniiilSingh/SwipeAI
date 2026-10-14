@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>BlunderR — Official App Downloads & Preview Builds</title>
+  <meta name="description" content="Download the latest preview builds for BlunderR on Android and iOS. Instant direct download for Standalone APK and iOS Simulator package.">
+  <link rel="icon" type="image/png" href="https://img.icons8.com/color/96/flame.png">
+
+  <style>
+    :root {
+      --bg: #07080D;
+      --card: #11131E;
+      --card-glass: rgba(18, 20, 32, 0.75);
+      --card-border: #1E2235;
+      --text: #F8FAFC;
+      --muted: #94A3B8;
+      --coral: #FF385C;
+      --coral-hover: #E0264B;
+      --rose: #FF758C;
+      --cyan: #00E5FF;
+      --success: #10B981;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    body {
+      background: radial-gradient(circle at 50% 0%, #171026 0%, var(--bg) 70%);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 32px 16px 64px;
+    }
+    .header {
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--card-border);
+      margin-bottom: 40px;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      color: #fff;
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+    .logo span {
+      background: linear-gradient(135deg, var(--coral), var(--rose));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .nav-links {
+      display: flex;
+      gap: 16px;
+    }
+    .nav-link {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 600;
+      transition: color 0.2s;
+    }
+    .nav-link:hover {
+      color: #fff;
+    }
+    .hero {
+      text-align: center;
+      max-width: 640px;
+      margin-bottom: 40px;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      background: rgba(255, 56, 92, 0.12);
+      border: 1px solid rgba(255, 56, 92, 0.3);
+      color: var(--rose);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    .badge-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 8px var(--success);
+    }
+    h1 {
+      font-size: 38px;
+      font-weight: 900;
+      letter-spacing: -1px;
+      line-height: 1.2;
+      margin-bottom: 12px;
+    }
+    .hero p {
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.5;
+    }
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+      width: 100%;
+      max-width: 900px;
+      margin-bottom: 48px;
+    }
+    .card {
+      background: var(--card-glass);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 28px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      transition: transform 0.25s, border-color 0.25s;
+    }
+    .card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(255, 56, 92, 0.4);
+    }
+    .card-icon {
+      font-size: 36px;
+      margin-bottom: 16px;
+    }
+    .card-title {
+      font-size: 22px;
+      font-weight: 800;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .card-pill {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 8px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--muted);
+    }
+    .card-desc {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+      margin-bottom: 20px;
+      flex-grow: 1;
+    }
+    .card-meta {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 12px;
+      padding: 12px;
+      font-size: 12.5px;
+      color: var(--muted);
+      margin-bottom: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .meta-row {
+      display: flex;
+      justify-content: space-between;
+    }
+    .meta-row span:last-child {
+      color: #fff;
+      font-weight: 600;
+      font-family: monospace;
+    }
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 14px 20px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 700;
+      text-decoration: none;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--coral), var(--coral-hover));
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(255, 56, 92, 0.35);
+    }
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #ff4d6d, var(--coral));
+      box-shadow: 0 6px 20px rgba(255, 56, 92, 0.5);
+    }
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.06);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      margin-top: 10px;
+    }
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.12);
+    }
+    .tip {
+      font-size: 11.5px;
+      color: #64748B;
+      text-align: center;
+      margin-top: 12px;
+      line-height: 1.4;
+    }
+    .footer {
+      text-align: center;
+      color: #64748B;
+      font-size: 13px;
+      margin-top: auto;
+    }
+    .footer a {
+      color: var(--rose);
+      text-decoration: none;
+    }
+    @media (max-width: 600px) {
+      h1 { font-size: 28px; }
+      .header { flex-direction: column; gap: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="header">
+    <a href="/" class="logo">
+      🔥 <span>BlunderR</span>
+    </a>
+    <nav class="nav-links">
+      <a href="/" class="nav-link">Home</a>
+      <a href="/webview" class="nav-link">Web App</a>
+      <a href="/safety.html" class="nav-link">Safety</a>
+    </nav>
+  </header>
+
+  <section class="hero">
+    <div class="badge">
+      <div class="badge-dot"></div>
+      Live Builds Ready • Commit 57e9db3 (Option A Glass Deck & Stable Login)
+    </div>
+    <h1>Latest Preview Builds</h1>
+    <p>Download and test the latest build of BlunderR with the Option A frosted glass live swipe teaser deck, Kiara AI flagship model, and non-squeezing mobile login.</p>
+  </section>
+
+  <div class="cards-grid">
+    <!-- Android Card -->
+    <div class="card">
+      <div class="card-icon">🤖</div>
+      <div class="card-title">
+        Android Package
+        <span class="card-pill">APK</span>
+      </div>
+      <div class="card-desc">
+        Standalone release APK compiled for all modern Android devices (ARM64 & ARMv7). Installs directly without Play Store.
+      </div>
+      <div class="card-meta">
+        <div class="meta-row">
+          <span>File Name</span>
+          <span>BlunderR.apk</span>
+        </div>
+        <div class="meta-row">
+          <span>File Size</span>
+          <span>~127 MB</span>
+        </div>
+        <div class="meta-row">
+          <span>Version</span>
+          <span>1.0.0 (Release)</span>
+        </div>
+      </div>
+      <a href="/downloads/BlunderR.apk" class="btn btn-primary" download>
+        ⬇️ Download Android APK
+      </a>
+      <div class="tip">If prompted, enable "Install unknown apps" in Settings.</div>
+    </div>
+
+    <!-- Google Play Production Bundle Card -->
+    <div class="card" style="border-color: rgba(34, 197, 94, 0.4);">
+      <div class="card-icon">📦</div>
+      <div class="card-title">
+        Google Play Bundle
+        <span class="card-pill" style="color: #22c55e; background: rgba(34, 197, 94, 0.15);">AAB & R8 Ready</span>
+      </div>
+      <div class="card-desc">
+        Optimized production release bundle for Google Play Console. Includes R8 DEX obfuscation, Android 15 Edge-to-Edge compliance, and large-screen resizability.
+      </div>
+      <div class="card-meta">
+        <div class="meta-row">
+          <span>AAB Package</span>
+          <span>blunderr-playstore-latest.aab</span>
+        </div>
+        <div class="meta-row">
+          <span>Deobfuscation Map</span>
+          <span>mapping-v1.0.7.txt</span>
+        </div>
+        <div class="meta-row">
+          <span>Version</span>
+          <span>1.0.7 (Code 8)</span>
+        </div>
+        <div class="meta-row">
+          <span>Target SDK</span>
+          <span>Android 16 (API 36)</span>
+        </div>
+      </div>
+      <a href="/downloads/blunderr-playstore-latest.aab" class="btn btn-primary" style="background: linear-gradient(135deg, #10b981, #059669);" download>
+        ⬇️ Download Play Store AAB (v1.0.7)
+      </a>
+      <a href="/downloads/mapping-v1.0.7.txt" class="btn btn-secondary" download>
+        ⬇️ Download mapping.txt (Deobfuscation)
+      </a>
+      <div class="tip">Upload this AAB to Google Play Console ➔ Production / Closed testing tracks.</div>
+    </div>
+
+    <!-- Apple iOS Card -->
+    <div class="card">
+      <div class="card-icon"></div>
+      <div class="card-title">
+        Apple iOS Build
+        <span class="card-pill">Simulator / IPA</span>
+      </div>
+      <div class="card-desc">
+        Pre-compiled iOS package ready for Xcode iOS Simulator or device sideloading (AltStore / Sideloadly).
+      </div>
+      <div class="card-meta">
+        <div class="meta-row">
+          <span>Simulator</span>
+          <span>BlunderR-iOS-Simulator.tar.gz</span>
+        </div>
+        <div class="meta-row">
+          <span>Direct IPA</span>
+          <span>BlunderR.ipa</span>
+        </div>
+        <div class="meta-row">
+          <span>File Size</span>
+          <span>~29.8 MB</span>
+        </div>
+      </div>
+      <a href="/downloads/BlunderR-iOS-Simulator.tar.gz" class="btn btn-primary" download>
+        ⬇️ Download iOS Simulator (.tar.gz)
+      </a>
+      <a href="/downloads/BlunderR.ipa" class="btn btn-secondary" download>
+        ⬇️ Download Direct Package (.ipa)
+      </a>
+      <div class="tip">Drag & drop the unzipped .app into any iOS Simulator window.</div>
+    </div>
+  </div>
+
+  <div style="text-align: center; margin-bottom: 40px;">
+    <a href="/webview" class="btn btn-secondary" style="display: inline-flex; padding: 12px 24px; border-radius: 999px;">
+      🚀 Or Launch Instant Zero-Install Web App ➔
+    </a>
+  </div>
+
+  <footer class="footer">
+    <p>© 2026 BlunderR Digital Private Limited • <a href="/">Return to blunderr.in</a></p>
+  </footer>
+
+</body>
+</html>
