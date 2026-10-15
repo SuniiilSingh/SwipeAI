@@ -108,6 +108,9 @@ public class DiscoveryDto {
         private String selectedMemeUrl;
         private String selectedMemeTitle;
         private String voicePromptUrl;
+        private String commentText;
+        private String contextType;
+        private String contextTargetId;
     }
 
     @Data
@@ -197,5 +200,20 @@ public class DiscoveryDto {
         private int activeMembers;
         private String icon;
         private boolean isPopular;
+    }
+
+    /**
+     * Daily free Spark Note quota status.
+     */
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class SparkNoteQuotaDto {
+        private int totalDaily;
+        private long usedToday;
+        private long remainingToday;
+        private boolean canSendFree;
+        private String resetsAt;
     }
 }

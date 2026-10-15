@@ -77,4 +77,14 @@ public class DiscoveryController {
         List<DiscoveryDto.CandidateCardDto> likes = discoveryService.getLikesReceived(userId);
         return ResponseEntity.ok(likes);
     }
+
+    /**
+     * Check authenticated user's daily free Spark Note (1/day) quota.
+     */
+    @GetMapping("/spark-note/quota")
+    public ResponseEntity<DiscoveryDto.SparkNoteQuotaDto> getSparkNoteQuota(
+            @AuthenticationPrincipal UUID userId) {
+        DiscoveryDto.SparkNoteQuotaDto quota = discoveryService.getSparkNoteQuota(userId);
+        return ResponseEntity.ok(quota);
+    }
 }

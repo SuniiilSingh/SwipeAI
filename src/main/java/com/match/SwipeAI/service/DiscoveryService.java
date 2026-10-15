@@ -802,9 +802,29 @@ public class DiscoveryService {
             if (actor == null) continue;
             Profile profile = profileRepository.findById(actorId).orElse(null);
 
-            result.add(buildCandidateCard(targetId, actor, profile, 2.5, 95, 95, List.of("Liked Your Profile! ✨")));
+            DiscoveryDto.CandidateCardDto card = buildCandidateCard(targetId, actor, profile, 2.5, 95, 95, List.of("Liked Your Profile! ✨"));
+            if (inter.getCommentText() != null && !inter.getCommentText().isBlank()) {
+                card.setCommentText(inter.getCommentText());
+                card.setContextType(inter.getContextType() != null ? inter.getContextType().name() : null);
+                card.setContextTargetId(inter.getContextTargetId());
+            }
+            result.add(card);
         }
 
         return result;
+    }
+
+    public DiscoveryDto.SparkNoteQuotaDto getSparkNoteQuota(UUID actorId) {
+        OffsetDateTime startOfDay = OffsetDateTime.now().withHour(0).withMinute(0).withSecond(0).withNano(0);
+        long usedToday = interactionRepository.countSparkNotesUsedSince(actorId, startOfDay);
+        long remaining = Math.max(0, 1 - usedToday);
+        OffsetDateTime tomorrowMidnight = startOfDay.plusDays(1);
+        return DiscoveryDto.SparkNoteQuotaDto.builder()
+                .totalDaily(1)
+                .usedToday(usedToday)
+                .remainingToday(remaining)
+                .canSendFree(remaining > 0)
+                .resetsAt(tomorrowMidnight.toString())
+                .build();
     }
 }
