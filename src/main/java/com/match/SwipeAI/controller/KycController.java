@@ -137,6 +137,8 @@ public class KycController {
             userRepository.findById(userId).ifPresent(user -> {
                 user.setLivenessScore(response.getLivenessScore());
                 user.setFaceVerified(false);
+                user.setNeedsLivenessRetry(false);
+                user.setLivenessStatus("PENDING");
                 userRepository.save(user);
             });
 
@@ -187,6 +189,8 @@ public class KycController {
 
         userRepository.findById(userId).ifPresent(user -> {
             user.setFaceVerified(false);
+            user.setNeedsLivenessRetry(false);
+            user.setLivenessStatus("PENDING");
             userRepository.save(user);
         });
 

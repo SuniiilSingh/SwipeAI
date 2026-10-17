@@ -174,9 +174,102 @@ public class MatchService {
     @Transactional
     public void unmatch(UUID matchId, UUID userId) {
         Match match = matchRepository.findById(matchId).orElseThrow();
+        UUID otherUserId = match.getUserAId().equals(userId) ? match.getUserBId() : match.getUserAId();
         match.setStatus(MatchStatus.UNMATCHED);
         matchRepository.save(match);
         log.info("User {} unmatched match {}", userId, matchId);
+
+        promoteQueuedMatchesIfSlotsOpen(userId);
+        promoteQueuedMatchesIfSlotsOpen(otherUserId);
+    }
+
+    public MatchDto.MatchCapacityDto getMatchCapacity(UUID userId) {
+        long activeCount = matchRepository.countActiveRuleOfFiveMatches(userId);
+        long queuedCount = matchRepository.findQueuedMatchesForUser(userId).size();
+        long plannedCount = matchRepository.findPlannedDatesForUser(userId).size();
+        boolean isAtCapacity = activeCount >= 5;
+
+        String msg;
+        if (isAtCapacity) {
+            msg = "Your inbox is at full focus (5/5). Resolve a conversation to unlock new connections.";
+        } else {
+            long openSlots = 5 - activeCount;
+            msg = openSlots + (openSlots == 1 ? " slot open" : " slots open") + " for high-intent connections.";
+        }
+
+        return MatchDto.MatchCapacityDto.builder()
+                .activeMatchesCount(activeCount)
+                .maxLimit(5)
+                .isAtCapacity(isAtCapacity)
+                .queuedMatchesCount(queuedCount)
+                .plannedDatesCount(plannedCount)
+                .message(msg)
+                .build();
+    }
+
+    @Transactional
+    public MatchDto.MatchResponseDto markDatePlanned(UUID matchId, UUID userId, String venueName, String note) {
+        Match match = matchRepository.findById(matchId)
+                .orElseThrow(() -> new IllegalArgumentException("Match not found: " + matchId));
+
+        if (!match.getUserAId().equals(userId) && !match.getUserBId().equals(userId)) {
+            throw new org.springframework.security.access.AccessDeniedException("Not authorized");
+        }
+
+        match.setStatus(MatchStatus.DATE_PLANNED);
+        match = matchRepository.save(match);
+        log.info("Match {} marked as DATE_PLANNED by user {}. Active slot freed under Rule of 5!", matchId, userId);
+
+        UUID otherUserId = match.getUserAId().equals(userId) ? match.getUserBId() : match.getUserAId();
+        User otherUser = userRepository.findById(otherUserId).orElseThrow();
+        Profile otherProfile = profileRepository.findById(otherUserId).orElse(null);
+
+        // Notify both users
+        pushNotificationService.sendMatchNotification(userId, otherUserId, matchId, "Date Planned! 🎉", "Date Planned! 🎉");
+
+        // Promote queued matches for both users
+        promoteQueuedMatchesIfSlotsOpen(userId);
+        promoteQueuedMatchesIfSlotsOpen(otherUserId);
+
+        return mapToMatchDto(match, userId, otherUser, otherProfile);
+    }
+
+    @Transactional
+    public void gracefulExit(UUID matchId, UUID userId, String farewellNote) {
+        Match match = matchRepository.findById(matchId)
+                .orElseThrow(() -> new IllegalArgumentException("Match not found: " + matchId));
+
+        if (!match.getUserAId().equals(userId) && !match.getUserBId().equals(userId)) {
+            throw new org.springframework.security.access.AccessDeniedException("Not authorized");
+        }
+
+        UUID otherUserId = match.getUserAId().equals(userId) ? match.getUserBId() : match.getUserAId();
+        match.setStatus(MatchStatus.UNMATCHED);
+        matchRepository.save(match);
+        log.info("User {} performed graceful exit on match {}", userId, matchId);
+
+        promoteQueuedMatchesIfSlotsOpen(userId);
+        promoteQueuedMatchesIfSlotsOpen(otherUserId);
+    }
+
+    @Transactional
+    public void promoteQueuedMatchesIfSlotsOpen(UUID userId) {
+        long active = matchRepository.countActiveRuleOfFiveMatches(userId);
+        if (active < 5) {
+            List<Match> queued = matchRepository.findQueuedMatchesForUser(userId);
+            for (Match m : queued) {
+                UUID partnerId = m.getUserAId().equals(userId) ? m.getUserBId() : m.getUserAId();
+                if (matchRepository.countActiveRuleOfFiveMatches(partnerId) < 5) {
+                    m.setStatus(MatchStatus.PENDING_ICEBREAKER);
+                    m.setExpiresAt(OffsetDateTime.now().plusHours(72));
+                    matchRepository.save(m);
+                    log.info("Promoted queued match {} between {} and {} into active lounge!", m.getId(), userId, partnerId);
+                    pushNotificationService.sendMatchNotification(userId, partnerId, m.getId(), "A queued connection", "A queued connection");
+                    active++;
+                    if (active >= 5) break;
+                }
+            }
+        }
     }
 
     @Transactional
@@ -259,4 +352,55 @@ public class MatchService {
                 .otherProfile(candidateCard)
                 .build();
     }
+
+    /**
+     * 6-Hour Background Expiry Sweep:
+     * Finds active chats whose 48-hour countdown has elapsed and marks them EXPIRED.
+     * Note: We intentionally do NOT auto-delete or auto-evict them; they remain in
+     * the user's inbox marked as EXPIRED so the user can consciously decide whether
+     * to Plan a Date or Farewell them when freeing a slot under the Rule of 5.
+     */
+    @org.springframework.scheduling.annotation.Scheduled(fixedRate = 6 * 60 * 60 * 1000)
+    @Transactional
+    public void processExpiredMatches() {
+        OffsetDateTime now = OffsetDateTime.now();
+        List<Match> expiredMatches = matchRepository.findExpiredActiveMatches(now);
+        if (!expiredMatches.isEmpty()) {
+            log.info("Processing {} expired matches in 6-hour scheduled job", expiredMatches.size());
+            for (Match m : expiredMatches) {
+                m.setStatus(MatchStatus.EXPIRED);
+                matchRepository.save(m);
+            }
+        }
+    }
+
+    /**
+     * Unlock a specific queued match when an active slot opens up under the Rule of 5.
+     */
+    @Transactional
+    public MatchDto.MatchResponseDto unlockSpecificQueuedMatch(UUID matchId, UUID userId) {
+        Match match = matchRepository.findById(matchId)
+                .orElseThrow(() -> new IllegalArgumentException("Match not found: " + matchId));
+
+        if (!match.getUserAId().equals(userId) && !match.getUserBId().equals(userId)) {
+            throw new org.springframework.security.access.AccessDeniedException("Not authorized to unlock this match");
+        }
+
+        long active = matchRepository.countActiveRuleOfFiveMatches(userId);
+        if (active >= 5) {
+            throw new IllegalStateException("Cannot unlock: user is already at maximum 5 active matches");
+        }
+
+        match.setStatus(MatchStatus.PENDING_ICEBREAKER);
+        match.setExpiresAt(OffsetDateTime.now().plusHours(48));
+        match = matchRepository.save(match);
+        log.info("User {} specifically unlocked queued match {}", userId, matchId);
+
+        UUID otherUserId = match.getUserAId().equals(userId) ? match.getUserBId() : match.getUserAId();
+        User otherUser = userRepository.findById(otherUserId).orElseThrow();
+        Profile otherProfile = profileRepository.findById(otherUserId).orElse(null);
+
+        return mapToMatchDto(match, userId, otherUser, otherProfile);
+    }
 }
+

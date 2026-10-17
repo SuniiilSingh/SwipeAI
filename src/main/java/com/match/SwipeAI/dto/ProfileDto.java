@@ -117,6 +117,8 @@ public class ProfileDto {
         private boolean digilockerVerified;
         private boolean whatsappVerified;
         private boolean faceVerified;
+        private boolean needsLivenessRetry;
+        private String livenessStatus;
         private String verificationStatus;
         private double livenessScore;
         private int karmaScore;

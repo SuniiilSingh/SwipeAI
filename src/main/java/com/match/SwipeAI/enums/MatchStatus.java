@@ -25,6 +25,18 @@ public enum MatchStatus {
     EXPIRED,
 
     /**
+     * Real-world date scheduled or contact info exchanged.
+     * Archived into the Date Book, freeing up an active match slot under the Rule of 5.
+     */
+    DATE_PLANNED,
+
+    /**
+     * Mutual match formed while user is at maximum active capacity (5/5).
+     * Held in priority queue until an active chat slot frees up.
+     */
+    QUEUED_CAPACITY,
+
+    /**
      * Unmatched by either user.
      */
     UNMATCHED

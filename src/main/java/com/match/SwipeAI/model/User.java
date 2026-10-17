@@ -69,6 +69,18 @@ public class User {
     private Boolean faceVerified = false;
 
     /**
+     * Flag indicating user needs to retake 3D liveness selfie due to poor lighting or blur.
+     * Drives all 4 recovery surfaces (Discovery, Matches, Profile, Notification).
+     */
+    @Builder.Default
+    @Column(name = "needs_liveness_retry")
+    private Boolean needsLivenessRetry = false;
+
+    @Builder.Default
+    @Column(name = "liveness_status", length = 30)
+    private String livenessStatus = "PENDING";
+
+    /**
      * Dynamic Ghost-Buster Karma score (0 - 200, default 100).
      * High karma grants profile spotlighting; ghosters get deprioritized.
      */

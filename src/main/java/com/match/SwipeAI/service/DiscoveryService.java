@@ -461,14 +461,19 @@ public class DiscoveryService {
                         reciprocal.get().getActionType() == ActionType.SUPER_SPARK
                 );
                 if (reciprocalIsHighIntent) {
-                    // Form new Match in PENDING_ICEBREAKER state with 48h timer
+                    // Rule of 5: check active match capacity for both users
+                    long actorActive = matchRepository.countActiveRuleOfFiveMatches(actorId);
+                    long targetActive = matchRepository.countActiveRuleOfFiveMatches(request.getTargetId());
+                    boolean atCapacity = actorActive >= 5 || targetActive >= 5;
+                    MatchStatus initialStatus = atCapacity ? MatchStatus.QUEUED_CAPACITY : MatchStatus.PENDING_ICEBREAKER;
+
                     isMatch = true;
                     Match match = Match.builder()
                             .userAId(actorId)
                             .userBId(request.getTargetId())
                             .initiatorId(actorId)
-                            .status(MatchStatus.PENDING_ICEBREAKER)
-                            .expiresAt(OffsetDateTime.now().plusHours(48))
+                            .status(initialStatus)
+                            .expiresAt(OffsetDateTime.now().plusHours(72))
                             .messagesCount(0)
                             .e2eeSecret(UUID.randomUUID().toString())
                             .icebreakerGameData("{\"quizId\":\"quiz_sunday_vibe\",\"title\":\"10s Rapid-Fire Quiz\",\"question\":\"Your Ultimate Sunday Vibe:\",\"options\":[\"Filter Coffee & Dosa crawl in Indiranagar\",\"Sleep until 2 PM & binge true-crime podcasts\",\"Spontaneous drive to Nandi Hills\"],\"userAAnswer\":null,\"userBAnswer\":null,\"isCompleted\":false,\"isMutualAgreement\":false}")
@@ -476,7 +481,7 @@ public class DiscoveryService {
 
                     match = matchRepository.save(match);
                     matchId = match.getId();
-                    log.info("Mutual Like! Created Match {} between {} and {}", matchId, actorId, request.getTargetId());
+                    log.info("Mutual Like! Created Match {} ({}) between {} and {}", matchId, initialStatus, actorId, request.getTargetId());
 
                     // Dispatch push notification to both users
                     String actorName = profileRepository.findById(actorId).map(Profile::getDisplayName).orElse("Your match");
@@ -652,6 +657,35 @@ public class DiscoveryService {
             }
         }
 
+        // Anti-Stalking Geo-Fuzzy Jitter: bucket exact distances to protect residential privacy
+        String locationArea = null;
+        if (profile != null) {
+            if (profile.getNeighborhood() != null && !profile.getNeighborhood().isBlank()) {
+                locationArea = profile.getNeighborhood().trim();
+            } else if (profile.getCity() != null && !profile.getCity().isBlank()) {
+                locationArea = profile.getCity().trim();
+            } else if (profile.getLocation() != null && !profile.getLocation().isBlank()) {
+                locationArea = profile.getLocation().trim();
+            }
+        }
+
+        String distanceTier;
+        if (distanceKm < 2.0) {
+            distanceTier = "< 2 km";
+        } else if (distanceKm < 5.0) {
+            distanceTier = "< 5 km";
+        } else if (distanceKm < 10.0) {
+            distanceTier = "< 10 km";
+        } else if (distanceKm < 25.0) {
+            distanceTier = "< 25 km";
+        } else {
+            distanceTier = Math.round(distanceKm) + " km";
+        }
+
+        String fuzzyDistance = (locationArea != null && !locationArea.equalsIgnoreCase("Bengaluru") && !locationArea.equalsIgnoreCase("Bangalore"))
+                ? locationArea + " · " + distanceTier
+                : distanceTier;
+
         return DiscoveryDto.CandidateCardDto.builder()
                 .userId(user.getId())
                 .displayName(profile != null && profile.getDisplayName() != null ? profile.getDisplayName() : "Single in City")
@@ -661,6 +695,7 @@ public class DiscoveryService {
                 .isWhatsappVerified(Boolean.TRUE.equals(user.getWhatsappVerified()))
                 .livenessScore(user.getLivenessScore() != null ? user.getLivenessScore() : 0.98)
                 .distanceKm(distanceKm)
+                .fuzzyDistance(fuzzyDistance)
                 .culturalBadges(DiscoveryDto.CulturalBadges.builder()
                         .diet(profile != null && profile.getDietaryPref() != null ? profile.getDietaryPref() : DietaryPreference.PURE_VEG)
                         .living(profile != null && profile.getLivingStatus() != null ? profile.getLivingStatus() : LivingStatus.INDEPENDENT_FLAT)

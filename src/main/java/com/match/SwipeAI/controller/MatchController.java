@@ -127,4 +127,53 @@ public class MatchController {
         matchService.unmatch(id, userId);
         return ResponseEntity.ok(Map.of("status", "success", "message", "Match deleted successfully."));
     }
+
+    /**
+     * Get user's Rule of 5 active match capacity status.
+     */
+    @GetMapping("/capacity")
+    public ResponseEntity<MatchDto.MatchCapacityDto> getMatchCapacity(@AuthenticationPrincipal UUID userId) {
+        MatchDto.MatchCapacityDto capacity = matchService.getMatchCapacity(userId);
+        return ResponseEntity.ok(capacity);
+    }
+
+    /**
+     * Mark a real date as planned or numbers exchanged.
+     * Archives the conversation to Date Book and frees up 1 of the 5 active slots.
+     */
+    @PostMapping("/{id}/plan-date")
+    public ResponseEntity<MatchDto.MatchResponseDto> planDate(
+            @AuthenticationPrincipal UUID userId,
+            @PathVariable UUID id,
+            @RequestBody(required = false) MatchDto.DatePlanRequest request) {
+        String venue = request != null ? request.getVenueName() : null;
+        String note = request != null ? request.getNote() : null;
+        MatchDto.MatchResponseDto res = matchService.markDatePlanned(id, userId, venue, note);
+        return ResponseEntity.ok(res);
+    }
+
+    /**
+     * Graceful exit: send polite farewell and close chat to free an active slot.
+     */
+    @PostMapping("/{id}/graceful-exit")
+    public ResponseEntity<Map<String, String>> gracefulExit(
+            @AuthenticationPrincipal UUID userId,
+            @PathVariable UUID id,
+            @RequestBody(required = false) MatchDto.DatePlanRequest request) {
+        String note = request != null ? request.getNote() : "Polite farewell";
+        matchService.gracefulExit(id, userId, note);
+        return ResponseEntity.ok(Map.of("status", "success", "message", "Graceful exit completed. Active slot freed under Rule of 5!"));
+    }
+
+    /**
+     * Specifically unlock a queued match when a slot has been freed under the Rule of 5.
+     */
+    @PostMapping("/{id}/unlock-queued")
+    public ResponseEntity<MatchDto.MatchResponseDto> unlockQueued(
+            @AuthenticationPrincipal UUID userId,
+            @PathVariable UUID id) {
+        MatchDto.MatchResponseDto res = matchService.unlockSpecificQueuedMatch(id, userId);
+        return ResponseEntity.ok(res);
+    }
 }
+

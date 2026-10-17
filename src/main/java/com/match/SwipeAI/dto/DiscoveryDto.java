@@ -70,6 +70,7 @@ public class DiscoveryDto {
         private boolean isWhatsappVerified;
         private double livenessScore;
         private double distanceKm;
+        private String fuzzyDistance;
         private CulturalBadges culturalBadges;
         private VoicePromptDto voicePrompt;
         private MemeMatchDto memeMatch;

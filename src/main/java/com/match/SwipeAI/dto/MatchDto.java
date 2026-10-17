@@ -110,4 +110,31 @@ public class MatchDto {
         private List<String> sparks;
         private String commonGround;
     }
+
+    /**
+     * Capacity and Rule of 5 stats for the active user.
+     */
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class MatchCapacityDto {
+        private long activeMatchesCount;
+        private int maxLimit;
+        private boolean isAtCapacity;
+        private long queuedMatchesCount;
+        private long plannedDatesCount;
+        private String message;
+    }
+
+    /**
+     * Request for planning a real date or recording a graceful exit.
+     */
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class DatePlanRequest {
+        private String venueName;
+        private String note;
+    }
 }

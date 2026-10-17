@@ -46,3 +46,7 @@ website/webview/
 
 # Uploads directory
 uploads/
+
+# Instagram publisher
+.instagram_session.json
+.venv_social/

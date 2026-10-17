@@ -513,6 +513,12 @@ public class ProfileService {
             }
         }
 
+        boolean isRetryNeeded = Boolean.TRUE.equals(user.getNeedsLivenessRetry())
+                || "REJECTED".equalsIgnoreCase(verStatus)
+                || "RETRY_NEEDED".equalsIgnoreCase(verStatus);
+        String liveStatus = user.getLivenessStatus() != null ? user.getLivenessStatus()
+                : (isRetryNeeded ? "RETRY_NEEDED" : (Boolean.TRUE.equals(user.getFaceVerified()) ? "VERIFIED" : "PENDING"));
+
         return ProfileDto.ProfileResponse.builder()
                 .userId(user.getId())
                 .phoneE164(user.getPhoneE164())
@@ -528,6 +534,8 @@ public class ProfileService {
                 .digilockerVerified(Boolean.TRUE.equals(user.getDigilockerVerified()))
                 .whatsappVerified(Boolean.TRUE.equals(user.getWhatsappVerified()))
                 .faceVerified(Boolean.TRUE.equals(user.getFaceVerified()))
+                .needsLivenessRetry(isRetryNeeded)
+                .livenessStatus(liveStatus)
                 .verificationStatus(verStatus)
                 .livenessScore(user.getLivenessScore() != null ? user.getLivenessScore() : 0.0)
                 .karmaScore(user.getKarmaScore() != null ? user.getKarmaScore() : 100)
@@ -623,6 +631,8 @@ public class ProfileService {
                     Profile freshProfile = profileRepository.findById(userId).orElse(p);
                     if (selfCheck.isMatch() || selfCheck.getSelfieFacesDetected() >= 1) {
                         freshUser.setFaceVerified(true);
+                        freshUser.setNeedsLivenessRetry(false);
+                        freshUser.setLivenessStatus("VERIFIED");
                         if (freshUser.getLivenessScore() == null || freshUser.getLivenessScore() < 0.85) {
                             freshUser.setLivenessScore(0.95);
                         }
@@ -632,6 +642,8 @@ public class ProfileService {
                         log.info("Async selfie verification PASSED (selfie face check) for user {}", userId);
                     } else {
                         freshUser.setFaceVerified(false);
+                        freshUser.setNeedsLivenessRetry(true);
+                        freshUser.setLivenessStatus("RETRY_NEEDED");
                         userRepository.save(freshUser);
                         freshProfile.setVerificationStatus("REJECTED");
                         profileRepository.save(freshProfile);
@@ -662,6 +674,8 @@ public class ProfileService {
                 Profile freshProfile = profileRepository.findById(userId).orElse(p);
                 if (anyMatch) {
                     freshUser.setFaceVerified(true);
+                    freshUser.setNeedsLivenessRetry(false);
+                    freshUser.setLivenessStatus("VERIFIED");
                     freshUser.setLivenessScore(Math.max(freshUser.getLivenessScore() != null ? freshUser.getLivenessScore() : 0.0, bestScore));
                     userRepository.save(freshUser);
                     freshProfile.setVerificationStatus("VERIFIED");
@@ -669,6 +683,8 @@ public class ProfileService {
                     log.info("Async selfie verification PASSED for user {} (score={})", userId, bestScore);
                 } else {
                     freshUser.setFaceVerified(false);
+                    freshUser.setNeedsLivenessRetry(true);
+                    freshUser.setLivenessStatus("RETRY_NEEDED");
                     userRepository.save(freshUser);
                     freshProfile.setVerificationStatus("REJECTED");
                     profileRepository.save(freshProfile);

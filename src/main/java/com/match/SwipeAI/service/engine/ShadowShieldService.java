@@ -102,24 +102,50 @@ public class ShadowShieldService {
     }
 
     public boolean isShielded(User viewer, Profile viewerProfile, User candidate, Profile candidateProfile) {
-        // 1. Corporate domain check
+        // 1. Explicit Corporate Domain Shield Check (Viewer's shield)
+        Optional<UserContactShield> viewerCorpShield = shieldRepository.findByUserIdAndCorporateDomainIsNotNull(viewer.getId());
+        if (viewerCorpShield.isPresent()) {
+            String domain = viewerCorpShield.get().getCorporateDomain().toLowerCase();
+            String candEmail = candidate.getEmail() != null ? candidate.getEmail().toLowerCase() : "";
+            String candCompany = candidateProfile != null && candidateProfile.getCompany() != null ? candidateProfile.getCompany().toLowerCase() : "";
+            if ((!candEmail.isEmpty() && (candEmail.endsWith("@" + domain) || candEmail.contains(domain))) ||
+                (!candCompany.isEmpty() && (candCompany.contains(domain) || domain.contains(candCompany)))) {
+                log.debug("Candidate {} filtered by viewer {}'s corporate domain shield (@{})", candidate.getId(), viewer.getId(), domain);
+                return true;
+            }
+        }
+
+        // 2. Symmetric Check: Candidate's corporate domain shield
+        Optional<UserContactShield> candCorpShield = shieldRepository.findByUserIdAndCorporateDomainIsNotNull(candidate.getId());
+        if (candCorpShield.isPresent()) {
+            String domain = candCorpShield.get().getCorporateDomain().toLowerCase();
+            String viewEmail = viewer.getEmail() != null ? viewer.getEmail().toLowerCase() : "";
+            String viewCompany = viewerProfile != null && viewerProfile.getCompany() != null ? viewerProfile.getCompany().toLowerCase() : "";
+            if ((!viewEmail.isEmpty() && (viewEmail.endsWith("@" + domain) || viewEmail.contains(domain))) ||
+                (!viewCompany.isEmpty() && (viewCompany.contains(domain) || domain.contains(viewCompany)))) {
+                log.debug("Viewer {} filtered by candidate {}'s corporate domain shield (@{})", viewer.getId(), candidate.getId(), domain);
+                return true;
+            }
+        }
+
+        // 3. Same employer company name match (e.g. Swiggy & Swiggy)
         if (viewerProfile != null && candidateProfile != null) {
             String viewerCorp = viewerProfile.getCompany();
             String candidateCorp = candidateProfile.getCompany();
-            if (viewerCorp != null && !viewerCorp.isBlank() && viewerCorp.equalsIgnoreCase(candidateCorp)) {
+            if (viewerCorp != null && !viewerCorp.isBlank() && candidateCorp != null && !candidateCorp.isBlank() && viewerCorp.trim().equalsIgnoreCase(candidateCorp.trim())) {
                 log.debug("User {} and candidate {} filtered by Corporate Shield ({})", viewer.getId(), candidate.getId(), viewerCorp);
                 return true;
             }
         }
 
-        // 2. Query Contact Hash: Is candidate's phone in viewer's shield?
+        // 4. Query Contact Hash: Is candidate's phone in viewer's shield?
         String candidatePhoneHash = hashPhoneNumber(candidate.getPhoneE164());
         if (shieldRepository.existsByUserIdAndContactPhoneHash(viewer.getId(), candidatePhoneHash)) {
             log.debug("Candidate {} found in viewer {}'s contact shield", candidate.getId(), viewer.getId());
             return true;
         }
 
-        // 3. Symmetric Check: Is viewer in candidate's shield?
+        // 5. Symmetric Check: Is viewer in candidate's shield?
         String viewerPhoneHash = hashPhoneNumber(viewer.getPhoneE164());
         if (shieldRepository.existsByUserIdAndContactPhoneHash(candidate.getId(), viewerPhoneHash)) {
             log.debug("Viewer {} found in candidate {}'s contact shield", viewer.getId(), candidate.getId());
