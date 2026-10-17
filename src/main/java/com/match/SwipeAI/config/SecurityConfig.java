@@ -73,6 +73,8 @@ public class SecurityConfig {
                                 "/api/v1/discovery/circles/**",
                                 "/v1/support/faqs",
                                 "/api/v1/support/faqs",
+                                "/v1/system/**",
+                                "/api/v1/system/**",
                                 "/v1/health",
                                 "/api/v1/health",
                                 "/health",
