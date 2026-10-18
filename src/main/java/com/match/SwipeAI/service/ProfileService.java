@@ -7,6 +7,7 @@ import com.match.SwipeAI.model.Profile;
 import com.match.SwipeAI.model.User;
 import com.match.SwipeAI.repository.*;
 import com.match.SwipeAI.service.engine.CosmicChemistryEngine;
+import com.match.SwipeAI.service.integration.FaceMatchService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -589,6 +590,7 @@ public class ProfileService {
                 .hasActivePass(Boolean.TRUE.equals(user.getHasActivePass()))
                 .selectedMemeUrl(profile.getSelectedMemeUrl())
                 .selectedMemeTitle(profile.getSelectedMemeTitle())
+                .photosVerificationJson(profile.getPhotosVerificationJson())
                 .build();
     }
 
@@ -606,40 +608,55 @@ public class ProfileService {
                     return;
                 }
 
-                List<String> candidatePhotos = new ArrayList<>();
-                if (p.getPhoto1() != null && !p.getPhoto1().isBlank()) candidatePhotos.add(p.getPhoto1().trim());
-                if (p.getPhoto2() != null && !p.getPhoto2().isBlank()) candidatePhotos.add(p.getPhoto2().trim());
-                if (p.getPhoto3() != null && !p.getPhoto3().isBlank()) candidatePhotos.add(p.getPhoto3().trim());
-                if (p.getPhoto4() != null && !p.getPhoto4().isBlank()) candidatePhotos.add(p.getPhoto4().trim());
-                if (p.getPhoto5() != null && !p.getPhoto5().isBlank()) candidatePhotos.add(p.getPhoto5().trim());
-                if (p.getPhoto6() != null && !p.getPhoto6().isBlank()) candidatePhotos.add(p.getPhoto6().trim());
+                List<FaceMatchService.PhotoSlotItemDto> photoSlots = new ArrayList<>();
+                if (p.getPhoto1() != null && !p.getPhoto1().isBlank()) {
+                    photoSlots.add(FaceMatchService.PhotoSlotItemDto.builder().slot(1).photoUrl(p.getPhoto1().trim()).build());
+                }
+                if (p.getPhoto2() != null && !p.getPhoto2().isBlank()) {
+                    photoSlots.add(FaceMatchService.PhotoSlotItemDto.builder().slot(2).photoUrl(p.getPhoto2().trim()).build());
+                }
+                if (p.getPhoto3() != null && !p.getPhoto3().isBlank()) {
+                    photoSlots.add(FaceMatchService.PhotoSlotItemDto.builder().slot(3).photoUrl(p.getPhoto3().trim()).build());
+                }
+                if (p.getPhoto4() != null && !p.getPhoto4().isBlank()) {
+                    photoSlots.add(FaceMatchService.PhotoSlotItemDto.builder().slot(4).photoUrl(p.getPhoto4().trim()).build());
+                }
+                if (p.getPhoto5() != null && !p.getPhoto5().isBlank()) {
+                    photoSlots.add(FaceMatchService.PhotoSlotItemDto.builder().slot(5).photoUrl(p.getPhoto5().trim()).build());
+                }
+                if (p.getPhoto6() != null && !p.getPhoto6().isBlank()) {
+                    photoSlots.add(FaceMatchService.PhotoSlotItemDto.builder().slot(6).photoUrl(p.getPhoto6().trim()).build());
+                }
 
-                if (candidatePhotos.isEmpty() && p.getPhotosJson() != null && !p.getPhotosJson().isBlank()) {
+                if (photoSlots.isEmpty() && p.getPhotosJson() != null && !p.getPhotosJson().isBlank()) {
                     try {
                         List<String> parsed = objectMapper.readValue(p.getPhotosJson(), new TypeReference<>() {});
+                        int s = 1;
                         for (String url : parsed) {
-                            if (url != null && !url.isBlank()) candidatePhotos.add(url.trim());
+                            if (url != null && !url.isBlank()) {
+                                photoSlots.add(FaceMatchService.PhotoSlotItemDto.builder().slot(s++).photoUrl(url.trim()).build());
+                            }
                         }
                     } catch (Exception ignored) {}
                 }
 
-                if (candidatePhotos.isEmpty()) {
-                    // Verify selfie face quality in background via YuNet/SFace even before profile photos are uploaded
+                if (photoSlots.isEmpty()) {
+                    // Check selfie quality when no profile photos have been uploaded yet
                     var selfCheck = faceMatchService.compareFaces(selfie, selfie);
-                    // Re-fetch fresh entities so we never overwrite photos uploaded while faceMatchService was running
                     User freshUser = userRepository.findById(userId).orElse(u);
                     Profile freshProfile = profileRepository.findById(userId).orElse(p);
                     if (selfCheck.isMatch() || selfCheck.getSelfieFacesDetected() >= 1) {
-                        freshUser.setFaceVerified(true);
                         freshUser.setNeedsLivenessRetry(false);
                         freshUser.setLivenessStatus("VERIFIED");
                         if (freshUser.getLivenessScore() == null || freshUser.getLivenessScore() < 0.85) {
                             freshUser.setLivenessScore(0.95);
                         }
+                        // FaceVerified remains false until primary profile photos are uploaded and matched
+                        freshUser.setFaceVerified(false);
                         userRepository.save(freshUser);
-                        freshProfile.setVerificationStatus("VERIFIED");
+                        freshProfile.setVerificationStatus("PENDING_PHOTOS");
                         profileRepository.save(freshProfile);
-                        log.info("Async selfie verification PASSED (selfie face check) for user {}", userId);
+                        log.info("Selfie face quality check PASSED for user {} (waiting for profile photos)", userId);
                     } else {
                         freshUser.setFaceVerified(false);
                         freshUser.setNeedsLivenessRetry(true);
@@ -647,51 +664,63 @@ public class ProfileService {
                         userRepository.save(freshUser);
                         freshProfile.setVerificationStatus("REJECTED");
                         profileRepository.save(freshProfile);
-                        log.info("Async selfie verification REJECTED (no clear face in selfie) for user {}", userId);
+                        log.warn("Selfie face quality check REJECTED (no face in selfie) for user {}", userId);
                     }
                     return;
                 }
 
-                boolean anyMatch = false;
-                double bestScore = 0.0;
-                for (String photoUrl : candidatePhotos) {
-                    try {
-                        var res = faceMatchService.compareFaces(selfie, photoUrl);
-                        if (res.getSimilarityScore() > bestScore) {
-                            bestScore = res.getSimilarityScore();
-                        }
-                        if (res.isMatch()) {
-                            anyMatch = true;
-                            break;
-                        }
-                    } catch (Exception e) {
-                        log.warn("Async face compare error for user {} against {}: {}", userId, photoUrl, e.getMessage());
-                    }
+                // Run biometric verification across ALL uploaded photo slots in parallel
+                var batchRes = faceMatchService.matchAllPhotos(selfie, photoSlots);
+
+                // Serialize per-photo verification results into JSON ledger
+                String ledgerJson = null;
+                try {
+                    ledgerJson = objectMapper.writeValueAsString(batchRes.getResults());
+                } catch (Exception e) {
+                    log.warn("Failed to serialize photos verification ledger for user {}: {}", userId, e.getMessage());
                 }
 
-                // Re-fetch fresh entities so we never overwrite concurrent photo updates made while compareFaces ran
+                // Re-fetch fresh entities so we never overwrite concurrent photo updates made while batch matching ran
                 User freshUser = userRepository.findById(userId).orElse(u);
                 Profile freshProfile = profileRepository.findById(userId).orElse(p);
-                if (anyMatch) {
+                freshProfile.setPhotosVerificationJson(ledgerJson);
+
+                if (batchRes.isProfileVerified()) {
                     freshUser.setFaceVerified(true);
                     freshUser.setNeedsLivenessRetry(false);
                     freshUser.setLivenessStatus("VERIFIED");
-                    freshUser.setLivenessScore(Math.max(freshUser.getLivenessScore() != null ? freshUser.getLivenessScore() : 0.0, bestScore));
+                    if (freshUser.getLivenessScore() == null || freshUser.getLivenessScore() < 0.85) {
+                        freshUser.setLivenessScore(0.95);
+                    }
                     userRepository.save(freshUser);
                     freshProfile.setVerificationStatus("VERIFIED");
                     profileRepository.save(freshProfile);
-                    log.info("Async selfie verification PASSED for user {} (score={})", userId, bestScore);
+                    log.info("Multi-photo selfie verification PASSED for user {}: {} matched, 0 mismatches",
+                            userId, batchRes.getMatchedCount());
                 } else {
                     freshUser.setFaceVerified(false);
-                    freshUser.setNeedsLivenessRetry(true);
-                    freshUser.setLivenessStatus("RETRY_NEEDED");
+                    if (batchRes.getMismatchCount() > 0) {
+                        freshUser.setNeedsLivenessRetry(false);
+                        freshUser.setLivenessStatus("MISMATCH_DETECTED");
+                        freshProfile.setVerificationStatus("REJECTED");
+                        log.warn("Multi-photo selfie verification REJECTED for user {}: {} catfish/mismatch photo(s) detected!",
+                                userId, batchRes.getMismatchCount());
+                    } else if ("PRIMARY_PHOTO_FAILED".equals(batchRes.getOverallStatus())) {
+                        freshUser.setNeedsLivenessRetry(false);
+                        freshUser.setLivenessStatus("PRIMARY_PHOTO_FAILED");
+                        freshProfile.setVerificationStatus("REJECTED");
+                        log.warn("Multi-photo selfie verification REJECTED for user {}: primary photo 1 failed to match selfie.", userId);
+                    } else {
+                        freshUser.setNeedsLivenessRetry(true);
+                        freshUser.setLivenessStatus("RETRY_NEEDED");
+                        freshProfile.setVerificationStatus("REJECTED");
+                        log.warn("Multi-photo selfie verification REJECTED for user {}: status={}", userId, batchRes.getOverallStatus());
+                    }
                     userRepository.save(freshUser);
-                    freshProfile.setVerificationStatus("REJECTED");
                     profileRepository.save(freshProfile);
-                    log.info("Async selfie verification REJECTED for user {} (bestScore={})", userId, bestScore);
                 }
             } catch (Exception e) {
-                log.error("Async selfie verification failed for user {}: {}", userId, e.getMessage());
+                log.error("Async multi-photo selfie verification failed for user {}: {}", userId, e.getMessage());
             }
         });
     }

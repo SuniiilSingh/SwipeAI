@@ -185,6 +185,9 @@ public class Profile {
     @Column(name = "photos_json", columnDefinition = "TEXT")
     private String photosJson;
 
+    @Column(name = "photos_verification_json", columnDefinition = "TEXT")
+    private String photosVerificationJson;
+
     @Column(name = "embedding_vector", columnDefinition = "TEXT")
     private String embeddingVector;
 

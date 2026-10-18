@@ -14,7 +14,9 @@ import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -219,6 +221,161 @@ public class FaceMatchService {
                     .livenessScore(0.35)
                     .status("SERVICE_UNAVAILABLE")
                     .message("3D Liveness engine is temporarily busy. Please try again.")
+                    .build();
+        }
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class PhotoSlotItemDto {
+        private int slot;
+        @JsonProperty("photo_base64")
+        private String photoBase64;
+        @JsonProperty("photo_url")
+        private String photoUrl;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class PhotoSlotVerificationResultDto {
+        private int slot;
+        @JsonProperty("photo_url")
+        private String photoUrl;
+        private String status; // "MATCHED", "GROUP_MATCHED", "MISMATCH", "LIFESTYLE", "NO_FACE_IN_PRIMARY", "LOAD_ERROR"
+        @JsonProperty("is_match")
+        private boolean isMatch;
+        @JsonProperty("is_blocked")
+        private boolean isBlocked;
+        @JsonProperty("similarity_score")
+        private double similarityScore;
+        @JsonProperty("confidence_percent")
+        private double confidencePercent;
+        @JsonProperty("faces_detected")
+        private int facesDetected;
+        private String message;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class BatchMatchResult {
+        @JsonProperty("overall_status")
+        private String overallStatus;
+        @JsonProperty("is_profile_verified")
+        private boolean isProfileVerified;
+        @JsonProperty("total_photos")
+        private int totalPhotos;
+        @JsonProperty("matched_count")
+        private int matchedCount;
+        @JsonProperty("mismatch_count")
+        private int mismatchCount;
+        @JsonProperty("lifestyle_count")
+        private int lifestyleCount;
+        @JsonProperty("selfie_faces_detected")
+        private int selfieFacesDetected;
+        @JsonProperty("primary_portrait_matched")
+        private boolean primaryPortraitMatched;
+        private List<PhotoSlotVerificationResultDto> results;
+        @JsonProperty("summary_message")
+        private String summaryMessage;
+    }
+
+    public BatchMatchResult matchAllPhotos(String selfieBase64OrUrl, List<PhotoSlotItemDto> photos) {
+        FeatureFlagsProperties.FaceMatch config = properties.getFeatures().getFacematch();
+        if (config == null || !config.isEnabled()) {
+            log.info("FaceMatch feature is disabled in config. Simulating batch verification pass.");
+            List<PhotoSlotVerificationResultDto> simResults = new ArrayList<>();
+            for (PhotoSlotItemDto p : photos) {
+                simResults.add(PhotoSlotVerificationResultDto.builder()
+                        .slot(p.getSlot())
+                        .photoUrl(p.getPhotoUrl())
+                        .status("MATCHED")
+                        .isMatch(true)
+                        .isBlocked(false)
+                        .similarityScore(0.92)
+                        .confidencePercent(96.0)
+                        .facesDetected(1)
+                        .message("Face verified (simulated).")
+                        .build());
+            }
+            return BatchMatchResult.builder()
+                    .overallStatus("VERIFIED")
+                    .isProfileVerified(true)
+                    .totalPhotos(photos.size())
+                    .matchedCount(photos.size())
+                    .mismatchCount(0)
+                    .lifestyleCount(0)
+                    .selfieFacesDetected(1)
+                    .primaryPortraitMatched(true)
+                    .results(simResults)
+                    .summaryMessage("Simulated biometric pass for all photos.")
+                    .build();
+        }
+
+        String serviceUrl = config.getServiceUrl();
+        if (serviceUrl == null || serviceUrl.trim().isEmpty()) {
+            serviceUrl = "http://facematch:5000";
+        }
+        String endpoint = serviceUrl.replaceAll("/+$", "") + "/match-all-photos";
+
+        log.info("Dispatching multi-photo biometric batch matching to: {} for {} photos", endpoint, photos.size());
+
+        try {
+            SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+            factory.setConnectTimeout(10000);
+            factory.setReadTimeout(30000);
+            RestTemplate restTemplate = new RestTemplate(factory);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            Map<String, Object> body = new HashMap<>();
+            if (selfieBase64OrUrl != null && selfieBase64OrUrl.startsWith("data:image")) {
+                body.put("selfie_base64", selfieBase64OrUrl);
+            } else {
+                body.put("selfie_url", selfieBase64OrUrl);
+            }
+            body.put("photos", photos);
+            body.put("threshold", config.getThreshold());
+
+            HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+
+            ResponseEntity<BatchMatchResult> response = restTemplate.postForEntity(
+                    endpoint,
+                    requestEntity,
+                    BatchMatchResult.class
+            );
+
+            BatchMatchResult resBody = response.getBody();
+            if (resBody == null) {
+                throw new IllegalStateException("Empty response from facematch /match-all-photos");
+            }
+
+            log.info("Batch face match completed: overall={}, verified={}, matched={}, mismatches={}, lifestyled={}",
+                    resBody.getOverallStatus(), resBody.isProfileVerified(),
+                    resBody.getMatchedCount(), resBody.getMismatchCount(), resBody.getLifestyleCount());
+
+            return resBody;
+        } catch (Exception e) {
+            log.error("Failed to connect to FaceMatch /match-all-photos at {}: {}", endpoint, e.getMessage());
+            return BatchMatchResult.builder()
+                    .overallStatus("SERVICE_UNAVAILABLE")
+                    .isProfileVerified(false)
+                    .totalPhotos(photos.size())
+                    .matchedCount(0)
+                    .mismatchCount(0)
+                    .lifestyleCount(0)
+                    .selfieFacesDetected(0)
+                    .primaryPortraitMatched(false)
+                    .results(new ArrayList<>())
+                    .summaryMessage("Face verification engine is temporarily busy. Will retry automatically.")
                     .build();
         }
     }

@@ -80,6 +80,7 @@ public class ProfileDto {
         private String selectedMemeTitle;
         private String email;
         private Boolean marketingOptIn;
+        private String photosVerificationJson;
     }
 
     /**
@@ -173,6 +174,7 @@ public class ProfileDto {
         private boolean hasActivePass;
         private String selectedMemeUrl;
         private String selectedMemeTitle;
+        private String photosVerificationJson;
     }
 
     /**

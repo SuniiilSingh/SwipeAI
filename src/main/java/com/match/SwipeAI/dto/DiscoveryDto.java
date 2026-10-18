@@ -112,6 +112,8 @@ public class DiscoveryDto {
         private String commentText;
         private String contextType;
         private String contextTargetId;
+        private boolean isFaceVerified;
+        private String photosVerificationJson;
     }
 
     @Data

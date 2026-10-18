@@ -3,7 +3,7 @@ import io
 import logging
 import os
 import re
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple
 
 import cv2
 import numpy as np
@@ -299,6 +299,234 @@ def match_faces(req: MatchRequest):
         selfie_faces_detected=len(selfie_faces),
         photo_faces_detected=len(photo_faces),
         message=message,
+    )
+
+
+class PhotoSlotItem(BaseModel):
+    slot: int
+    photo_base64: Optional[str] = None
+    photo_url: Optional[str] = None
+
+
+class BatchMatchRequest(BaseModel):
+    selfie_base64: Optional[str] = None
+    selfie_url: Optional[str] = None
+    photos: List[PhotoSlotItem] = []
+    threshold: Optional[float] = None
+
+
+class PhotoSlotVerificationResult(BaseModel):
+    slot: int
+    photo_url: Optional[str] = None
+    status: str  # "MATCHED", "GROUP_MATCHED", "MISMATCH", "LIFESTYLE", "NO_FACE_IN_PRIMARY", "LOAD_ERROR"
+    is_match: bool
+    is_blocked: bool
+    similarity_score: float
+    confidence_percent: float
+    faces_detected: int
+    message: str
+
+
+class BatchMatchResponse(BaseModel):
+    overall_status: str  # "VERIFIED", "REJECTED_MISMATCH", "PRIMARY_PHOTO_FAILED", "NO_FACE_IN_SELFIE", "NO_PHOTOS"
+    is_profile_verified: bool
+    total_photos: int
+    matched_count: int
+    mismatch_count: int
+    lifestyle_count: int
+    selfie_faces_detected: int
+    primary_portrait_matched: bool
+    results: List[PhotoSlotVerificationResult]
+    summary_message: str
+
+
+@app.post("/match-all-photos", response_model=BatchMatchResponse)
+def match_all_photos(req: BatchMatchRequest):
+    """
+    Biometric verification of an anchor 3D selfie against all uploaded profile photos (Slots 1..6).
+    Enforces the zero-catfish security policy:
+    1. Primary slot (Slot 1) MUST clearly show the user's face and match the selfie.
+    2. Any photo containing a non-matching human face is flagged as MISMATCH and blocked.
+    3. Secondary slots (2..6) with 0 faces (pets, scenic travel, hobbies) are classified as LIFESTYLE.
+    4. Profile is VERIFIED only when primary portrait matches and 0 mismatches exist.
+    """
+    if recognizer is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Face recognition model not loaded."
+        )
+
+    # 1. Load Selfie Anchor
+    try:
+        selfie_img = load_image(req.selfie_base64, req.selfie_url)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Selfie error: {str(e)}")
+
+    # 2. Detect face in selfie
+    selfie_img, selfie_faces = detect_faces_and_orient(selfie_img, score_threshold=0.35)
+    if len(selfie_faces) == 0:
+        logger.warning("Batch face match rejected: 0 faces detected in selfie.")
+        return BatchMatchResponse(
+            overall_status="NO_FACE_IN_SELFIE",
+            is_profile_verified=False,
+            total_photos=len(req.photos),
+            matched_count=0,
+            mismatch_count=0,
+            lifestyle_count=0,
+            selfie_faces_detected=0,
+            primary_portrait_matched=False,
+            results=[],
+            summary_message="No clear human face detected in your selfie. Please hold the camera steadily at eye level.",
+        )
+
+    # Extract primary selfie face embedding (largest bounding box)
+    selfie_faces_sorted = sorted(
+        selfie_faces, key=lambda f: float(f[2]) * float(f[3]), reverse=True
+    )
+    primary_selfie_face = selfie_faces_sorted[0]
+    selfie_aligned = recognizer.alignCrop(selfie_img, primary_selfie_face)
+    selfie_feature = recognizer.feature(selfie_aligned)
+
+    threshold = req.threshold if req.threshold is not None else DEFAULT_COSINE_THRESHOLD
+
+    slot_results: List[PhotoSlotVerificationResult] = []
+    matched_count = 0
+    mismatch_count = 0
+    lifestyle_count = 0
+    primary_matched = False
+
+    for item in req.photos:
+        slot_num = item.slot
+        photo_ref = item.photo_url or ""
+        try:
+            photo_img = load_image(item.photo_base64, item.photo_url)
+            photo_img, photo_faces = detect_faces_and_orient(photo_img, score_threshold=0.35)
+        except Exception as e:
+            logger.warning(f"Error loading photo slot {slot_num}: {e}")
+            slot_results.append(
+                PhotoSlotVerificationResult(
+                    slot=slot_num,
+                    photo_url=photo_ref,
+                    status="LOAD_ERROR",
+                    is_match=False,
+                    is_blocked=False,
+                    similarity_score=0.0,
+                    confidence_percent=0.0,
+                    faces_detected=0,
+                    message=f"Could not load image: {str(e)}",
+                )
+            )
+            continue
+
+        if len(photo_faces) == 0:
+            if slot_num == 1:
+                slot_results.append(
+                    PhotoSlotVerificationResult(
+                        slot=slot_num,
+                        photo_url=photo_ref,
+                        status="NO_FACE_IN_PRIMARY",
+                        is_match=False,
+                        is_blocked=False,
+                        similarity_score=0.0,
+                        confidence_percent=0.0,
+                        faces_detected=0,
+                        message="Primary photo must clearly show your face.",
+                    )
+                )
+            else:
+                lifestyle_count += 1
+                slot_results.append(
+                    PhotoSlotVerificationResult(
+                        slot=slot_num,
+                        photo_url=photo_ref,
+                        status="LIFESTYLE",
+                        is_match=False,
+                        is_blocked=False,
+                        similarity_score=0.0,
+                        confidence_percent=0.0,
+                        faces_detected=0,
+                        message="No face detected. Classified as lifestyle or hobby photo.",
+                    )
+                )
+            continue
+
+        # Face(s) detected: compare all faces against primary selfie embedding
+        best_cosine = -1.0
+        for p_face in photo_faces:
+            p_aligned = recognizer.alignCrop(photo_img, p_face)
+            p_feat = recognizer.feature(p_aligned)
+            cos_score = float(recognizer.match(selfie_feature, p_feat, cv2.FaceRecognizerSF_FR_COSINE))
+            if cos_score > best_cosine:
+                best_cosine = cos_score
+
+        is_match = best_cosine >= threshold
+        if is_match:
+            matched_count += 1
+            if slot_num == 1:
+                primary_matched = True
+            st = "GROUP_MATCHED" if len(photo_faces) > 1 else "MATCHED"
+            ratio = min(1.0, max(0.0, (best_cosine - threshold) / max(0.01, 0.75 - threshold)))
+            conf = round(75.0 + ratio * 24.5, 1)
+            slot_results.append(
+                PhotoSlotVerificationResult(
+                    slot=slot_num,
+                    photo_url=photo_ref,
+                    status=st,
+                    is_match=True,
+                    is_blocked=False,
+                    similarity_score=round(best_cosine, 4),
+                    confidence_percent=conf,
+                    faces_detected=len(photo_faces),
+                    message="Face verified with 3D selfie.",
+                )
+            )
+        else:
+            # Human face detected but does not match reference selfie -> Catfish / Mismatch
+            mismatch_count += 1
+            ratio = max(0.0, best_cosine / max(0.01, threshold))
+            conf = round(min(65.0, ratio * 65.0), 1)
+            slot_results.append(
+                PhotoSlotVerificationResult(
+                    slot=slot_num,
+                    photo_url=photo_ref,
+                    status="MISMATCH",
+                    is_match=False,
+                    is_blocked=True,
+                    similarity_score=round(best_cosine, 4),
+                    confidence_percent=conf,
+                    faces_detected=len(photo_faces),
+                    message="Face does not match your 3D selfie. Replacement required.",
+                )
+            )
+
+    # Determine overall profile verification status
+    if mismatch_count > 0:
+        overall = "REJECTED_MISMATCH"
+        verified = False
+        summary = f"{mismatch_count} photo(s) do not match your 3D selfie. Please replace mismatched photos."
+    elif not primary_matched and any(r.slot == 1 for r in slot_results):
+        overall = "PRIMARY_PHOTO_FAILED"
+        verified = False
+        summary = "Your primary photo (Photo 1) must be a clear photo of yourself matching your 3D selfie."
+    elif matched_count >= 1:
+        overall = "VERIFIED"
+        verified = True
+        summary = f"Identity verified! {matched_count} photo(s) authenticated with 3D selfie."
+    else:
+        overall = "PENDING_PHOTOS"
+        verified = False
+        summary = "No matching portrait photos found. Please upload at least one clear photo of yourself."
+
+    return BatchMatchResponse(
+        overall_status=overall,
+        is_profile_verified=verified,
+        total_photos=len(req.photos),
+        matched_count=matched_count,
+        mismatch_count=mismatch_count,
+        lifestyle_count=lifestyle_count,
+        selfie_faces_detected=len(selfie_faces),
+        primary_portrait_matched=primary_matched,
+        results=slot_results,
+        summary_message=summary,
     )
 
 

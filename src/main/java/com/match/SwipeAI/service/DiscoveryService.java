@@ -591,6 +591,26 @@ public class DiscoveryService {
                 }
             }
         }
+
+        // Zero-Catfish Policy: Filter out any photos flagged as MISMATCH from discovery feed
+        if (profile != null && profile.getPhotosVerificationJson() != null && !profile.getPhotosVerificationJson().isBlank()) {
+            try {
+                List<Map<String, Object>> verList = objectMapper.readValue(profile.getPhotosVerificationJson(), new com.fasterxml.jackson.core.type.TypeReference<>() {});
+                List<String> blockedUrls = new ArrayList<>();
+                for (Map<String, Object> item : verList) {
+                    Boolean isBlocked = (Boolean) item.get("is_blocked");
+                    String status = (String) item.get("status");
+                    String pUrl = (String) item.get("photo_url");
+                    if ((Boolean.TRUE.equals(isBlocked) || "MISMATCH".equalsIgnoreCase(status)) && pUrl != null && !pUrl.isBlank()) {
+                        blockedUrls.add(pUrl.trim());
+                    }
+                }
+                if (!blockedUrls.isEmpty()) {
+                    photos.removeIf(p -> blockedUrls.contains(p) || blockedUrls.stream().anyMatch(b -> p.contains(b) || b.contains(p)));
+                }
+            } catch (Exception ignored) {}
+        }
+
         if (photos.isEmpty()) {
             photos.add("https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800");
         }
@@ -740,6 +760,8 @@ public class DiscoveryService {
                 .photo2(photo2)
                 .desireMatchPercent(desireMatchPercent)
                 .desireMatchHighlights(desireMatchHighlights != null ? desireMatchHighlights : List.of())
+                .isFaceVerified(Boolean.TRUE.equals(user.getFaceVerified()))
+                .photosVerificationJson(profile != null ? profile.getPhotosVerificationJson() : null)
                 .build();
     }
 
