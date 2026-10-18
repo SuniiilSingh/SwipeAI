@@ -320,33 +320,55 @@ class LivenessMotionResponse(BaseModel):
 
 def compute_face_yaw(face: np.ndarray) -> float:
     """
-    Estimate horizontal 3D head yaw from YuNet 5-point facial landmarks:
+    Estimate horizontal 3D head yaw from YuNet 5-point facial landmarks,
+    made mathematically invariant to camera tilt/roll angle by rotating
+    landmarks into the face's anatomical eye-horizontal frame.
+
     face[0..3]: bbox (x, y, w, h)
     face[4..5]: right eye (x, y)
     face[6..7]: left eye (x, y)
     face[8..9]: nose tip (x, y)
     face[10..11]: right mouth corner (x, y)
     face[12..13]: left mouth corner (x, y)
-    Returns a signed yaw ratio (~0.0 when facing straight ahead; +/-0.12 to +/-0.45 when turned right/left).
     """
-    bbox_x = float(face[0])
-    bbox_w = max(float(face[2]), 1.0)
-    re_x = float(face[4])
-    le_x = float(face[6])
-    nose_x = float(face[8])
-    rm_x = float(face[10])
-    lm_x = float(face[12])
+    re_x, re_y = float(face[4]), float(face[5])
+    le_x, le_y = float(face[6]), float(face[7])
+    nose_x, nose_y = float(face[8]), float(face[9])
+    rm_x, rm_y = float(face[10]), float(face[11])
+    lm_x, lm_y = float(face[12]), float(face[13])
 
+    # 1. Compute in-plane roll angle (tilt of the phone/camera in user's hand)
+    dx_eye = le_x - re_x
+    dy_eye = le_y - re_y
+    inter_eye_dist = max(float(np.hypot(dx_eye, dy_eye)), 1.0)
+    roll_angle = float(np.arctan2(dy_eye, dx_eye))
+
+    # 2. De-rotate coordinates into face-aligned horizontal axis centered at eye midpoint
+    cos_r = float(np.cos(-roll_angle))
+    sin_r = float(np.sin(-roll_angle))
     eye_mid_x = 0.5 * (re_x + le_x)
-    mouth_mid_x = 0.5 * (rm_x + lm_x)
-    anchor_mid_x = 0.65 * eye_mid_x + 0.35 * mouth_mid_x
-    inter_eye_dist = max(abs(le_x - re_x), bbox_w * 0.22, 1.0)
+    eye_mid_y = 0.5 * (re_y + le_y)
 
-    eye_nose_yaw = (nose_x - anchor_mid_x) / inter_eye_dist
-    bbox_center_x = bbox_x + 0.5 * bbox_w
-    bbox_nose_yaw = (nose_x - bbox_center_x) / bbox_w
+    def align_pt(x: float, y: float) -> Tuple[float, float]:
+        tx = x - eye_mid_x
+        ty = y - eye_mid_y
+        return (tx * cos_r - ty * sin_r, tx * sin_r + ty * cos_r)
 
-    return float(0.65 * eye_nose_yaw + 0.35 * (bbox_nose_yaw * 2.5))
+    aligned_nose_x, _ = align_pt(nose_x, nose_y)
+    aligned_rm_x, _ = align_pt(rm_x, rm_y)
+    aligned_lm_x, _ = align_pt(lm_x, lm_y)
+    aligned_mouth_mid_x = 0.5 * (aligned_rm_x + aligned_lm_x)
+
+    # In face-aligned coordinates:
+    # Eye midpoint is at x=0.
+    # Nose lateral offset is normalized by half the inter-eye distance:
+    half_eye_dist = 0.5 * inter_eye_dist
+    eye_nose_ratio = aligned_nose_x / max(half_eye_dist, 1.0)
+    mouth_nose_ratio = (aligned_nose_x - aligned_mouth_mid_x) / max(half_eye_dist, 1.0)
+
+    # Blended tilt-invariant 3D head yaw
+    yaw = float(0.70 * eye_nose_ratio + 0.30 * mouth_nose_ratio)
+    return yaw
 
 
 @app.post("/verify-liveness", response_model=LivenessMotionResponse)
@@ -371,7 +393,7 @@ def verify_liveness(req: LivenessMotionRequest):
             message=f"Could not read all 3 camera frames: {str(e)}",
         )
 
-    # Detect faces in all 3 poses (slightly lower score threshold for side-turned poses)
+    # Detect faces in all 3 poses with multi-orientation auto-rotation (0°, 90°, 180°, 270°)
     center_img, center_faces = detect_faces_and_orient(center_img, score_threshold=0.32)
     right_img, right_faces = detect_faces_and_orient(right_img, score_threshold=0.25)
     left_img, left_faces = detect_faces_and_orient(left_img, score_threshold=0.25)
@@ -396,11 +418,26 @@ def verify_liveness(req: LivenessMotionRequest):
             message=f"No clear human face detected during: {missing_str}. Keep your face well-lit inside the oval.",
         )
 
-    # Pick largest face in each frame
+    # Pick primary largest face in each frame
     c_face = sorted(center_faces, key=lambda f: float(f[2]) * float(f[3]), reverse=True)[0]
     r_face = sorted(right_faces, key=lambda f: float(f[2]) * float(f[3]), reverse=True)[0]
     l_face = sorted(left_faces, key=lambda f: float(f[2]) * float(f[3]), reverse=True)[0]
 
+    # Face size validation: Ensure user is the primary subject in front of the camera,
+    # rejecting distant background faces, posters, or small non-human objects
+    min_face_h = 0.10 * float(center_img.shape[0])
+    if float(c_face[3]) < min_face_h or float(r_face[3]) < min_face_h or float(l_face[3]) < min_face_h:
+        return LivenessMotionResponse(
+            status="FACE_TOO_FAR",
+            is_live_human=False,
+            liveness_score=0.20,
+            yaw_center=0.0,
+            yaw_right=0.0,
+            yaw_left=0.0,
+            message="Face is too far from the camera. Please hold your phone closer inside the oval guide.",
+        )
+
+    # Compute tilt-invariant 3D head yaw in the face's own anatomical frame
     yaw_c = compute_face_yaw(c_face)
     yaw_r = compute_face_yaw(r_face)
     yaw_l = compute_face_yaw(l_face)
@@ -410,7 +447,7 @@ def verify_liveness(req: LivenessMotionRequest):
     span_rl = abs(yaw_r - yaw_l)
     opposite_sides = ((yaw_r - yaw_c) * (yaw_l - yaw_c)) <= 0.01
 
-    # Also measure aligned face pixel difference to catch completely static/unmoving faces
+    # Measure aligned face pixel difference to catch static/constant unmoving photos
     c_aligned = recognizer.alignCrop(center_img, c_face)
     r_aligned = recognizer.alignCrop(right_img, r_face)
     l_aligned = recognizer.alignCrop(left_img, l_face)
@@ -424,41 +461,41 @@ def verify_liveness(req: LivenessMotionRequest):
         f"opposite={opposite_sides}, mad_cr={mad_cr:.1f}, mad_cl={mad_cl:.1f}"
     )
 
-    # A live human turning their head produces:
-    # 1. Broad angular span between side poses (span_rl >= 0.05) OR
-    # 2. Clear deviation from center (delta_r >= 0.04 or delta_l >= 0.04) OR
-    # 3. Dynamic pixel parallax across angles (mad_cr >= 7.0 or mad_cl >= 7.0)
-    has_angular_turn = (span_rl >= 0.05) or (delta_r >= 0.04) or (delta_l >= 0.04)
-    has_pixel_motion = (mad_cr >= 7.0 or mad_cl >= 7.0)
+    # A live human turning their head produces genuine 3D motion:
+    # 1. Broad angular span between side poses (span_rl >= 0.045) OR
+    # 2. Clear deviation from center (delta_r >= 0.035 or delta_l >= 0.035) OR
+    # 3. Dynamic 3D pixel parallax across angles (mad_cr >= 6.5 or mad_cl >= 6.5)
+    has_angular_turn = (span_rl >= 0.045) or (delta_r >= 0.035) or (delta_l >= 0.035)
+    has_pixel_motion = (mad_cr >= 6.5 or mad_cl >= 6.5)
 
-    # Only reject if the user is truly static / held an unmoving 2D photo in front of the lens
+    # Strictly reject constant images, unmoving photos, or flat printed paper
     if not has_angular_turn and not has_pixel_motion:
         return LivenessMotionResponse(
             status="NO_HEAD_MOVEMENT",
             is_live_human=False,
-            liveness_score=0.35,
+            liveness_score=0.20,
             yaw_center=round(yaw_c, 4),
             yaw_right=round(yaw_r, 4),
             yaw_left=round(yaw_l, 4),
-            message="No 3D head movement detected. Please turn your head clearly to the Right and Left when prompted.",
+            message="No head movement detected. A live human must turn their head. Static photos or unmoving images are strictly rejected.",
         )
 
-    # Verify same human across frames (lenient threshold for angled views)
+    # Verify same human across frames (strictly blocks switching subjects or showing non-human objects)
     c_feat = recognizer.feature(c_aligned)
     r_feat = recognizer.feature(r_aligned)
     l_feat = recognizer.feature(l_aligned)
     sim_cr = float(recognizer.match(c_feat, r_feat, cv2.FaceRecognizerSF_FR_COSINE))
     sim_cl = float(recognizer.match(c_feat, l_feat, cv2.FaceRecognizerSF_FR_COSINE))
 
-    if sim_cr < 0.18 or sim_cl < 0.18:
+    if sim_cr < 0.20 or sim_cl < 0.20:
         return LivenessMotionResponse(
             status="INCONSISTENT_FACE",
             is_live_human=False,
-            liveness_score=0.40,
+            liveness_score=0.25,
             yaw_center=round(yaw_c, 4),
             yaw_right=round(yaw_r, 4),
             yaw_left=round(yaw_l, 4),
-            message="Face changed or left the frame during the turn. Please keep your face visible throughout all 3 steps.",
+            message="Different subject or face changed across the turns. The same live human face must be visible throughout all 3 steps.",
         )
 
     score = min(0.99, round(0.88 + min(0.11, span_rl * 0.25), 2))
@@ -469,6 +506,6 @@ def verify_liveness(req: LivenessMotionRequest):
         yaw_center=round(yaw_c, 4),
         yaw_right=round(yaw_r, 4),
         yaw_left=round(yaw_l, 4),
-        message="3D Biometric Liveness verified! Real head movement confirmed.",
+        message="3D Biometric Liveness verified! Real human head movement confirmed.",
     )
 
