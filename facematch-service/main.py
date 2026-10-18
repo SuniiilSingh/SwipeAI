@@ -424,17 +424,15 @@ def verify_liveness(req: LivenessMotionRequest):
         f"opposite={opposite_sides}, mad_cr={mad_cr:.1f}, mad_cl={mad_cl:.1f}"
     )
 
-    # Reject if user stayed still / constant without turning their head
-    if delta_r < 0.065 or delta_l < 0.065 or span_rl < 0.11 or not opposite_sides or (mad_cr < 11.0 and mad_cl < 11.0):
-        if delta_r < 0.065 and delta_l < 0.065:
-            reason = "No 3D head movement detected! You stayed still—please turn your head clearly to the Right and Left when prompted."
-        elif not opposite_sides or span_rl < 0.11:
-            reason = "Incomplete 3D head turn! Please look straight for Center, then turn clearly to the Right, and then to the Left."
-        elif delta_r < 0.065:
-            reason = "Right head turn was not detected. Please turn your head clearly to the Right on step 2."
-        else:
-            reason = "Left head turn was not detected. Please turn your head clearly to the Left on step 3."
+    # A live human turning their head produces:
+    # 1. Broad angular span between side poses (span_rl >= 0.05) OR
+    # 2. Clear deviation from center (delta_r >= 0.04 or delta_l >= 0.04) OR
+    # 3. Dynamic pixel parallax across angles (mad_cr >= 7.0 or mad_cl >= 7.0)
+    has_angular_turn = (span_rl >= 0.05) or (delta_r >= 0.04) or (delta_l >= 0.04)
+    has_pixel_motion = (mad_cr >= 7.0 or mad_cl >= 7.0)
 
+    # Only reject if the user is truly static / held an unmoving 2D photo in front of the lens
+    if not has_angular_turn and not has_pixel_motion:
         return LivenessMotionResponse(
             status="NO_HEAD_MOVEMENT",
             is_live_human=False,
@@ -442,7 +440,7 @@ def verify_liveness(req: LivenessMotionRequest):
             yaw_center=round(yaw_c, 4),
             yaw_right=round(yaw_r, 4),
             yaw_left=round(yaw_l, 4),
-            message=reason,
+            message="No 3D head movement detected. Please turn your head clearly to the Right and Left when prompted.",
         )
 
     # Verify same human across frames (lenient threshold for angled views)

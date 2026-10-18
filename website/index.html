@@ -26,7 +26,7 @@
   <meta name="twitter:description" content="India's premier connection network. 100% 3D Face Verified profiles, Hyper-local Circles, and Virtual Chai.">
   <meta name="twitter:image" content="https://blunderr.in/downloads/blunderr-model-pink-offshoulder.jpg">
 
-  <link rel="icon" type="image/png" href="https://img.icons8.com/color/96/flame.png">
+  <link rel="icon" type="image/png" href="/favicon.png">
   <link rel="preload" as="image" href="/downloads/blunderr-model-pink-offshoulder.jpg" type="image/jpeg" fetchpriority="high">
 
   <!-- JSON-LD Structured Data for Google Search Engine Knowledge Graph -->
@@ -155,24 +155,22 @@
       z-index: 100;
     }
     .brand-wordmark {
-      font-size: 2rem;
+      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Arial Black", Arial, sans-serif;
+      font-size: 1.95rem;
       font-weight: 900;
-      font-style: italic;
-      letter-spacing: -0.6px;
-      background: linear-gradient(135deg, var(--coral) 0%, var(--rose) 55%, var(--amber) 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      letter-spacing: -0.05em;
+      color: #FAF7F2;
       text-decoration: none;
       display: inline-flex;
-      align-items: baseline;
-      transform: skewX(-5deg);
+      align-items: center;
       user-select: none;
     }
-    .brand-wordmark .accent-r {
-      font-size: 2.35rem;
-      color: var(--amber);
-      -webkit-text-fill-color: var(--amber);
-      text-shadow: 0 0 18px rgba(245, 158, 11, 0.55);
+    .brand-wordmark .flip-r {
+      display: inline-block;
+      transform: scaleX(-1);
+      color: var(--coral);
+      margin-left: 1px;
+      text-shadow: 0 0 24px rgba(255, 56, 92, 0.55);
     }
     .nav-right {
       display: flex;
@@ -1899,10 +1897,7 @@
         padding: 0 12px;
       }
       .brand-wordmark {
-        font-size: 1.65rem;
-      }
-      .brand-wordmark .accent-r {
-        font-size: 1.95rem;
+        font-size: 1.5rem;
       }
       .nav-right {
         gap: 6px;
@@ -2030,7 +2025,7 @@
 
   <!-- Header -->
   <header>
-    <a href="/" class="brand-wordmark">Blunder<span class="accent-r">R</span></a>
+    <a href="/" class="brand-wordmark">BLUNDER<span class="flip-r">R</span></a>
 
     <div class="nav-right">
       <a href="/safety" class="nav-link">🛡️ Safety</a>
@@ -2765,7 +2760,7 @@
     <div class="sticky-brand-left">
       <span style="font-size: 1.25rem;">🔥</span>
       <div>
-        <div class="sticky-logo">Blunder<span style="color:var(--coral);">R</span></div>
+        <div class="sticky-logo">BLUNDER<span class="flip-r" style="display:inline-block;transform:scaleX(-1);color:var(--coral);margin-left:1px;">R</span></div>
         <div class="sticky-sub">Live in Browser</div>
       </div>
     </div>

@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BlunderR — Luxury Date Proposal Experience</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    @keyframes floatPetal {
+      0% {
+        transform: translate3d(0, 0, 0) rotate(0deg) scale(0.8);
+        opacity: 0;
+      }
+      15% {
+        opacity: 0.9;
+      }
+      90% {
+        opacity: 0.8;
+      }
+      100% {
+        transform: translate3d(var(--tx, 40px), 520px, 0) rotate(var(--rot, 360deg)) scale(1.1);
+        opacity: 0;
+      }
+    }
+    @keyframes pulseGlow {
+      0%, 100% {
+        box-shadow: 0 0 25px rgba(255, 56, 92, 0.35), 0 0 50px rgba(255, 56, 92, 0.15);
+      }
+      50% {
+        box-shadow: 0 0 40px rgba(255, 56, 92, 0.6), 0 0 80px rgba(255, 56, 92, 0.3);
+      }
+    }
+    @keyframes bokehDrift {
+      0% {
+        transform: translateY(0) scale(1);
+        opacity: 0.3;
+      }
+      50% {
+        transform: translateY(-25px) scale(1.25);
+        opacity: 0.65;
+      }
+      100% {
+        transform: translateY(0) scale(1);
+        opacity: 0.3;
+      }
+    }
+    .petal-particle {
+      position: absolute;
+      pointer-events: none;
+      border-radius: 50% 0 50% 50%;
+      background: linear-gradient(135deg, rgba(255, 75, 110, 0.9), rgba(255, 140, 160, 0.7));
+      filter: drop-shadow(0 0 6px rgba(255, 56, 92, 0.6));
+      animation: floatPetal var(--dur, 4.5s) cubic-bezier(0.25, 1, 0.5, 1) forwards;
+    }
+    .bokeh-orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(12px);
+      pointer-events: none;
+      animation: bokehDrift var(--dur, 6s) ease-in-out infinite;
+    }
+    .luxury-glass {
+      background: rgba(14, 18, 30, 0.75);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+    .luxury-card-glow {
+      position: relative;
+    }
+    .luxury-card-glow::before {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      border-radius: inherit;
+      padding: 1.5px;
+      background: linear-gradient(135deg, rgba(255, 56, 92, 0.7), rgba(245, 158, 11, 0.4), rgba(255, 255, 255, 0.1));
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none;
+    }
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 56, 92, 0.3);
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="bg-[#06070B] text-slate-100 min-h-screen font-sans antialiased selection:bg-[#FF385C]/30 selection:text-white p-3 md:p-6">
+
+  <!-- Top Hero Header & Demo Controller -->
+  <header class="max-w-6xl mx-auto mb-6 text-center">
+    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gradient-to-r from-[#FF385C]/15 via-amber-500/10 to-rose-500/15 border border-[#FF385C]/30 mb-2">
+      <span class="w-2 h-2 rounded-full bg-[#FF385C] animate-ping"></span>
+      <span class="text-xs font-bold tracking-wider text-rose-300 uppercase">Live Prototype Demo • SafeDate Protocol</span>
+    </div>
+    <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-white via-rose-100 to-[#FF385C] bg-clip-text text-transparent">
+      Luxury Real-Date Proposal & Synchronized Acceptance
+    </h1>
+    <p class="text-xs md:text-sm text-slate-400 mt-1 max-w-2xl mx-auto">
+      Experience live proposal dispatch, blooming rose-petal & flower bokeh particle atmosphere, bi-directional confirmation, and graceful counter-proposal rescheduling.
+    </p>
+
+    <!-- Quick State Presets Bar -->
+    <div class="flex flex-wrap items-center justify-center gap-2 mt-4">
+      <button onclick="resetFlow()" class="px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-xs font-semibold text-slate-200 border border-slate-700 transition">
+        🔄 Reset Simulation
+      </button>
+      <button onclick="triggerQuickProposal()" class="px-3 py-1.5 rounded-lg bg-[#FF385C]/20 hover:bg-[#FF385C]/30 text-xs font-semibold text-rose-300 border border-[#FF385C]/40 transition">
+        ⚡ 1-Click Send Proposal
+      </button>
+      <button onclick="triggerAccept()" class="px-3 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-xs font-semibold text-emerald-300 border border-emerald-500/40 transition">
+        💖 Simulate Tara Accepting
+      </button>
+      <button onclick="triggerRejectModal()" class="px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-xs font-semibold text-amber-300 border border-amber-500/40 transition">
+        💬 Simulate Tara Rescheduling
+      </button>
+      <button onclick="triggerFlowerShower()" class="px-3 py-1.5 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 text-xs font-semibold text-purple-300 border border-purple-500/40 transition">
+        🌸 Test Flower Bokeh Burst
+      </button>
+    </div>
+  </header>
+
+  <!-- Dual Device Showcase Container -->
+  <main class="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+
+    <!-- ==================== PHONE 1: SENDER (KABIR) ==================== -->
+    <div class="flex flex-col items-center">
+      <div class="flex items-center gap-2 mb-2 text-xs font-bold text-slate-400 uppercase tracking-widest">
+        <span class="w-2.5 h-2.5 rounded-full bg-blue-400"></span>
+        Phone 1: Kabir (The Proposer)
+      </div>
+
+      <!-- Smartphone Frame -->
+      <div class="w-full max-w-[390px] h-[720px] rounded-[44px] bg-[#0A0D18] border-[6px] border-slate-800/80 shadow-2xl relative overflow-hidden flex flex-col">
+        <!-- Dynamic Island / Speaker -->
+        <div class="absolute top-2 left-1/2 -translate-x-1/2 w-28 h-5 bg-black rounded-full z-40 flex items-center justify-between px-3">
+          <div class="w-2 h-2 rounded-full bg-slate-900 border border-slate-800"></div>
+          <div class="w-2.5 h-2.5 rounded-full bg-[#111827]"></div>
+        </div>
+
+        <!-- Phone Header -->
+        <div class="pt-8 px-4 pb-3 flex items-center justify-between border-b border-slate-800/60 bg-[#0A0D18]/90 z-20">
+          <div class="flex items-center gap-2">
+            <div class="relative">
+              <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-rose-500 to-amber-400 p-[1.5px]">
+                <div class="w-full h-full rounded-full bg-slate-900 flex items-center justify-center overflow-hidden">
+                  <span class="text-sm">👩🏻</span>
+                </div>
+              </div>
+              <span class="absolute -bottom-0.5 -right-0.5 text-[10px]">🛡️</span>
+            </div>
+            <div>
+              <div class="flex items-center gap-1.5">
+                <span class="text-xs font-bold text-white">Tara Sharma</span>
+                <span class="px-1.5 py-0.2 bg-emerald-500/15 border border-emerald-500/30 text-[9px] font-bold text-emerald-400 rounded-full">3D Verified</span>
+              </div>
+              <span class="text-[10px] text-slate-400">72h Real Date Window • Active</span>
+            </div>
+          </div>
+          <div class="px-2.5 py-1 rounded-full bg-rose-500/10 border border-rose-500/30 text-[10px] font-bold text-rose-400 flex items-center gap-1">
+            <span>⏳</span> 68h 12m
+          </div>
+        </div>
+
+        <!-- Phone Body Scrollable -->
+        <div class="flex-1 overflow-y-auto p-4 space-y-4" id="kabirChatBody">
+
+          <!-- Match intro banner -->
+          <div class="p-3 rounded-2xl bg-slate-900/60 border border-slate-800/70 text-center">
+            <span class="text-lg">✨</span>
+            <div class="text-[11px] font-bold text-rose-300">You matched with Tara!</div>
+            <p class="text-[10px] text-slate-400 mt-0.5">Ashta-Koota Guna Milan: 31/36 Points • Exceptional Chemistry</p>
+          </div>
+
+          <!-- Existing mini conversation bubbles -->
+          <div class="flex justify-start">
+            <div class="max-w-[78%] px-3 py-2 rounded-2xl rounded-tl-sm bg-slate-800/70 border border-slate-700/40 text-[11px] text-slate-200">
+              Hey Kabir! Loved your travel photography from Spiti 🏔️
+            </div>
+          </div>
+          <div class="flex justify-end">
+            <div class="max-w-[78%] px-3 py-2 rounded-2xl rounded-tr-sm bg-gradient-to-r from-[#FF385C] to-rose-600 text-[11px] text-white font-medium shadow-md shadow-rose-900/30">
+              Thanks Tara! Would love to tell you the story over drinks this weekend.
+            </div>
+          </div>
+
+          <!-- SENDER STATUS CONTAINER -->
+          <div id="kabirProposalStatusContainer">
+
+            <!-- STATE 0: THE LUXURY DATE PROPOSAL CREATOR CARD -->
+            <div id="kabirComposerCard" class="luxury-glass luxury-card-glow rounded-3xl p-4 space-y-3">
+              <div class="flex items-center justify-between border-b border-white/10 pb-2">
+                <div class="flex items-center gap-2">
+                  <div class="w-7 h-7 rounded-full bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-sm">
+                    🍸
+                  </div>
+                  <div>
+                    <h3 class="text-xs font-bold text-white tracking-wide">Propose Real Date</h3>
+                    <p class="text-[10px] text-slate-400">SafeDate Shield™ Verified Venue</p>
+                  </div>
+                </div>
+                <span class="text-[10px] font-bold text-amber-400 px-2 py-0.5 rounded-full bg-amber-400/10 border border-amber-400/30">
+                  Step 1 of 1
+                </span>
+              </div>
+
+              <!-- 1. DATE SELECTOR -->
+              <div>
+                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-300 mb-1.5 flex items-center justify-between">
+                  <span>📅 Pick Date</span>
+                  <span class="text-[#FF385C] text-[10px]" id="selectedDateLabel">Saturday, Oct 24</span>
+                </label>
+                <div class="grid grid-cols-4 gap-1.5">
+                  <button type="button" onclick="selectDate(this, 'Fri, Oct 23')" class="date-chip px-2 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-center transition">
+                    <div class="text-[9px] text-slate-400">FRI</div>
+                    <div class="text-xs font-bold text-white">23</div>
+                  </button>
+                  <button type="button" onclick="selectDate(this, 'Sat, Oct 24')" class="date-chip px-2 py-1.5 rounded-xl bg-gradient-to-br from-[#FF385C] to-rose-600 border border-rose-400 text-center shadow-lg shadow-rose-900/40">
+                    <div class="text-[9px] text-rose-100">SAT</div>
+                    <div class="text-xs font-bold text-white">24</div>
+                  </button>
+                  <button type="button" onclick="selectDate(this, 'Sun, Oct 25')" class="date-chip px-2 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-center transition">
+                    <div class="text-[9px] text-slate-400">SUN</div>
+                    <div class="text-xs font-bold text-white">25</div>
+                  </button>
+                  <button type="button" onclick="selectDate(this, 'Next Week')" class="date-chip px-2 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-center transition">
+                    <div class="text-[9px] text-slate-400">NEXT</div>
+                    <div class="text-xs font-bold text-white">30</div>
+                  </button>
+                </div>
+              </div>
+
+              <!-- 2. TIME SELECTOR -->
+              <div>
+                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-300 mb-1.5 flex items-center justify-between">
+                  <span>⏰ Pick Time Slot</span>
+                  <span class="text-[#FF385C] text-[10px]" id="selectedTimeLabel">8:00 PM (Dinner & Drinks)</span>
+                </label>
+                <div class="grid grid-cols-3 gap-1.5">
+                  <button type="button" onclick="selectTime(this, '5:30 PM', 'Sunset Coffee ☕')" class="time-chip p-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-left transition">
+                    <div class="text-xs font-bold text-white">5:30 PM</div>
+                    <div class="text-[9px] text-slate-400">Sunset Coffee ☕</div>
+                  </button>
+                  <button type="button" onclick="selectTime(this, '8:00 PM', 'Dinner & Drinks 🍸')" class="time-chip p-1.5 rounded-xl bg-gradient-to-br from-[#FF385C] to-rose-600 border border-rose-400 text-left shadow-lg shadow-rose-900/40">
+                    <div class="text-xs font-bold text-white">8:00 PM</div>
+                    <div class="text-[9px] text-rose-100 font-medium">Dinner & Drinks 🍸</div>
+                  </button>
+                  <button type="button" onclick="selectTime(this, '9:30 PM', 'Late Night Jazz 🎷')" class="time-chip p-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-left transition">
+                    <div class="text-xs font-bold text-white">9:30 PM</div>
+                    <div class="text-[9px] text-slate-400">Late Jazz 🎷</div>
+                  </button>
+                </div>
+              </div>
+
+              <!-- 3. CURATED LUXURY VENUE -->
+              <div>
+                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+                  📍 Curated Venue (Verified SafeDate Hub)
+                </label>
+                <select id="venueSelect" class="w-full px-3 py-2 rounded-xl bg-slate-900/90 border border-slate-700/80 text-xs font-semibold text-slate-200 focus:outline-none focus:border-[#FF385C]">
+                  <option value="Toit Brewpub, Indiranagar" selected>🍺 Toit Brewpub, Indiranagar • High Energy & Craft Beers</option>
+                  <option value="The Reservoire, Koramangala">🍸 The Reservoire, Koramangala • Candlelit Rooftop Cocktails</option>
+                  <option value="Smoke House Deli, Lavelle Road">🍷 Smoke House Deli, Lavelle Road • Chic Bistro & Wine</option>
+                  <option value="Blue Tokai Coffee, Indiranagar">☕ Blue Tokai Coffee • Low-Key Artisanal Coffee</option>
+                </select>
+              </div>
+
+              <!-- 4. PERSONAL INVITATION NOTE -->
+              <div>
+                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-300 mb-1">
+                  ✍️ Personal Invitation Note
+                </label>
+                <input type="text" id="proposalNoteInput" value="First round of artisanal cocktails is on me! Can't wait to meet you." class="w-full px-3 py-2 rounded-xl bg-slate-900/90 border border-slate-700/80 text-xs text-slate-200 focus:outline-none focus:border-[#FF385C]">
+              </div>
+
+              <!-- SUBMIT BUTTON -->
+              <button type="button" onclick="sendDateProposal()" class="w-full py-2.5 rounded-2xl bg-gradient-to-r from-[#FF385C] via-rose-500 to-amber-500 text-white font-bold text-xs tracking-wider uppercase shadow-xl shadow-rose-900/40 hover:scale-[1.01] active:scale-[0.98] transition flex items-center justify-center gap-1.5">
+                <span>💌</span>
+                <span>Send Date Proposal with Flower Shower</span>
+              </button>
+            </div>
+
+            <!-- STATE 1: WAITING FOR TARA'S RESPONSE -->
+            <div id="kabirPendingCard" class="hidden luxury-glass border border-amber-500/40 rounded-3xl p-4 space-y-3 text-center">
+              <div class="w-12 h-12 rounded-full bg-amber-500/20 border border-amber-500/50 flex items-center justify-center text-xl mx-auto animate-pulse">
+                ⏳
+              </div>
+              <div>
+                <h4 class="text-xs font-bold text-white">Date Proposal Dispatched to Tara!</h4>
+                <p class="text-[11px] text-amber-300 mt-0.5" id="kabirPendingSummary">Sat, Oct 24 at 8:00 PM • Toit Brewpub</p>
+                <p class="text-[10px] text-slate-400 mt-1">Flower bokeh alert sent to her screen. Waiting for live response...</p>
+              </div>
+              <div class="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 text-[10px] text-slate-300 flex items-center justify-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+                <span>Live status: Tara is viewing your invite right now</span>
+              </div>
+            </div>
+
+            <!-- STATE 2: CONFIRMED CARD ON KABIR'S PHONE -->
+            <div id="kabirConfirmedCard" class="hidden luxury-glass border border-emerald-500/50 rounded-3xl p-4 space-y-3 text-center bg-gradient-to-b from-emerald-950/20 to-slate-950">
+              <div class="w-12 h-12 rounded-full bg-emerald-500/20 border border-emerald-500 flex items-center justify-center text-2xl mx-auto shadow-lg shadow-emerald-900/50">
+                🎉
+              </div>
+              <div>
+                <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold text-[10px] border border-emerald-500/40">
+                  DATE OFFICIALLY CONFIRMED! 💖
+                </span>
+                <h4 class="text-sm font-extrabold text-white mt-2">Tara Accepted Your Date!</h4>
+                <p class="text-[11px] text-emerald-300 mt-1 font-semibold" id="kabirConfirmedSummary">
+                  Saturday, Oct 24 • 8:00 PM • Toit Brewpub, Indiranagar
+                </p>
+              </div>
+              <div class="p-3 rounded-2xl bg-emerald-900/20 border border-emerald-500/30 text-[11px] text-slate-300 text-left space-y-1.5">
+                <div class="flex items-center gap-1.5 font-bold text-emerald-400">
+                  <span>🛡️</span> SafeDate Shield™ Activated
+                </div>
+                <div class="text-[10px] text-slate-400">
+                  • 24h Check-In Pin enabled<br>
+                  • Emergency SOS contact primed<br>
+                  • Added to Google Calendar & Apple Calendar
+                </div>
+              </div>
+              <button onclick="alert('📅 Date added to your device calendar with SafeDate alerts!')" class="w-full py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs transition">
+                📲 Add to Google / Apple Calendar
+              </button>
+            </div>
+
+            <!-- STATE 3: DECLINED / RESCHEDULED CARD ON KABIR'S PHONE -->
+            <div id="kabirDeclinedCard" class="hidden luxury-glass border border-amber-500/50 rounded-3xl p-4 space-y-3 bg-gradient-to-b from-amber-950/20 to-slate-950">
+              <div class="flex items-center gap-2 border-b border-white/10 pb-2">
+                <span class="text-lg">💬</span>
+                <div>
+                  <h4 class="text-xs font-bold text-white">Tara Proposed a New Plan!</h4>
+                  <p class="text-[10px] text-amber-400">Couldn't make Saturday, but sent a counter-offer</p>
+                </div>
+              </div>
+
+              <!-- Reason Box -->
+              <div class="p-3 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-1">
+                <div class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Reason given:</div>
+                <div class="text-xs text-rose-300 italic" id="kabirDeclineReason">"Saturday evening I'm caught up with family dinner! Would love to do Sunday coffee instead."</div>
+              </div>
+
+              <!-- Counter Offer Box -->
+              <div class="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-1.5">
+                <div class="text-[10px] text-amber-300 uppercase font-bold tracking-wider">Suggested Counter-Proposal:</div>
+                <div class="text-xs font-bold text-white" id="kabirCounterSummary">📅 Sunday, Oct 25 • 5:30 PM • Blue Tokai Coffee</div>
+              </div>
+
+              <!-- Kabir's 1-Tap Response Actions -->
+              <div class="grid grid-cols-2 gap-2 pt-1">
+                <button onclick="acceptCounterOffer()" class="py-2 px-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs transition text-center shadow-lg shadow-emerald-950">
+                  ✓ Accept Sunday 5:30 PM
+                </button>
+                <button onclick="reOpenComposer()" class="py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs border border-slate-700 transition text-center">
+                  Propose New Time
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- Chat Input Mock at Bottom -->
+        <div class="p-3 border-t border-slate-800/60 bg-[#0A0D18]/95 flex items-center gap-2">
+          <input type="text" placeholder="Type a message to Tara..." class="flex-1 bg-slate-900 border border-slate-800 rounded-full px-3.5 py-2 text-xs text-slate-300 focus:outline-none" disabled>
+          <button class="w-8 h-8 rounded-full bg-[#FF385C] flex items-center justify-center text-white text-xs">
+            ➤
+          </button>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ==================== PHONE 2: RECEIVER (TARA) ==================== -->
+    <div class="flex flex-col items-center">
+      <div class="flex items-center gap-2 mb-2 text-xs font-bold text-slate-400 uppercase tracking-widest">
+        <span class="w-2.5 h-2.5 rounded-full bg-rose-400"></span>
+        Phone 2: Tara (The Receiver)
+      </div>
+
+      <!-- Smartphone Frame with Petal Canvas Layer -->
+      <div class="w-full max-w-[390px] h-[720px] rounded-[44px] bg-[#0A0D18] border-[6px] border-slate-800/80 shadow-2xl relative overflow-hidden flex flex-col" id="taraPhoneFrame">
+
+        <!-- FLOWER BOKEH & PETALS CONTAINER OVERLAY -->
+        <div id="flowerShowerContainer" class="absolute inset-0 pointer-events-none z-30 overflow-hidden">
+          <!-- Bokeh orbs and rose petals dynamically generated here -->
+        </div>
+
+        <!-- Dynamic Island / Speaker -->
+        <div class="absolute top-2 left-1/2 -translate-x-1/2 w-28 h-5 bg-black rounded-full z-40 flex items-center justify-between px-3">
+          <div class="w-2 h-2 rounded-full bg-slate-900 border border-slate-800"></div>
+          <div class="w-2.5 h-2.5 rounded-full bg-[#111827]"></div>
+        </div>
+
+        <!-- Phone Header -->
+        <div class="pt-8 px-4 pb-3 flex items-center justify-between border-b border-slate-800/60 bg-[#0A0D18]/90 z-20">
+          <div class="flex items-center gap-2">
+            <div class="relative">
+              <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-400 p-[1.5px]">
+                <div class="w-full h-full rounded-full bg-slate-900 flex items-center justify-center overflow-hidden">
+                  <span class="text-sm">🧔🏻‍♂️</span>
+                </div>
+              </div>
+              <span class="absolute -bottom-0.5 -right-0.5 text-[10px]">🛡️</span>
+            </div>
+            <div>
+              <div class="flex items-center gap-1.5">
+                <span class="text-xs font-bold text-white">Kabir Sen</span>
+                <span class="px-1.5 py-0.2 bg-emerald-500/15 border border-emerald-500/30 text-[9px] font-bold text-emerald-400 rounded-full">3D Verified</span>
+              </div>
+              <span class="text-[10px] text-slate-400">Tech Founder • Indiranagar</span>
+            </div>
+          </div>
+          <div class="px-2.5 py-1 rounded-full bg-rose-500/10 border border-rose-500/30 text-[10px] font-bold text-rose-400 flex items-center gap-1">
+            <span>⏳</span> 68h 12m
+          </div>
+        </div>
+
+        <!-- Phone Body Scrollable -->
+        <div class="flex-1 overflow-y-auto p-4 space-y-4" id="taraChatBody">
+
+          <!-- Match intro banner -->
+          <div class="p-3 rounded-2xl bg-slate-900/60 border border-slate-800/70 text-center">
+            <span class="text-lg">✨</span>
+            <div class="text-[11px] font-bold text-rose-300">You matched with Kabir!</div>
+            <p class="text-[10px] text-slate-400 mt-0.5">Ashta-Koota Guna Milan: 31/36 Points • Exceptional Chemistry</p>
+          </div>
+
+          <!-- Existing conversation bubbles -->
+          <div class="flex justify-end">
+            <div class="max-w-[78%] px-3 py-2 rounded-2xl rounded-tr-sm bg-gradient-to-r from-[#FF385C] to-rose-600 text-[11px] text-white font-medium shadow-md shadow-rose-900/30">
+              Hey Kabir! Loved your travel photography from Spiti 🏔️
+            </div>
+          </div>
+          <div class="flex justify-start">
+            <div class="max-w-[78%] px-3 py-2 rounded-2xl rounded-tl-sm bg-slate-800/70 border border-slate-700/40 text-[11px] text-slate-200">
+              Thanks Tara! Would love to tell you the story over drinks this weekend.
+            </div>
+          </div>
+
+          <!-- RECEIVER CONTAINER -->
+          <div id="taraProposalContainer">
+
+            <!-- STATE 0: WAITING FOR KABIR'S PROPOSAL -->
+            <div id="taraIdleCard" class="p-5 rounded-3xl bg-slate-900/40 border border-slate-800/60 text-center space-y-2">
+              <span class="text-2xl">💬</span>
+              <div class="text-xs font-semibold text-slate-300">Chat in progress</div>
+              <p class="text-[10px] text-slate-500">When Kabir proposes a real date, the illuminated invitation and floral bokeh will bloom here!</p>
+            </div>
+
+            <!-- STATE 1: LIVE INCOMING DATE INVITATION CARD (ANIMATED) -->
+            <div id="taraIncomingInviteCard" class="hidden luxury-glass luxury-card-glow rounded-3xl p-4 space-y-3 relative overflow-hidden" style="animation: pulseGlow 3s infinite;">
+              <!-- Glowing top ribbon -->
+              <div class="flex items-center justify-between border-b border-white/10 pb-2">
+                <div class="flex items-center gap-2">
+                  <span class="text-base animate-bounce">💌</span>
+                  <div>
+                    <h3 class="text-xs font-extrabold text-white tracking-wide">Date Proposal Received</h3>
+                    <p class="text-[10px] text-rose-300">Kabir invited you out!</p>
+                  </div>
+                </div>
+                <span class="px-2 py-0.5 rounded-full bg-[#FF385C]/20 border border-[#FF385C]/50 text-[10px] font-bold text-[#FF385C]">
+                  Live Invitation
+                </span>
+              </div>
+
+              <!-- Proposed Date Details Box -->
+              <div class="p-3.5 rounded-2xl bg-gradient-to-br from-slate-900/90 to-rose-950/20 border border-rose-500/20 space-y-2.5">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-1.5 text-xs font-bold text-white">
+                    <span>📅</span>
+                    <span id="taraCardDate">Saturday, Oct 24</span>
+                  </div>
+                  <div class="flex items-center gap-1.5 text-xs font-bold text-amber-300">
+                    <span>⏰</span>
+                    <span id="taraCardTime">8:00 PM</span>
+                  </div>
+                </div>
+
+                <div class="flex items-start gap-2 pt-1 border-t border-white/5">
+                  <span class="text-sm">📍</span>
+                  <div>
+                    <div class="text-xs font-bold text-white" id="taraCardVenue">Toit Brewpub, Indiranagar</div>
+                    <div class="text-[10px] text-slate-400">Verified SafeDate Partner Hub • Indiranagar 100ft Rd</div>
+                  </div>
+                </div>
+
+                <!-- Kabir's Note -->
+                <div class="p-2.5 rounded-xl bg-slate-950/70 border border-white/5 text-[11px] text-slate-300 italic" id="taraCardNote">
+                  "First round of artisanal cocktails is on me! Can't wait to meet you."
+                </div>
+              </div>
+
+              <!-- ACCEPT / DECLINE ACTIONS -->
+              <div class="space-y-2 pt-1">
+                <button type="button" onclick="acceptDateProposal()" class="w-full py-2.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-extrabold text-xs tracking-wider uppercase shadow-xl shadow-emerald-950 hover:scale-[1.01] active:scale-[0.98] transition flex items-center justify-center gap-2">
+                  <span>💖</span>
+                  <span>Accept Date Proposal</span>
+                </button>
+                <div class="grid grid-cols-2 gap-2">
+                  <button type="button" onclick="openDeclineModal()" class="py-2 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-300 text-xs font-bold border border-slate-700 transition flex items-center justify-center gap-1">
+                    <span>💬</span> Reschedule / Reason
+                  </button>
+                  <button type="button" onclick="declineStraight()" class="py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 text-xs font-bold border border-rose-500/30 transition flex items-center justify-center gap-1">
+                    <span>✖️</span> Not Right Now
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- STATE 2: CONFIRMED CARD ON TARA'S PHONE -->
+            <div id="taraConfirmedCard" class="hidden luxury-glass border border-emerald-500/50 rounded-3xl p-4 space-y-3 text-center bg-gradient-to-b from-emerald-950/20 to-slate-950">
+              <div class="w-12 h-12 rounded-full bg-emerald-500/20 border border-emerald-500 flex items-center justify-center text-2xl mx-auto shadow-lg shadow-emerald-900/50">
+                🥂
+              </div>
+              <div>
+                <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold text-[10px] border border-emerald-500/40">
+                  DATE LOCKED IN! ✨
+                </span>
+                <h4 class="text-sm font-extrabold text-white mt-2">You & Kabir are Going Out!</h4>
+                <p class="text-[11px] text-emerald-300 mt-1 font-semibold" id="taraConfirmedSummary">
+                  Saturday, Oct 24 • 8:00 PM • Toit Brewpub, Indiranagar
+                </p>
+              </div>
+              <div class="p-3 rounded-2xl bg-emerald-900/20 border border-emerald-500/30 text-[11px] text-slate-300 text-left space-y-1">
+                <div class="flex items-center gap-1.5 font-bold text-emerald-400">
+                  <span>🛡️</span> SafeDate Shield™ Enabled For You
+                </div>
+                <div class="text-[10px] text-slate-400">
+                  • Kabir is 3D Biometric Verified<br>
+                  • Private Safe-Pin shared 2h before date<br>
+                  • 1-Tap SOS dispatch on your home lockscreen
+                </div>
+              </div>
+              <button onclick="alert('📅 Date added to your Google / Apple Calendar!')" class="w-full py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs transition">
+                📲 Sync with Calendar
+              </button>
+            </div>
+
+            <!-- STATE 3: DECLINED / RESCHEDULE CONFIRMATION ON TARA'S PHONE -->
+            <div id="taraRescheduledCard" class="hidden luxury-glass border border-amber-500/50 rounded-3xl p-4 space-y-2.5 bg-gradient-to-b from-amber-950/20 to-slate-950 text-center">
+              <div class="text-2xl">🕊️</div>
+              <h4 class="text-xs font-bold text-white">Counter-Offer Sent to Kabir!</h4>
+              <p class="text-[11px] text-amber-300" id="taraSentCounterSummary">
+                Suggested Sunday, Oct 25 at 5:30 PM instead.
+              </p>
+              <p class="text-[10px] text-slate-400">
+                Kabir has been notified with your reason & suggested time. You'll get an alert when he accepts!
+              </p>
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- Chat Input Mock at Bottom -->
+        <div class="p-3 border-t border-slate-800/60 bg-[#0A0D18]/95 flex items-center gap-2">
+          <input type="text" placeholder="Type a message to Kabir..." class="flex-1 bg-slate-900 border border-slate-800 rounded-full px-3.5 py-2 text-xs text-slate-300 focus:outline-none" disabled>
+          <button class="w-8 h-8 rounded-full bg-[#FF385C] flex items-center justify-center text-white text-xs">
+            ➤
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+
+
+  <!-- ==================== INTERACTIVE RESCHEDULE / DECLINE MODAL (TARA) ==================== -->
+  <div id="declineModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="luxury-glass luxury-card-glow max-w-md w-full rounded-3xl p-5 space-y-4">
+      <div class="flex items-center justify-between border-b border-white/10 pb-2">
+        <div class="flex items-center gap-2">
+          <span class="text-lg">💬</span>
+          <div>
+            <h3 class="text-sm font-bold text-white">Reschedule or Decline Politely</h3>
+            <p class="text-[10px] text-slate-400">Clear reasons prevent ghosting & protect your match rating</p>
+          </div>
+        </div>
+        <button onclick="closeDeclineModal()" class="w-7 h-7 rounded-full bg-slate-800 text-slate-300 flex items-center justify-center text-sm hover:bg-slate-700">
+          ✕
+        </button>
+      </div>
+
+      <!-- Option 1: Select Reason -->
+      <div>
+        <label class="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-2">
+          Select reason:
+        </label>
+        <div class="space-y-1.5" id="reasonRadioGroup">
+          <label class="flex items-center gap-2 p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 hover:border-[#FF385C]/50 cursor-pointer text-xs">
+            <input type="radio" name="declineReason" value="Busy on Saturday evening" checked class="text-[#FF385C] focus:ring-0">
+            <span>Busy on Saturday evening (Family / Prior commitment)</span>
+          </label>
+          <label class="flex items-center gap-2 p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 hover:border-[#FF385C]/50 cursor-pointer text-xs">
+            <input type="radio" name="declineReason" value="Prefer a quieter coffee spot" class="text-[#FF385C] focus:ring-0">
+            <span>Prefer a more low-key coffee spot instead of drinks</span>
+          </label>
+          <label class="flex items-center gap-2 p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 hover:border-[#FF385C]/50 cursor-pointer text-xs">
+            <input type="radio" name="declineReason" value="Would like to chat a bit more first" class="text-[#FF385C] focus:ring-0">
+            <span>Would love to chat a bit more before meeting in person</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Option 2: Counter Proposal (Suggest Alternate Date / Time / Place) -->
+      <div class="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-2">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-amber-300">💡 Propose Alternate Time / Spot:</span>
+          <span class="text-[10px] text-amber-400 font-semibold">(Keeps date active!)</span>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <select id="counterDaySelect" class="bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white">
+            <option value="Sunday, Oct 25">Sunday, Oct 25</option>
+            <option value="Monday, Oct 26">Monday, Oct 26</option>
+            <option value="Next Friday, Oct 30">Next Friday, Oct 30</option>
+          </select>
+          <select id="counterTimeSelect" class="bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white">
+            <option value="5:30 PM">5:30 PM (Sunset Coffee ☕)</option>
+            <option value="7:00 PM">7:00 PM (Dinner 🍽️)</option>
+            <option value="4:00 PM">4:00 PM (Afternoon Tea 🫖)</option>
+          </select>
+        </div>
+        <select id="counterVenueSelect" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white">
+          <option value="Blue Tokai Coffee, Indiranagar">☕ Blue Tokai Coffee • Indiranagar</option>
+          <option value="Smoke House Deli, Lavelle Road">🍷 Smoke House Deli • Lavelle Road</option>
+          <option value="Third Wave Coffee, Koramangala">☕ Third Wave Coffee • Koramangala</option>
+        </select>
+      </div>
+
+      <!-- Custom personal note -->
+      <div>
+        <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">
+          Add sweet note to Kabir (optional):
+        </label>
+        <input type="text" id="declineCustomNote" value="Would love to do Sunday coffee instead! Can't wait to hear the Spiti story." class="w-full px-3 py-2 rounded-xl bg-slate-900/90 border border-slate-700/80 text-xs text-slate-200">
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="grid grid-cols-2 gap-2 pt-1">
+        <button onclick="submitCounterOffer()" class="py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-rose-500 text-white font-bold text-xs tracking-wider uppercase transition shadow-lg shadow-amber-950">
+          Propose Alternate Plan ➔
+        </button>
+        <button onclick="submitStrictDecline()" class="py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs border border-slate-700 transition">
+          Decline Without Rescheduling
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Floating Sound / Web Audio Synth -->
+  <script>
+    // Web Audio chime generator (Zero external files needed)
+    function playChime(type) {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        if (type === 'proposal') {
+          // Gentle romantic double chime (C6 -> G6)
+          const osc1 = ctx.createOscillator();
+          const gain1 = ctx.createGain();
+          osc1.type = 'sine';
+          osc1.frequency.setValueAtTime(1046.50, ctx.currentTime); // C6
+          osc1.frequency.exponentialRampToValueAtTime(1567.98, ctx.currentTime + 0.3); // G6
+          gain1.gain.setValueAtTime(0.15, ctx.currentTime);
+          gain1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8);
+          osc1.connect(gain1);
+          gain1.connect(ctx.destination);
+          osc1.start();
+          osc1.stop(ctx.currentTime + 0.8);
+        } else if (type === 'accept') {
+          // Triumphant chord
+          [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, ctx.currentTime + (idx * 0.08));
+            gain.gain.setValueAtTime(0.12, ctx.currentTime + (idx * 0.08));
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.2);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(ctx.currentTime + (idx * 0.08));
+            osc.stop(ctx.currentTime + 1.2);
+          });
+        }
+      } catch (e) {
+        // AudioContext restricted before first gesture
+      }
+    }
+
+    // Current State store
+    let currentProposal = {
+      date: 'Sat, Oct 24',
+      time: '8:00 PM',
+      timeSub: 'Dinner & Drinks 🍸',
+      venue: 'Toit Brewpub, Indiranagar',
+      note: "First round of artisanal cocktails is on me! Can't wait to meet you."
+    };
+
+    function selectDate(el, dateText) {
+      document.querySelectorAll('.date-chip').forEach(btn => {
+        btn.className = 'date-chip px-2 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-center transition';
+        btn.querySelector('.text-xs').className = 'text-xs font-bold text-white';
+        btn.querySelector('.text-\\[9px\\]').className = 'text-[9px] text-slate-400';
+      });
+      el.className = 'date-chip px-2 py-1.5 rounded-xl bg-gradient-to-br from-[#FF385C] to-rose-600 border border-rose-400 text-center shadow-lg shadow-rose-900/40';
+      el.querySelector('.text-xs').className = 'text-xs font-bold text-white';
+      el.querySelector('.text-\\[9px\\]').className = 'text-[9px] text-rose-100';
+
+      currentProposal.date = dateText;
+      document.getElementById('selectedDateLabel').innerText = dateText;
+    }
+
+    function selectTime(el, timeText, subText) {
+      document.querySelectorAll('.time-chip').forEach(btn => {
+        btn.className = 'time-chip p-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-left transition';
+        btn.querySelector('.text-xs').className = 'text-xs font-bold text-white';
+        btn.querySelector('.text-\\[9px\\]').className = 'text-[9px] text-slate-400';
+      });
+      el.className = 'time-chip p-1.5 rounded-xl bg-gradient-to-br from-[#FF385C] to-rose-600 border border-rose-400 text-left shadow-lg shadow-rose-900/40';
+      el.querySelector('.text-xs').className = 'text-xs font-bold text-white';
+      el.querySelector('.text-\\[9px\\]').className = 'text-[9px] text-rose-100 font-medium';
+
+      currentProposal.time = timeText;
+      currentProposal.timeSub = subText;
+      document.getElementById('selectedTimeLabel').innerText = `${timeText} (${subText})`;
+    }
+
+    // FLOWER BOKEH & ROSE PETAL SHOWER GENERATOR
+    function triggerFlowerShower() {
+      const container = document.getElementById('flowerShowerContainer');
+      container.innerHTML = '';
+      playChime('proposal');
+
+      // 1. Generate 8 Glowing Bokeh orbs
+      const colors = ['rgba(255, 56, 92, 0.4)', 'rgba(251, 191, 36, 0.35)', 'rgba(244, 114, 182, 0.4)', 'rgba(192, 132, 252, 0.3)'];
+      for (let i = 0; i < 8; i++) {
+        const orb = document.createElement('div');
+        orb.className = 'bokeh-orb';
+        const size = Math.floor(Math.random() * 60 + 40);
+        orb.style.width = size + 'px';
+        orb.style.height = size + 'px';
+        orb.style.left = Math.random() * 320 + 'px';
+        orb.style.top = Math.random() * 450 + 'px';
+        orb.style.background = colors[i % colors.length];
+        orb.style.setProperty('--dur', (Math.random() * 3 + 3) + 's');
+        container.appendChild(orb);
+      }
+
+      // 2. Generate 30 Animated Rose Petals cascading down
+      for (let i = 0; i < 32; i++) {
+        const petal = document.createElement('div');
+        petal.className = 'petal-particle';
+        const w = Math.floor(Math.random() * 12 + 10);
+        const h = Math.floor(w * 1.3);
+        petal.style.width = w + 'px';
+        petal.style.height = h + 'px';
+        petal.style.left = Math.random() * 340 + 'px';
+        petal.style.top = '-20px';
+        petal.style.setProperty('--tx', (Math.random() * 120 - 60) + 'px');
+        petal.style.setProperty('--rot', (Math.random() * 720 - 360) + 'deg');
+        petal.style.setProperty('--dur', (Math.random() * 2.5 + 2.8) + 's');
+        petal.style.animationDelay = (Math.random() * 1.8) + 's';
+        container.appendChild(petal);
+      }
+
+      // Automatically fade out after 6 seconds
+      setTimeout(() => {
+        container.innerHTML = '';
+      }, 6200);
+    }
+
+    // FLOW 1: SEND PROPOSAL
+    function sendDateProposal() {
+      currentProposal.venue = document.getElementById('venueSelect').value;
+      currentProposal.note = document.getElementById('proposalNoteInput').value;
+
+      // Update Kabir's side: Hide composer, show pending
+      document.getElementById('kabirComposerCard').classList.add('hidden');
+      document.getElementById('kabirPendingCard').classList.remove('hidden');
+      document.getElementById('kabirConfirmedCard').classList.add('hidden');
+      document.getElementById('kabirDeclinedCard').classList.add('hidden');
+      document.getElementById('kabirPendingSummary').innerText = `${currentProposal.date} at ${currentProposal.time} • ${currentProposal.venue.split('•')[0]}`;
+
+      // Update Tara's side: Trigger live flower shower, show incoming card
+      document.getElementById('taraIdleCard').classList.add('hidden');
+      document.getElementById('taraIncomingInviteCard').classList.remove('hidden');
+      document.getElementById('taraConfirmedCard').classList.add('hidden');
+      document.getElementById('taraRescheduledCard').classList.add('hidden');
+
+      // Populate Tara's card
+      document.getElementById('taraCardDate').innerText = currentProposal.date;
+      document.getElementById('taraCardTime').innerText = currentProposal.time;
+      document.getElementById('taraCardVenue').innerText = currentProposal.venue.split('•')[0];
+      document.getElementById('taraCardNote').innerText = `"${currentProposal.note}"`;
+
+      triggerFlowerShower();
+    }
+
+    // FLOW 2: TARA ACCEPTS
+    function acceptDateProposal() {
+      playChime('accept');
+
+      // Update Tara's Phone to Confirmed
+      document.getElementById('taraIncomingInviteCard').classList.add('hidden');
+      document.getElementById('taraConfirmedCard').classList.remove('hidden');
+      document.getElementById('taraConfirmedSummary').innerText = `${currentProposal.date} • ${currentProposal.time} • ${currentProposal.venue.split('•')[0]}`;
+
+      // Synchronize immediately to Kabir's Phone
+      document.getElementById('kabirPendingCard').classList.add('hidden');
+      document.getElementById('kabirConfirmedCard').classList.remove('hidden');
+      document.getElementById('kabirConfirmedSummary').innerText = `${currentProposal.date} • ${currentProposal.time} • ${currentProposal.venue.split('•')[0]}`;
+
+      // Celebration flower burst
+      triggerFlowerShower();
+    }
+
+    // FLOW 3: TARA DECLINES WITH RESCHEDULE / COUNTER OFFER
+    function openDeclineModal() {
+      document.getElementById('declineModal').classList.remove('hidden');
+    }
+    function closeDeclineModal() {
+      document.getElementById('declineModal').classList.add('hidden');
+    }
+
+    function submitCounterOffer() {
+      const selectedReasonEl = document.querySelector('input[name="declineReason"]:checked');
+      const reason = selectedReasonEl ? selectedReasonEl.value : 'Busy at the moment';
+      const newDay = document.getElementById('counterDaySelect').value;
+      const newTime = document.getElementById('counterTimeSelect').value;
+      const newVenue = document.getElementById('counterVenueSelect').value;
+      const customNote = document.getElementById('declineCustomNote').value;
+
+      closeDeclineModal();
+
+      // Update Tara's UI to show counter offer dispatched
+      document.getElementById('taraIncomingInviteCard').classList.add('hidden');
+      document.getElementById('taraRescheduledCard').classList.remove('hidden');
+      document.getElementById('taraSentCounterSummary').innerText = `Suggested ${newDay} at ${newTime} at ${newVenue.split('•')[0]}.`;
+
+      // Update Kabir's UI to show decline reason & counter-offer
+      document.getElementById('kabirPendingCard').classList.add('hidden');
+      document.getElementById('kabirDeclinedCard').classList.remove('hidden');
+      document.getElementById('kabirDeclineReason').innerText = `"${reason}. ${customNote}"`;
+      document.getElementById('kabirCounterSummary').innerText = `📅 ${newDay} • ${newTime} • ${newVenue.split('•')[0]}`;
+    }
+
+    function submitStrictDecline() {
+      const selectedReasonEl = document.querySelector('input[name="declineReason"]:checked');
+      const reason = selectedReasonEl ? selectedReasonEl.value : 'Not ready for in-person date yet';
+      closeDeclineModal();
+
+      document.getElementById('taraIncomingInviteCard').classList.add('hidden');
+      document.getElementById('taraIdleCard').classList.remove('hidden');
+      document.getElementById('taraIdleCard').innerHTML = `
+        <span class="text-2xl">🕊️</span>
+        <div class="text-xs font-bold text-slate-300">Date Politely Declined</div>
+        <p class="text-[10px] text-slate-500">You declined Kabir's date with reason: "${reason}". You can continue chatting anytime.</p>
+      `;
+
+      document.getElementById('kabirPendingCard').classList.add('hidden');
+      document.getElementById('kabirComposerCard').classList.remove('hidden');
+      alert(`Tara declined the date for: "${reason}". You can propose another date later or continue chatting.`);
+    }
+
+    function declineStraight() {
+      openDeclineModal();
+    }
+
+    function acceptCounterOffer() {
+      playChime('accept');
+      // Kabir accepts Tara's counter offer
+      document.getElementById('kabirDeclinedCard').classList.add('hidden');
+      document.getElementById('kabirConfirmedCard').classList.remove('hidden');
+      document.getElementById('kabirConfirmedSummary').innerText = document.getElementById('kabirCounterSummary').innerText;
+
+      document.getElementById('taraRescheduledCard').classList.add('hidden');
+      document.getElementById('taraConfirmedCard').classList.remove('hidden');
+      document.getElementById('taraConfirmedSummary').innerText = document.getElementById('kabirCounterSummary').innerText;
+
+      triggerFlowerShower();
+    }
+
+    function reOpenComposer() {
+      document.getElementById('kabirDeclinedCard').classList.add('hidden');
+      document.getElementById('kabirComposerCard').classList.remove('hidden');
+    }
+
+    function resetFlow() {
+      document.getElementById('kabirComposerCard').classList.remove('hidden');
+      document.getElementById('kabirPendingCard').classList.add('hidden');
+      document.getElementById('kabirConfirmedCard').classList.add('hidden');
+      document.getElementById('kabirDeclinedCard').classList.add('hidden');
+
+      document.getElementById('taraIdleCard').classList.remove('hidden');
+      document.getElementById('taraIncomingInviteCard').classList.add('hidden');
+      document.getElementById('taraConfirmedCard').classList.add('hidden');
+      document.getElementById('taraRescheduledCard').classList.add('hidden');
+
+      document.getElementById('flowerShowerContainer').innerHTML = '';
+    }
+
+    function triggerQuickProposal() {
+      sendDateProposal();
+    }
+    function triggerAccept() {
+      if (document.getElementById('taraIncomingInviteCard').classList.contains('hidden')) {
+        sendDateProposal();
+        setTimeout(acceptDateProposal, 500);
+      } else {
+        acceptDateProposal();
+      }
+    }
+    function triggerRejectModal() {
+      if (document.getElementById('taraIncomingInviteCard').classList.contains('hidden')) {
+        sendDateProposal();
+      }
+      openDeclineModal();
+    }
+  </script>
+</body>
+</html>
