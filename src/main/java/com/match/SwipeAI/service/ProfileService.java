@@ -321,7 +321,12 @@ public class ProfileService {
      */
     @Transactional
     public void reportProfile(UUID reporterId, UUID targetUserId, String reason) {
-        log.warn("User {} reported candidate {} for reason: {}", reporterId, targetUserId, reason);
+        reportProfile(reporterId, targetUserId, reason, null);
+    }
+
+    @Transactional
+    public void reportProfile(UUID reporterId, UUID targetUserId, String reason, String remarks) {
+        log.warn("User {} reported candidate {} for reason: {}, remarks: {}", reporterId, targetUserId, reason, remarks);
 
         // 1. Penalize karma of reported user
         try {
@@ -361,14 +366,29 @@ public class ProfileService {
 
         // 4. Create Support / Trust & Safety moderation ticket
         try {
+            Profile reporterProfile = profileRepository.findById(reporterId).orElse(null);
+            Profile targetProfile = profileRepository.findById(targetUserId).orElse(null);
+            String reporterName = reporterProfile != null && reporterProfile.getDisplayName() != null ? reporterProfile.getDisplayName().trim() : "User " + reporterId;
+            String targetName = targetProfile != null && targetProfile.getDisplayName() != null ? targetProfile.getDisplayName().trim() : "User " + targetUserId;
+
+            StringBuilder desc = new StringBuilder();
+            desc.append("ACTION: REPORT_PROFILE\n");
+            desc.append("Reporter: ").append(reporterName).append(" (ID: ").append(reporterId).append(")\n");
+            desc.append("Reported Candidate: ").append(targetName).append(" (ID: ").append(targetUserId).append(")\n");
+            desc.append("Reason Category: ").append(reason != null ? reason : "Objectionable Content").append("\n");
+            if (remarks != null && !remarks.isBlank()) {
+                desc.append("\n--- User Remarks for Admin Review ---\n");
+                desc.append(remarks.trim()).append("\n");
+            }
+
             String ticketNumber = "UGC-" + (10000 + new Random().nextInt(90000));
             SupportTicket ticket = SupportTicket.builder()
                     .userId(reporterId)
                     .ticketNumber(ticketNumber)
                     .category(TicketCategory.SAFETY_HARASSMENT)
                     .status(TicketStatus.PENDING)
-                    .subject("Profile Report: " + (reason != null ? reason : "Objectionable Content"))
-                    .description("Reporter ID: " + reporterId + "\nReported Target User ID: " + targetUserId + "\nReason: " + reason)
+                    .subject("Profile Report: " + targetName + " (" + (reason != null ? reason : "Objectionable Content") + ")")
+                    .description(desc.toString())
                     .build();
             supportTicketRepository.save(ticket);
         } catch (Exception e) {
@@ -381,7 +401,12 @@ public class ProfileService {
      */
     @Transactional
     public void blockProfile(UUID blockerId, UUID targetUserId) {
-        log.info("User {} blocked target {}", blockerId, targetUserId);
+        blockProfile(blockerId, targetUserId, "Direct Block", null);
+    }
+
+    @Transactional
+    public void blockProfile(UUID blockerId, UUID targetUserId, String reason, String remarks) {
+        log.info("User {} blocked target {}, reason: {}, remarks: {}", blockerId, targetUserId, reason, remarks);
 
         // 1. Record PASS interaction so blocker never sees target in discovery
         try {
@@ -410,6 +435,37 @@ public class ProfileService {
             });
         } catch (Exception e) {
             log.warn("Could not unmatch blocked user: {}", e.getMessage());
+        }
+
+        // 3. Create Support / Safety ticket for Admin Review
+        try {
+            Profile blockerProfile = profileRepository.findById(blockerId).orElse(null);
+            Profile targetProfile = profileRepository.findById(targetUserId).orElse(null);
+            String blockerName = blockerProfile != null && blockerProfile.getDisplayName() != null ? blockerProfile.getDisplayName().trim() : "User " + blockerId;
+            String targetName = targetProfile != null && targetProfile.getDisplayName() != null ? targetProfile.getDisplayName().trim() : "User " + targetUserId;
+
+            StringBuilder desc = new StringBuilder();
+            desc.append("ACTION: BLOCK_PROFILE\n");
+            desc.append("Blocker: ").append(blockerName).append(" (ID: ").append(blockerId).append(")\n");
+            desc.append("Blocked Candidate: ").append(targetName).append(" (ID: ").append(targetUserId).append(")\n");
+            desc.append("Reason Category: ").append(reason != null && !reason.isBlank() ? reason : "Direct Block").append("\n");
+            if (remarks != null && !remarks.isBlank()) {
+                desc.append("\n--- User Remarks for Admin Review ---\n");
+                desc.append(remarks.trim()).append("\n");
+            }
+
+            String ticketNumber = "BLK-" + (10000 + new Random().nextInt(90000));
+            SupportTicket ticket = SupportTicket.builder()
+                    .userId(blockerId)
+                    .ticketNumber(ticketNumber)
+                    .category(TicketCategory.SAFETY_HARASSMENT)
+                    .status(TicketStatus.PENDING)
+                    .subject("Profile Blocked: " + targetName + " (" + (reason != null && !reason.isBlank() ? reason : "Direct Block") + ")")
+                    .description(desc.toString())
+                    .build();
+            supportTicketRepository.save(ticket);
+        } catch (Exception e) {
+            log.warn("Could not create support ticket for block: {}", e.getMessage());
         }
     }
 

@@ -2626,11 +2626,21 @@
       const remarks = t.remarksHistory || [];
       const drawer = document.getElementById('ticket-modal-content');
 
+      let reportedUserId = null;
+      let reportedUserName = 'Target User';
+      if (t.description) {
+        const match = t.description.match(/(?:Reported Candidate|Reported Match User|Reported User|Blocked Candidate|Blocked User):\s*(.*?)\s*\(ID:\s*([a-f0-9\-]{36})\)/i);
+        if (match) {
+          reportedUserName = match[1].trim();
+          reportedUserId = match[2].trim();
+        }
+      }
+
       drawer.innerHTML = `
         <!-- Header -->
         <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid var(--border);padding-bottom:14px;">
           <div>
-            <div style="font-size:11px;color:var(--brand);font-weight:800;letter-spacing:1px;">CUSTOMER SUPPORT DESK</div>
+            <div style="font-size:11px;color:var(--brand);font-weight:800;letter-spacing:1px;">CUSTOMER SUPPORT & SAFETY DESK</div>
             <div style="font-size:20px;font-weight:900;margin-top:2px;">Ticket #${t.ticketNumber}</div>
             <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">
               Customer: <b>${escapeHtml(t.userName || 'User')}</b> (${escapeHtml(t.userPhoneMasked || '—')}) • Category: <b>${escapeHtml(t.category)}</b>
@@ -2644,12 +2654,20 @@
 
         <!-- Issue Details Card -->
         <div class="panel-card" style="margin-top:14px;background:rgba(0,0,0,0.35);">
-          <div style="font-weight:800;font-size:15px;color:#FFF;">${escapeHtml(t.subject)}</div>
-          <div style="font-size:13px;color:var(--text-muted);margin-top:6px;line-height:1.5;white-space:pre-wrap;">${escapeHtml(t.description)}</div>
-          <div style="margin-top:10px;display:flex;gap:8px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div style="font-weight:800;font-size:15px;color:#FFF;">${escapeHtml(t.subject)}</div>
+            ${t.subject && (t.subject.includes('Report') || t.subject.includes('Blocked')) ? '<span style="background:rgba(239,68,68,0.2);color:#FCA5A5;border:1px solid #EF4444;border-radius:99px;font-size:10px;font-weight:800;padding:2px 8px;">MODERATION ACTION</span>' : ''}
+          </div>
+          <div style="font-size:13px;color:var(--text-muted);margin-top:8px;line-height:1.6;white-space:pre-wrap;background:rgba(255,255,255,0.03);padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,0.07);">${escapeHtml(t.description)}</div>
+          <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
             <button class="btn btn-ghost btn-sm" style="font-size:11px;" onclick="closeTicketModal(); openInspector('${t.userId}')">
-              🔍 Inspect Customer 360° Profile & Payments
+              🔍 Inspect Reporter (${escapeHtml(t.userName || 'User')})
             </button>
+            ${reportedUserId ? `
+              <button class="btn btn-brand btn-sm" style="font-size:11px;background:#EF4444;border-color:#EF4444;" onclick="closeTicketModal(); openInspector('${reportedUserId}')">
+                🎯 Inspect Reported/Blocked User (${escapeHtml(reportedUserName)})
+              </button>
+            ` : ''}
           </div>
         </div>
 

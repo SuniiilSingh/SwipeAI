@@ -105,7 +105,7 @@ public class MatchController {
 
     /**
      * Report a match for harassment, offensive messages, or fake profile.
-     * Applies safety karma penalty, sets status to UNMATCHED, and severs channels.
+     * Applies safety karma penalty, sets status to UNMATCHED, and logs SupportTicket for Admin Review.
      */
     @PostMapping("/{id}/report")
     public ResponseEntity<Map<String, String>> reportMatch(
@@ -113,8 +113,24 @@ public class MatchController {
             @PathVariable UUID id,
             @RequestBody(required = false) Map<String, String> body) {
         String reason = body != null && body.containsKey("reason") ? body.get("reason") : "Inappropriate behavior";
-        matchService.reportMatch(id, userId, reason);
+        String remarks = body != null && body.containsKey("remarks") ? body.get("remarks") : null;
+        matchService.reportMatch(id, userId, reason, remarks);
         return ResponseEntity.ok(Map.of("status", "success", "message", "User reported and blocked successfully."));
+    }
+
+    /**
+     * Block a match from chat lounge.
+     * Sets status to UNMATCHED and logs SupportTicket with remarks for Admin Review.
+     */
+    @PostMapping("/{id}/block")
+    public ResponseEntity<Map<String, String>> blockMatch(
+            @AuthenticationPrincipal UUID userId,
+            @PathVariable UUID id,
+            @RequestBody(required = false) Map<String, String> body) {
+        String reason = body != null && body.containsKey("reason") ? body.get("reason") : "Direct Block";
+        String remarks = body != null && body.containsKey("remarks") ? body.get("remarks") : null;
+        matchService.blockMatch(id, userId, reason, remarks);
+        return ResponseEntity.ok(Map.of("status", "success", "message", "User blocked successfully."));
     }
 
     /**

@@ -41,6 +41,7 @@ public class MatchService {
     private final MatchKarmaService karmaService;
     private final DiscoveryService discoveryService;
     private final PushNotificationService pushNotificationService;
+    private final SupportTicketRepository supportTicketRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public List<MatchDto.MatchResponseDto> getMatchesForUser(UUID userId) {
@@ -274,14 +275,92 @@ public class MatchService {
 
     @Transactional
     public void reportMatch(UUID matchId, UUID userId, String reason) {
+        reportMatch(matchId, userId, reason, null);
+    }
+
+    @Transactional
+    public void reportMatch(UUID matchId, UUID userId, String reason, String remarks) {
         Match match = matchRepository.findById(matchId).orElseThrow();
         match.setStatus(MatchStatus.UNMATCHED);
         matchRepository.save(match);
 
         UUID reportedUserId = match.getUserAId().equals(userId) ? match.getUserBId() : match.getUserAId();
         karmaService.penaltyHarassment(reportedUserId);
-        log.warn("User {} reported match {} with user {} for reason: '{}'. Applied -50 karma penalty.",
-                userId, matchId, reportedUserId, reason);
+        log.warn("User {} reported match {} with user {} for reason: '{}', remarks: '{}'. Applied -50 karma penalty.",
+                userId, matchId, reportedUserId, reason, remarks);
+
+        try {
+            Profile reporterProfile = profileRepository.findById(userId).orElse(null);
+            Profile reportedProfile = profileRepository.findById(reportedUserId).orElse(null);
+            String reporterName = reporterProfile != null && reporterProfile.getDisplayName() != null ? reporterProfile.getDisplayName().trim() : "User " + userId;
+            String reportedName = reportedProfile != null && reportedProfile.getDisplayName() != null ? reportedProfile.getDisplayName().trim() : "User " + reportedUserId;
+
+            StringBuilder desc = new StringBuilder();
+            desc.append("ACTION: REPORT_MATCH\n");
+            desc.append("Reporter: ").append(reporterName).append(" (ID: ").append(userId).append(")\n");
+            desc.append("Reported Match User: ").append(reportedName).append(" (ID: ").append(reportedUserId).append(")\n");
+            desc.append("Match ID: ").append(matchId).append("\n");
+            desc.append("Reason Category: ").append(reason != null ? reason : "Inappropriate behavior").append("\n");
+            if (remarks != null && !remarks.isBlank()) {
+                desc.append("\n--- User Remarks for Admin Review ---\n");
+                desc.append(remarks.trim()).append("\n");
+            }
+
+            String ticketNumber = "UGC-" + (10000 + new Random().nextInt(90000));
+            SupportTicket ticket = SupportTicket.builder()
+                    .userId(userId)
+                    .ticketNumber(ticketNumber)
+                    .category(TicketCategory.SAFETY_HARASSMENT)
+                    .status(TicketStatus.PENDING)
+                    .subject("Chat Report: " + reportedName + " (" + (reason != null ? reason : "Inappropriate behavior") + ")")
+                    .description(desc.toString())
+                    .build();
+            supportTicketRepository.save(ticket);
+        } catch (Exception e) {
+            log.warn("Could not create support ticket for reported match: {}", e.getMessage());
+        }
+    }
+
+    @Transactional
+    public void blockMatch(UUID matchId, UUID userId, String reason, String remarks) {
+        Match match = matchRepository.findById(matchId).orElseThrow();
+        match.setStatus(MatchStatus.UNMATCHED);
+        matchRepository.save(match);
+
+        UUID blockedUserId = match.getUserAId().equals(userId) ? match.getUserBId() : match.getUserAId();
+        log.info("User {} blocked match {} with user {}, reason: {}, remarks: {}",
+                userId, matchId, blockedUserId, reason, remarks);
+
+        try {
+            Profile blockerProfile = profileRepository.findById(userId).orElse(null);
+            Profile blockedProfile = profileRepository.findById(blockedUserId).orElse(null);
+            String blockerName = blockerProfile != null && blockerProfile.getDisplayName() != null ? blockerProfile.getDisplayName().trim() : "User " + userId;
+            String blockedName = blockedProfile != null && blockedProfile.getDisplayName() != null ? blockedProfile.getDisplayName().trim() : "User " + blockedUserId;
+
+            StringBuilder desc = new StringBuilder();
+            desc.append("ACTION: BLOCK_MATCH\n");
+            desc.append("Blocker: ").append(blockerName).append(" (ID: ").append(userId).append(")\n");
+            desc.append("Blocked User: ").append(blockedName).append(" (ID: ").append(blockedUserId).append(")\n");
+            desc.append("Match ID: ").append(matchId).append("\n");
+            desc.append("Reason Category: ").append(reason != null && !reason.isBlank() ? reason : "Direct Block").append("\n");
+            if (remarks != null && !remarks.isBlank()) {
+                desc.append("\n--- User Remarks for Admin Review ---\n");
+                desc.append(remarks.trim()).append("\n");
+            }
+
+            String ticketNumber = "BLK-" + (10000 + new Random().nextInt(90000));
+            SupportTicket ticket = SupportTicket.builder()
+                    .userId(userId)
+                    .ticketNumber(ticketNumber)
+                    .category(TicketCategory.SAFETY_HARASSMENT)
+                    .status(TicketStatus.PENDING)
+                    .subject("Match Blocked: " + blockedName + " (" + (reason != null && !reason.isBlank() ? reason : "Direct Block") + ")")
+                    .description(desc.toString())
+                    .build();
+            supportTicketRepository.save(ticket);
+        } catch (Exception e) {
+            log.warn("Could not create support ticket for blocked match: {}", e.getMessage());
+        }
     }
 
     private MatchDto.MatchResponseDto mapToMatchDto(Match match, UUID currentUserId, User otherUser, Profile otherProfile) {

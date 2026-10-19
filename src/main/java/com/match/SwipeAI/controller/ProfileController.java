@@ -150,7 +150,8 @@ public class ProfileController {
             @PathVariable UUID id,
             @RequestBody(required = false) Map<String, String> body) {
         String reason = (body != null && body.containsKey("reason")) ? body.get("reason") : "Objectionable Content";
-        profileService.reportProfile(userId, id, reason);
+        String remarks = (body != null && body.containsKey("remarks")) ? body.get("remarks") : null;
+        profileService.reportProfile(userId, id, reason, remarks);
         return ResponseEntity.ok(Map.of("status", "success", "message", "Profile reported and hidden from discovery."));
     }
 
@@ -161,8 +162,11 @@ public class ProfileController {
     @PostMapping("/{id}/block")
     public ResponseEntity<Map<String, String>> blockCandidate(
             @AuthenticationPrincipal UUID userId,
-            @PathVariable UUID id) {
-        profileService.blockProfile(userId, id);
+            @PathVariable UUID id,
+            @RequestBody(required = false) Map<String, String> body) {
+        String reason = (body != null && body.containsKey("reason")) ? body.get("reason") : "Direct Block";
+        String remarks = (body != null && body.containsKey("remarks")) ? body.get("remarks") : null;
+        profileService.blockProfile(userId, id, reason, remarks);
         return ResponseEntity.ok(Map.of("status", "success", "message", "User blocked successfully."));
     }
 }
