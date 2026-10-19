@@ -17,7 +17,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Download official OpenCV Zoo ONNX model weights (YuNet face detector & SFace recognizer)
 RUN mkdir -p /app/models && \
     wget -q -O /app/models/face_detection_yunet.onnx https://github.com/opencv/opencv_zoo/raw/main/models/face_detection_yunet/face_detection_yunet_2023mar.onnx && \
-    wget -q -O /app/models/face_recognition_sface.onnx https://github.com/opencv/opencv_zoo/raw/main/models/face_recognition_sface/face_recognition_sface_2021dec.onnx
+    wget -q -O /app/models/face_recognition_sface.onnx https://github.com/opencv/opencv_zoo/raw/main/models/face_recognition_sface/face_recognition_sface_2021dec.onnx && \
+    wget -q -O /app/models/open_nsfw.onnx https://raw.githubusercontent.com/Robinbinu/yahoo-open-nsfw-onnx/main/src/yahoo_open_nsfw_onnx/open_nsfw.onnx
 
 COPY main.py .
 

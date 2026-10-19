@@ -22,23 +22,34 @@ app = FastAPI(title="SwipeAI Biometric Face Match Service", version="1.1.0")
 MODEL_DIR = os.getenv("MODEL_DIR", "/app/models")
 YUNET_PATH = os.path.join(MODEL_DIR, "face_detection_yunet.onnx")
 SFACE_PATH = os.path.join(MODEL_DIR, "face_recognition_sface.onnx")
+NSFW_ONNX_PATH = os.path.join(MODEL_DIR, "open_nsfw.onnx")
 
 # Face recognition threshold (OpenCV SFace standard is 0.363 for cosine similarity)
 DEFAULT_COSINE_THRESHOLD = 0.363
 
 recognizer: Optional[cv2.FaceRecognizerSF] = None
+nsfw_net: Optional[cv2.dnn.Net] = None
 
 
 @app.on_event("startup")
 def load_models():
-    global recognizer
-    logger.info("Initializing YuNet and SFace models...")
+    global recognizer, nsfw_net
+    logger.info("Initializing YuNet, SFace, and OpenNSFW models...")
     if not os.path.exists(YUNET_PATH) or not os.path.exists(SFACE_PATH):
         logger.error(f"Models not found at {YUNET_PATH} or {SFACE_PATH}")
         raise RuntimeError("Model files missing from container filesystem.")
 
     recognizer = cv2.FaceRecognizerSF.create(SFACE_PATH, "")
-    logger.info("Models loaded successfully.")
+    logger.info("Face recognition models loaded successfully.")
+
+    if os.path.exists(NSFW_ONNX_PATH):
+        try:
+            nsfw_net = cv2.dnn.readNetFromONNX(NSFW_ONNX_PATH)
+            logger.info("OpenNSFW ONNX model loaded successfully into OpenCV DNN.")
+        except Exception as e:
+            logger.warning(f"Failed to load OpenNSFW ONNX model: {e}")
+    else:
+        logger.warning(f"OpenNSFW model not found at {NSFW_ONNX_PATH}.")
 
 
 def decode_image_bytes(data: bytes) -> np.ndarray:
@@ -736,4 +747,110 @@ def verify_liveness(req: LivenessMotionRequest):
         yaw_left=round(yaw_l, 4),
         message="3D Biometric Liveness verified! Real human head movement confirmed.",
     )
+
+
+# -----------------------------------------------------------------------------
+# SHIELD 360 AI: SELF-HOSTED OPENNSFW NUDITY & EXPLICIT CONTENT DETECTOR
+# -----------------------------------------------------------------------------
+class NsfwDetectRequest(BaseModel):
+    image_base64: Optional[str] = None
+    image_url: Optional[str] = None
+
+
+class NsfwDetectResponse(BaseModel):
+    is_nsfw: bool
+    nsfw_score: float
+    sfw_score: float
+    action: str  # "BLOCK", "BLUR_WITH_WARNING", "ALLOW"
+    message: str
+
+
+def classify_nsfw_cv_img(bgr_img: np.ndarray) -> Tuple[float, float]:
+    """
+    Classify an OpenCV BGR image using the OpenNSFW ONNX model via cv2.dnn.
+    Returns (sfw_score, nsfw_score).
+    """
+    global nsfw_net
+    if nsfw_net is None:
+        if os.path.exists(NSFW_ONNX_PATH):
+            nsfw_net = cv2.dnn.readNetFromONNX(NSFW_ONNX_PATH)
+        else:
+            logger.warning("OpenNSFW model not loaded; returning safe default.")
+            return 0.95, 0.05
+
+    # Convert BGR to RGB PIL for standard Yahoo OpenNSFW pipeline
+    rgb_img = cv2.cvtColor(bgr_img, cv2.COLOR_BGR2RGB)
+    pil_img = Image.fromarray(rgb_img)
+
+    RESIZE_SIZE = 256
+    CROP_SIZE = 224
+    VGG_MEAN = np.array([104.0, 117.0, 123.0], dtype=np.float32)
+
+    resized = pil_img.resize((RESIZE_SIZE, RESIZE_SIZE), resample=Image.BILINEAR)
+    buffer = io.BytesIO()
+    resized.save(buffer, format="JPEG")
+    buffer.seek(0)
+    decoded = np.asarray(Image.open(buffer).convert("RGB"), dtype=np.float32)
+
+    offset = (RESIZE_SIZE - CROP_SIZE) // 2
+    cropped = decoded[offset : offset + CROP_SIZE, offset : offset + CROP_SIZE, :]
+    bgr_norm = cropped[:, :, ::-1] - VGG_MEAN
+
+    # NHWC shape: (1, 224, 224, 3)
+    blob = np.expand_dims(bgr_norm, axis=0)
+    nsfw_net.setInput(blob)
+    preds = nsfw_net.forward()
+
+    sfw_score = float(preds[0][0])
+    nsfw_score = float(preds[0][1])
+    return sfw_score, nsfw_score
+
+
+@app.post("/detect-nsfw", response_model=NsfwDetectResponse)
+def detect_nsfw_endpoint(req: NsfwDetectRequest):
+    """
+    Shield 360 AI endpoint for evaluating nudity & explicit content.
+    Returns classification scores and recommended enforcement actions.
+    """
+    try:
+        img = load_image(req.image_base64, req.image_url)
+    except Exception as e:
+        logger.warning(f"Failed to load image for NSFW detection: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Unable to load image for moderation check: {str(e)}",
+        )
+
+    try:
+        sfw_score, nsfw_score = classify_nsfw_cv_img(img)
+    except Exception as e:
+        logger.error(f"Inference error during NSFW detection: {e}")
+        return NsfwDetectResponse(
+            is_nsfw=False,
+            nsfw_score=0.05,
+            sfw_score=0.95,
+            action="ALLOW",
+            message=f"Inference exception fallback: {str(e)}",
+        )
+
+    is_nsfw = nsfw_score >= 0.60
+    if nsfw_score >= 0.65:
+        action = "BLOCK"
+        msg = f"Explicit nudity detected (confidence: {nsfw_score:.2f}). Hard blocked."
+    elif nsfw_score >= 0.40:
+        action = "BLUR_WITH_WARNING"
+        msg = f"Potentially sensitive or suggestive content (confidence: {nsfw_score:.2f}). Auto-blur enabled."
+    else:
+        action = "ALLOW"
+        msg = f"Content verified safe (safe confidence: {sfw_score:.2f})."
+
+    logger.info(f"NSFW Check result: score={nsfw_score:.4f}, action={action}")
+    return NsfwDetectResponse(
+        is_nsfw=is_nsfw,
+        nsfw_score=round(nsfw_score, 4),
+        sfw_score=round(sfw_score, 4),
+        action=action,
+        message=msg,
+    )
+
 

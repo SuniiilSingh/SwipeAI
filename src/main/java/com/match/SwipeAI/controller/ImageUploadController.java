@@ -23,6 +23,7 @@ import java.util.Map;
 public class ImageUploadController {
 
     private final R2StorageService r2StorageService;
+    private final com.match.SwipeAI.service.integration.NudityDetectorService nudityDetectorService;
 
     /**
      * Direct multipart image upload endpoint.
@@ -38,6 +39,18 @@ public class ImageUploadController {
             String filename = file.getOriginalFilename() != null ? file.getOriginalFilename() : "photo.jpg";
             String contentType = file.getContentType() != null ? file.getContentType() : "image/jpeg";
             byte[] bytes = file.getBytes();
+
+            // Layer 2: Self-Hosted AI Zero-Tolerance Nudity Scan before Cloudflare R2 upload
+            var check = nudityDetectorService.scanImageBytes(bytes);
+            if (check.isSensitive() && ("BLOCK".equalsIgnoreCase(check.getAction()) || check.getConfidenceScore() >= 0.65)) {
+                log.warn("Shield 360 AI: Rejecting explicit/nude upload for {}: score={}, msg={}", filename, check.getConfidenceScore(), check.getMessage());
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
+                        "error", "EXPLICIT_CONTENT_REJECTED",
+                        "message", "Upload rejected: Image does not meet BlunderR Community Safety Guidelines (explicit/sensitive content detected).",
+                        "confidence", check.getConfidenceScore(),
+                        "status", "REJECTED"
+                ));
+            }
 
             log.info("Processing direct image upload: {} ({} bytes, type: {})", filename, bytes.length, contentType);
             Map<String, String> result = r2StorageService.uploadFile(filename, contentType, bytes);
@@ -78,6 +91,18 @@ public class ImageUploadController {
 
             String filename = body.getOrDefault("filename", "photo.jpg");
             String contentType = body.getOrDefault("contentType", "image/jpeg");
+
+            // Layer 2: Self-Hosted AI Zero-Tolerance Nudity Scan before Cloudflare R2 upload
+            var check = nudityDetectorService.scanImageBytes(bytes);
+            if (check.isSensitive() && ("BLOCK".equalsIgnoreCase(check.getAction()) || check.getConfidenceScore() >= 0.65)) {
+                log.warn("Shield 360 AI: Rejecting explicit/nude base64 upload for {}: score={}, msg={}", filename, check.getConfidenceScore(), check.getMessage());
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
+                        "error", "EXPLICIT_CONTENT_REJECTED",
+                        "message", "Upload rejected: Image does not meet BlunderR Community Safety Guidelines (explicit/sensitive content detected).",
+                        "confidence", check.getConfidenceScore(),
+                        "status", "REJECTED"
+                ));
+            }
 
             log.info("Processing base64 image upload: {} ({} bytes, type: {})", filename, bytes.length, contentType);
             Map<String, String> result = r2StorageService.uploadFile(filename, contentType, bytes);

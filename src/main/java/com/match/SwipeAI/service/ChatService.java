@@ -109,9 +109,9 @@ public class ChatService {
         // Shield 360 AI Safe Detector & Nudity Scan
         if (request.getMediaUrl() != null && !request.getMediaUrl().isBlank()) {
             ChatDto.NudityCheckResponse check = nudityDetectorService.scanMedia(request.getMediaUrl());
-            if (check.isSensitive()) {
+            if (check.isSensitive() || "BLUR_WITH_WARNING".equalsIgnoreCase(check.getAction()) || "BLOCK".equalsIgnoreCase(check.getAction())) {
                 isBlurred = true;
-                blurReason = "Sensitive Content Warning: Auto-blurred by Shield 360";
+                blurReason = String.format("Sensitive Content Warning: Auto-blurred by Shield 360 (NSFW Score: %.0f%%)", check.getConfidenceScore() * 100);
             }
         }
 
