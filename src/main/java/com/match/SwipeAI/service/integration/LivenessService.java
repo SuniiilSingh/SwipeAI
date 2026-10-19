@@ -18,15 +18,19 @@ public class LivenessService {
         log.info("Processing 3D Biometric Liveness scan for user {}, head turn duration: {}ms",
                 userId, request.getHeadTurnDurationMs());
 
-        boolean hasThreePoses = request.getSelfieFrameBase64() != null && !request.getSelfieFrameBase64().trim().isEmpty()
-                && request.getRightFrameBase64() != null && !request.getRightFrameBase64().trim().isEmpty()
-                && request.getLeftFrameBase64() != null && !request.getLeftFrameBase64().trim().isEmpty();
+        boolean hasActionPose = request.getSelfieFrameBase64() != null && !request.getSelfieFrameBase64().trim().isEmpty()
+                && request.getActionFrameBase64() != null && !request.getActionFrameBase64().trim().isEmpty();
 
-        if (hasThreePoses) {
+        boolean hasThreePoses = request.getSelfieFrameBase64() != null && !request.getSelfieFrameBase64().trim().isEmpty()
+                && request.getRightFrameBase64() != null && !request.getRightFrameBase64().trim().isEmpty();
+
+        if (hasActionPose || hasThreePoses) {
             FaceMatchService.LivenessMotionResult motionResult = faceMatchService.verifyLivenessMotion(
                     request.getSelfieFrameBase64(),
                     request.getRightFrameBase64(),
-                    request.getLeftFrameBase64()
+                    request.getLeftFrameBase64(),
+                    request.getActionFrameBase64(),
+                    request.getActionType() != null ? request.getActionType() : "SMILE"
             );
             return KycDto.LivenessResponse.builder()
                     .isLiveHuman(motionResult.isLiveHuman())

@@ -42,6 +42,8 @@ public class MatchService {
     private final DiscoveryService discoveryService;
     private final PushNotificationService pushNotificationService;
     private final SupportTicketRepository supportTicketRepository;
+    private final UserReportRepository userReportRepository;
+    private final UserBlockRepository userBlockRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public List<MatchDto.MatchResponseDto> getMatchesForUser(UUID userId) {
@@ -290,6 +292,35 @@ public class MatchService {
                 userId, matchId, reportedUserId, reason, remarks);
 
         try {
+            UserReport report = UserReport.builder()
+                    .reporterId(userId)
+                    .reportedUserId(reportedUserId)
+                    .matchId(matchId)
+                    .reason(reason != null ? reason : "Inappropriate behavior")
+                    .remarks(remarks)
+                    .status("PENDING")
+                    .build();
+            userReportRepository.save(report);
+        } catch (Exception e) {
+            log.warn("Could not save UserReport for reported match {}: {}", matchId, e.getMessage());
+        }
+
+        try {
+            if (!userBlockRepository.existsByBlockerIdAndBlockedUserId(userId, reportedUserId)) {
+                UserBlock block = UserBlock.builder()
+                        .blockerId(userId)
+                        .blockedUserId(reportedUserId)
+                        .matchId(matchId)
+                        .reason("Reported: " + (reason != null ? reason : "Inappropriate behavior"))
+                        .remarks(remarks)
+                        .build();
+                userBlockRepository.save(block);
+            }
+        } catch (Exception e) {
+            log.warn("Could not save UserBlock for reported match {}: {}", matchId, e.getMessage());
+        }
+
+        try {
             Profile reporterProfile = profileRepository.findById(userId).orElse(null);
             Profile reportedProfile = profileRepository.findById(reportedUserId).orElse(null);
             String reporterName = reporterProfile != null && reporterProfile.getDisplayName() != null ? reporterProfile.getDisplayName().trim() : "User " + userId;
@@ -330,6 +361,21 @@ public class MatchService {
         UUID blockedUserId = match.getUserAId().equals(userId) ? match.getUserBId() : match.getUserAId();
         log.info("User {} blocked match {} with user {}, reason: {}, remarks: {}",
                 userId, matchId, blockedUserId, reason, remarks);
+
+        try {
+            if (!userBlockRepository.existsByBlockerIdAndBlockedUserId(userId, blockedUserId)) {
+                UserBlock block = UserBlock.builder()
+                        .blockerId(userId)
+                        .blockedUserId(blockedUserId)
+                        .matchId(matchId)
+                        .reason(reason != null && !reason.isBlank() ? reason : "Direct Block")
+                        .remarks(remarks)
+                        .build();
+                userBlockRepository.save(block);
+            }
+        } catch (Exception e) {
+            log.warn("Could not save UserBlock for blocked match {}: {}", matchId, e.getMessage());
+        }
 
         try {
             Profile blockerProfile = profileRepository.findById(userId).orElse(null);

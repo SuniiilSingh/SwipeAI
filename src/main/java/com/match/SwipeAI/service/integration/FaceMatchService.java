@@ -162,6 +162,16 @@ public class FaceMatchService {
     }
 
     public LivenessMotionResult verifyLivenessMotion(String centerBase64, String rightBase64, String leftBase64) {
+        return verifyLivenessMotion(centerBase64, rightBase64, leftBase64, null, "TURN");
+    }
+
+    public LivenessMotionResult verifyLivenessMotion(
+            String centerBase64,
+            String rightBase64,
+            String leftBase64,
+            String actionBase64,
+            String actionType
+    ) {
         FeatureFlagsProperties.FaceMatch config = properties.getFeatures().getFacematch();
         if (config == null || !config.isEnabled()) {
             return LivenessMotionResult.builder()
@@ -189,8 +199,10 @@ public class FaceMatchService {
 
             Map<String, Object> body = new HashMap<>();
             body.put("center_base64", centerBase64);
-            body.put("right_base64", rightBase64);
-            body.put("left_base64", leftBase64);
+            if (rightBase64 != null) body.put("right_base64", rightBase64);
+            if (leftBase64 != null) body.put("left_base64", leftBase64);
+            if (actionBase64 != null) body.put("action_base64", actionBase64);
+            if (actionType != null) body.put("action_type", actionType);
 
             HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(body, headers);
 

@@ -40,6 +40,8 @@ public class ProfileService {
     private final InteractionRepository interactionRepository;
     private final MatchRepository matchRepository;
     private final SupportTicketRepository supportTicketRepository;
+    private final UserReportRepository userReportRepository;
+    private final UserBlockRepository userBlockRepository;
     private final com.match.SwipeAI.service.engine.MatchKarmaService karmaService;
     private final CosmicChemistryEngine cosmicChemistryEngine;
     private final com.match.SwipeAI.service.integration.FaceMatchService faceMatchService;
@@ -364,7 +366,31 @@ public class ProfileService {
             log.warn("Could not unmatch reported user: {}", e.getMessage());
         }
 
-        // 4. Create Support / Trust & Safety moderation ticket
+        // 4. Record UserReport & UserBlock for Admin Review Desk and in-app Unblock management
+        try {
+            com.match.SwipeAI.model.UserReport report = com.match.SwipeAI.model.UserReport.builder()
+                    .reporterId(reporterId)
+                    .reportedUserId(targetUserId)
+                    .reason(reason != null ? reason : "Objectionable Content")
+                    .remarks(remarks != null ? remarks.trim() : null)
+                    .status("PENDING")
+                    .build();
+            userReportRepository.save(report);
+
+            if (!userBlockRepository.existsByBlockerIdAndBlockedUserId(reporterId, targetUserId)) {
+                com.match.SwipeAI.model.UserBlock block = com.match.SwipeAI.model.UserBlock.builder()
+                        .blockerId(reporterId)
+                        .blockedUserId(targetUserId)
+                        .reason(reason != null ? reason : "Objectionable Content")
+                        .remarks(remarks != null ? remarks.trim() : null)
+                        .build();
+                userBlockRepository.save(block);
+            }
+        } catch (Exception e) {
+            log.warn("Could not save UserReport/UserBlock record: {}", e.getMessage());
+        }
+
+        // 5. Create Support / Trust & Safety moderation ticket
         try {
             Profile reporterProfile = profileRepository.findById(reporterId).orElse(null);
             Profile targetProfile = profileRepository.findById(targetUserId).orElse(null);
@@ -437,7 +463,22 @@ public class ProfileService {
             log.warn("Could not unmatch blocked user: {}", e.getMessage());
         }
 
-        // 3. Create Support / Safety ticket for Admin Review
+        // 3. Record UserBlock entity for in-app unblock & review
+        try {
+            if (!userBlockRepository.existsByBlockerIdAndBlockedUserId(blockerId, targetUserId)) {
+                com.match.SwipeAI.model.UserBlock block = com.match.SwipeAI.model.UserBlock.builder()
+                        .blockerId(blockerId)
+                        .blockedUserId(targetUserId)
+                        .reason(reason != null && !reason.isBlank() ? reason : "Direct Block")
+                        .remarks(remarks != null ? remarks.trim() : null)
+                        .build();
+                userBlockRepository.save(block);
+            }
+        } catch (Exception e) {
+            log.warn("Could not save UserBlock entity: {}", e.getMessage());
+        }
+
+        // 4. Create Support / Safety ticket for Admin Review
         try {
             Profile blockerProfile = profileRepository.findById(blockerId).orElse(null);
             Profile targetProfile = profileRepository.findById(targetUserId).orElse(null);
@@ -467,6 +508,96 @@ public class ProfileService {
         } catch (Exception e) {
             log.warn("Could not create support ticket for block: {}", e.getMessage());
         }
+    }
+
+    /**
+     * Unblock a previously blocked or reported user so they can reappear in discovery.
+     */
+    @Transactional
+    public boolean unblockUser(UUID blockerId, UUID targetUserId) {
+        log.info("User {} is unblocking user {}", blockerId, targetUserId);
+        try {
+            userBlockRepository.deleteByBlockerIdAndBlockedUserId(blockerId, targetUserId);
+
+            // Remove PASS interaction if one was recorded
+            interactionRepository.findByActorIdAndTargetId(blockerId, targetUserId).ifPresent(interaction -> {
+                if (interaction.getActionType() == ActionType.PASS) {
+                    interactionRepository.delete(interaction);
+                }
+            });
+            return true;
+        } catch (Exception e) {
+            log.warn("Could not unblock user {} by {}: {}", targetUserId, blockerId, e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Retrieve all accounts blocked or reported by the current user.
+     */
+    public List<Map<String, Object>> getBlockedAndReportedUsers(UUID userId) {
+        List<com.match.SwipeAI.model.UserBlock> blocks = userBlockRepository.findByBlockerIdOrderByCreatedAtDesc(userId);
+        List<com.match.SwipeAI.model.UserReport> reports = userReportRepository.findByReporterIdOrderByCreatedAtDesc(userId);
+
+        Map<UUID, Map<String, Object>> map = new LinkedHashMap<>();
+
+        // Process blocks
+        for (com.match.SwipeAI.model.UserBlock b : blocks) {
+            UUID targetId = b.getBlockedUserId();
+            Profile p = profileRepository.findById(targetId).orElse(null);
+            User u = userRepository.findById(targetId).orElse(null);
+
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("targetUserId", targetId.toString());
+            item.put("displayName", p != null && p.getDisplayName() != null ? p.getDisplayName().trim() : "Member");
+            item.put("age", u != null && u.getBirthDate() != null ? Period.between(u.getBirthDate(), LocalDate.now()).getYears() : 25);
+            item.put("city", p != null && p.getCity() != null ? p.getCity().trim() : "Nearby");
+            item.put("photoUrl", extractPrimaryPhoto(p));
+            item.put("type", "BLOCKED");
+            item.put("reason", b.getReason() != null ? b.getReason() : "Blocked by you");
+            item.put("remarks", b.getRemarks());
+            item.put("createdAt", b.getCreatedAt());
+
+            map.put(targetId, item);
+        }
+
+        // Process reports (tag as REPORTED if not already or enrich)
+        for (com.match.SwipeAI.model.UserReport r : reports) {
+            UUID targetId = r.getReportedUserId();
+            if (!map.containsKey(targetId)) {
+                Profile p = profileRepository.findById(targetId).orElse(null);
+                User u = userRepository.findById(targetId).orElse(null);
+
+                Map<String, Object> item = new LinkedHashMap<>();
+                item.put("targetUserId", targetId.toString());
+                item.put("displayName", p != null && p.getDisplayName() != null ? p.getDisplayName().trim() : "Member");
+                item.put("age", u != null && u.getBirthDate() != null ? Period.between(u.getBirthDate(), LocalDate.now()).getYears() : 25);
+                item.put("city", p != null && p.getCity() != null ? p.getCity().trim() : "Nearby");
+                item.put("photoUrl", extractPrimaryPhoto(p));
+                item.put("type", "REPORTED");
+                item.put("reason", r.getReason() != null ? r.getReason() : "Reported by you");
+                item.put("remarks", r.getRemarks());
+                item.put("createdAt", r.getCreatedAt());
+
+                map.put(targetId, item);
+            } else {
+                map.get(targetId).put("type", "REPORTED_AND_BLOCKED");
+            }
+        }
+
+        return new ArrayList<>(map.values());
+    }
+
+    private String extractPrimaryPhoto(Profile p) {
+        if (p == null) return null;
+        if (p.getSelfieUrl() != null && !p.getSelfieUrl().isBlank()) return p.getSelfieUrl();
+        try {
+            if (p.getPhotosJson() != null && !p.getPhotosJson().isBlank()) {
+                List<String> list = objectMapper.readValue(p.getPhotosJson(), new TypeReference<List<String>>() {});
+                if (!list.isEmpty() && list.get(0) != null) return list.get(0);
+            }
+        } catch (Exception ignored) {}
+        return null;
     }
 
     public ProfileDto.CosmicChemistryResponse getCosmicChemistry(UUID viewerId, UUID candidateId) {

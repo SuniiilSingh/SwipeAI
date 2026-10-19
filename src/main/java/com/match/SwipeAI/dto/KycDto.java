@@ -53,6 +53,8 @@ public class KycDto {
         private String selfieFrameBase64;
         private String rightFrameBase64;
         private String leftFrameBase64;
+        private String actionFrameBase64;
+        private String actionType; // "SMILE", "BLINK", "TURN"
         private int headTurnDurationMs;
 
         @JsonProperty("simulatePass")

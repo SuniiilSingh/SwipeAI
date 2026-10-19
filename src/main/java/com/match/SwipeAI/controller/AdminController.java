@@ -63,6 +63,7 @@ public class AdminController {
     private final SafeDateSpotRepository safeDateSpotRepository;
     private final UserContactShieldRepository contactShieldRepository;
     private final UserNotificationRepository notificationRepository;
+    private final UserReportRepository userReportRepository;
     private final MarketingEmailCampaignRepository marketingEmailCampaignRepository;
     private final PaymentAuditService paymentAuditService;
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -234,6 +235,15 @@ public class AdminController {
         private String username;
         private String password;
         private String fromEmail;
+    }
+
+    @Data
+    public static class ReportActionRequest {
+        private String action; // PROFILE_SUSPENDED, WARNING_ISSUED, CONTENT_REMOVED, DISMISSED
+        private String adminMessage;
+        private UUID reportId; // optional
+        private Boolean suspendAccount;
+        private Boolean notifyReporter;
     }
 
     // =========================================================================
@@ -795,7 +805,205 @@ public class AdminController {
         res.put("corporateDomainsBlocked", corporateDomains);
         res.put("flaggedUsers", flaggedUsers);
         res.put("safetyTickets", safetyTickets);
+        res.put("totalReportsCount", userReportRepository.count());
+        res.put("pendingReportsCount", userReportRepository.countAllReportsGroupedByReportedUser().size());
         return ResponseEntity.ok(res);
+    }
+
+    // =========================================================================
+    // 5B. MODULE 4B: REPORTED PROFILES DESK & ACTION CENTER (TRUST & SAFETY)
+    // =========================================================================
+
+    @GetMapping("/reports")
+    public ResponseEntity<List<Map<String, Object>>> getReportedProfiles(
+            @RequestParam(required = false) String status,
+            HttpServletRequest request) {
+        requireAdmin(request, "SUPER_ADMIN", "SUPPORT_AGENT");
+
+        List<UserReport> allReports = (status != null && !status.isBlank() && !"ALL".equalsIgnoreCase(status))
+                ? userReportRepository.findByStatusOrderByCreatedAtDesc(status.trim().toUpperCase())
+                : userReportRepository.findAll();
+
+        allReports.sort((a, b) -> {
+            OffsetDateTime ca = a.getCreatedAt() != null ? a.getCreatedAt() : OffsetDateTime.MIN;
+            OffsetDateTime cb = b.getCreatedAt() != null ? b.getCreatedAt() : OffsetDateTime.MIN;
+            return cb.compareTo(ca);
+        });
+
+        // Group by reportedUserId
+        Map<UUID, List<UserReport>> grouped = allReports.stream()
+                .collect(Collectors.groupingBy(UserReport::getReportedUserId, LinkedHashMap::new, Collectors.toList()));
+
+        Map<UUID, Profile> profileMap = profileRepository.findAllById(grouped.keySet()).stream()
+                .collect(Collectors.toMap(Profile::getUserId, p -> p, (a, b) -> a));
+        Map<UUID, User> userMap = userRepository.findAllById(grouped.keySet()).stream()
+                .collect(Collectors.toMap(User::getId, u -> u, (a, b) -> a));
+
+        Set<UUID> reporterIds = allReports.stream().map(UserReport::getReporterId).collect(Collectors.toSet());
+        Map<UUID, Profile> reporterProfiles = profileRepository.findAllById(reporterIds).stream()
+                .collect(Collectors.toMap(Profile::getUserId, p -> p, (a, b) -> a));
+        Map<UUID, User> reporterUsers = userRepository.findAllById(reporterIds).stream()
+                .collect(Collectors.toMap(User::getId, u -> u, (a, b) -> a));
+
+        List<Map<String, Object>> result = new ArrayList<>();
+
+        for (Map.Entry<UUID, List<UserReport>> entry : grouped.entrySet()) {
+            UUID reportedUserId = entry.getKey();
+            List<UserReport> userReports = entry.getValue();
+
+            User reportedUser = userMap.get(reportedUserId);
+            Profile reportedProfile = profileMap.get(reportedUserId);
+
+            long pendingCount = userReports.stream().filter(r -> "PENDING".equalsIgnoreCase(r.getStatus())).count();
+
+            Map<String, Object> card = new LinkedHashMap<>();
+            card.put("reportedUserId", reportedUserId);
+            card.put("displayName", (reportedProfile != null && reportedProfile.getDisplayName() != null) ? reportedProfile.getDisplayName().trim() : "Member");
+            card.put("phoneMasked", reportedUser != null ? maskPhone(reportedUser.getPhoneE164()) : "—");
+            card.put("city", (reportedProfile != null && reportedProfile.getCity() != null) ? reportedProfile.getCity().trim() : "—");
+            card.put("isSuspended", reportedUser != null && Boolean.TRUE.equals(reportedUser.getIsIncognito()));
+            card.put("karmaScore", reportedUser != null && reportedUser.getKarmaScore() != null ? reportedUser.getKarmaScore() : 100);
+            card.put("primaryPhoto", reportedProfile != null ? extractPrimaryPhoto(reportedProfile) : null);
+            card.put("totalReportsCount", userReports.size());
+            card.put("pendingReportsCount", pendingCount);
+            card.put("latestReportAt", userReports.get(0).getCreatedAt());
+
+            List<Map<String, Object>> reportsList = new ArrayList<>();
+            for (UserReport r : userReports) {
+                Profile repProf = reporterProfiles.get(r.getReporterId());
+                User repUser = reporterUsers.get(r.getReporterId());
+
+                Map<String, Object> rMap = new LinkedHashMap<>();
+                rMap.put("id", r.getId());
+                rMap.put("reporterId", r.getReporterId());
+                rMap.put("reporterName", (repProf != null && repProf.getDisplayName() != null) ? repProf.getDisplayName().trim() : "Anonymous User");
+                rMap.put("reporterPhoneMasked", repUser != null ? maskPhone(repUser.getPhoneE164()) : "—");
+                rMap.put("matchId", r.getMatchId());
+                rMap.put("reason", r.getReason());
+                rMap.put("remarks", r.getRemarks());
+                rMap.put("status", r.getStatus());
+                rMap.put("adminAction", r.getAdminAction());
+                rMap.put("adminMessage", r.getAdminMessage());
+                rMap.put("resolvedBy", r.getResolvedBy());
+                rMap.put("resolvedAt", r.getResolvedAt());
+                rMap.put("createdAt", r.getCreatedAt());
+                reportsList.add(rMap);
+            }
+            card.put("reports", reportsList);
+            result.add(card);
+        }
+
+        result.sort((a, b) -> {
+            long pB = (long) b.get("pendingReportsCount");
+            long pA = (long) a.get("pendingReportsCount");
+            if (pB != pA) return Long.compare(pB, pA);
+            return Integer.compare((int) b.get("totalReportsCount"), (int) a.get("totalReportsCount"));
+        });
+
+        return ResponseEntity.ok(result);
+    }
+
+    @PostMapping("/reports/user/{targetUserId}/action")
+    public ResponseEntity<Map<String, Object>> takeActionOnReportedUser(
+            @PathVariable UUID targetUserId,
+            @RequestBody ReportActionRequest req,
+            HttpServletRequest request) {
+        AdminSession session = requireAdmin(request, "SUPER_ADMIN", "SUPPORT_AGENT");
+        String ip = extractClientIp(request);
+
+        User targetUser = userRepository.findById(targetUserId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Target user not found"));
+        Profile targetProfile = profileRepository.findById(targetUserId).orElse(null);
+        String targetName = (targetProfile != null && targetProfile.getDisplayName() != null)
+                ? targetProfile.getDisplayName().trim() : "User";
+
+        String action = req.getAction() != null ? req.getAction().trim().toUpperCase() : "WARNING_ISSUED";
+        String adminMsg = req.getAdminMessage() != null ? req.getAdminMessage().trim() : "";
+        if (adminMsg.isBlank()) {
+            adminMsg = switch (action) {
+                case "PROFILE_SUSPENDED" -> "Thank you for reporting. We have reviewed your report against " + targetName + " and suspended this profile for violating our community guidelines.";
+                case "CONTENT_REMOVED" -> "Thank you for reporting. We have reviewed " + targetName + "'s profile and removed the inappropriate content.";
+                case "WARNING_ISSUED" -> "Thank you for reporting. A formal warning and karma penalty have been issued to " + targetName + ".";
+                case "DISMISSED" -> "Thank you for your report. After thorough review, no community guideline violation was detected at this time.";
+                default -> "Our Trust & Safety team has processed your report regarding " + targetName + ". Action taken: " + action + ".";
+            };
+        }
+
+        // If suspendAccount or action == PROFILE_SUSPENDED, shadowban the target user
+        if (Boolean.TRUE.equals(req.getSuspendAccount()) || "PROFILE_SUSPENDED".equals(action)) {
+            targetUser.setIsIncognito(true);
+            int currentKarma = targetUser.getKarmaScore() != null ? targetUser.getKarmaScore() : 100;
+            targetUser.setKarmaScore(Math.max(0, currentKarma - 50));
+            userRepository.save(targetUser);
+        }
+
+        // Update UserReport records
+        List<UserReport> reportsToUpdate = new ArrayList<>();
+        if (req.getReportId() != null) {
+            userReportRepository.findById(req.getReportId()).ifPresent(reportsToUpdate::add);
+        } else {
+            List<UserReport> existing = userReportRepository.findByReportedUserIdOrderByCreatedAtDesc(targetUserId);
+            for (UserReport r : existing) {
+                if ("PENDING".equalsIgnoreCase(r.getStatus())) {
+                    reportsToUpdate.add(r);
+                }
+            }
+            if (reportsToUpdate.isEmpty()) {
+                reportsToUpdate.addAll(existing);
+            }
+        }
+
+        String reportStatus = "DISMISSED".equals(action) ? "DISMISSED" : "RESOLVED";
+        OffsetDateTime now = OffsetDateTime.now();
+        Set<UUID> notifiedReporters = new HashSet<>();
+
+        for (UserReport report : reportsToUpdate) {
+            report.setStatus(reportStatus);
+            report.setAdminAction(action);
+            report.setAdminMessage(adminMsg);
+            report.setResolvedBy(session.email);
+            report.setResolvedAt(now);
+            userReportRepository.save(report);
+
+            if (!Boolean.FALSE.equals(req.getNotifyReporter()) && report.getReporterId() != null) {
+                UUID reporterId = report.getReporterId();
+                if (notifiedReporters.add(reporterId)) {
+                    try {
+                        Map<String, Object> dataMap = new LinkedHashMap<>();
+                        dataMap.put("reportId", report.getId());
+                        dataMap.put("action", action);
+                        dataMap.put("adminMessage", adminMsg);
+                        dataMap.put("reportedUserId", targetUserId);
+                        dataMap.put("reportedUserName", targetName);
+                        dataMap.put("resolvedAt", now.toString());
+
+                        UserNotification notif = UserNotification.builder()
+                                .userId(reporterId)
+                                .type("REPORT_ACTION")
+                                .title("Safety Update: Action Taken on Report 🛡️")
+                                .body(adminMsg)
+                                .dataJson(objectMapper.writeValueAsString(dataMap))
+                                .isRead(false)
+                                .build();
+                        notificationRepository.save(notif);
+                    } catch (Exception ex) {
+                        log.warn("Failed to create UserNotification for reporter {}: {}", reporterId, ex.getMessage());
+                    }
+                }
+            }
+        }
+
+        recordAudit(session.email, session.role, "REPORT_ACTION_" + action, targetUserId.toString(),
+                "Action=" + action + " | Updated=" + reportsToUpdate.size() + " reports | Notified=" + notifiedReporters.size() + " reporters | Msg=" + adminMsg, ip);
+
+        return ResponseEntity.ok(Map.of(
+                "targetUserId", targetUserId,
+                "action", action,
+                "adminMessage", adminMsg,
+                "updatedReportsCount", reportsToUpdate.size(),
+                "notifiedReportersCount", notifiedReporters.size(),
+                "accountSuspended", Boolean.TRUE.equals(targetUser.getIsIncognito())
+        ));
     }
 
     // =========================================================================
@@ -1605,6 +1813,13 @@ public class AdminController {
             } catch (Exception ignored) {}
         }
         return combined;
+    }
+
+    private String extractPrimaryPhoto(Profile p) {
+        if (p == null) return null;
+        if (p.getSelfieUrl() != null && !p.getSelfieUrl().isBlank()) return p.getSelfieUrl();
+        List<String> photos = extractProfilePhotos(p);
+        return (!photos.isEmpty() && photos.get(0) != null) ? photos.get(0) : null;
     }
 
     private String maskPhone(String phone) {

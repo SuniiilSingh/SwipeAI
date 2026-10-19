@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -168,5 +169,29 @@ public class ProfileController {
         String remarks = (body != null && body.containsKey("remarks")) ? body.get("remarks") : null;
         profileService.blockProfile(userId, id, reason, remarks);
         return ResponseEntity.ok(Map.of("status", "success", "message", "User blocked successfully."));
+    }
+
+    /**
+     * Unblock a previously blocked or reported candidate.
+     */
+    @PostMapping("/{id}/unblock")
+    public ResponseEntity<Map<String, Object>> unblockCandidate(
+            @AuthenticationPrincipal UUID userId,
+            @PathVariable UUID id) {
+        boolean unblocked = profileService.unblockUser(userId, id);
+        return ResponseEntity.ok(Map.of(
+                "success", unblocked,
+                "message", unblocked ? "User unblocked successfully." : "User could not be unblocked."
+        ));
+    }
+
+    /**
+     * Retrieve all accounts blocked or reported by the current user.
+     */
+    @GetMapping("/blocked")
+    public ResponseEntity<List<Map<String, Object>>> getBlockedAndReportedUsers(
+            @AuthenticationPrincipal UUID userId) {
+        List<Map<String, Object>> list = profileService.getBlockedAndReportedUsers(userId);
+        return ResponseEntity.ok(list);
     }
 }
