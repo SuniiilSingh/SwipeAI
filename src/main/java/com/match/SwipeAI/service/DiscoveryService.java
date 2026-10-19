@@ -389,11 +389,12 @@ public class DiscoveryService {
             }
         }
 
-        // Sort descending by multi-objective compatibility score
-        candidateCards.sort((a, b) -> Integer.compare(b.getCompatibilityScore(), a.getCompatibilityScore()));
+        // Sort ascending by shortest distance first (closest/top), then descending by compatibility score
+        candidateCards.sort(Comparator.comparingDouble(DiscoveryDto.CandidateCardDto::getDistanceKm)
+                .thenComparing(Comparator.comparingInt(DiscoveryDto.CandidateCardDto::getCompatibilityScore).reversed()));
 
-        // Limit results
-        int limit = request.getLimit() != null ? request.getLimit() : 10;
+        // Limit results (up to requested limit or 50 by default to provide all candidates within search radius)
+        int limit = request.getLimit() != null ? request.getLimit() : 50;
         List<DiscoveryDto.CandidateCardDto> limitedCandidates = candidateCards.stream().limit(limit).toList();
 
         return DiscoveryDto.DiscoveryFeedResponse.builder()
