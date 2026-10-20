@@ -64,6 +64,7 @@ public class AdminController {
     private final UserContactShieldRepository contactShieldRepository;
     private final UserNotificationRepository notificationRepository;
     private final UserReportRepository userReportRepository;
+    private final UserBlockRepository userBlockRepository;
     private final MarketingEmailCampaignRepository marketingEmailCampaignRepository;
     private final PaymentAuditService paymentAuditService;
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -429,8 +430,15 @@ public class AdminController {
         res.put("capturedOrders", capturedOrders);
         res.put("totalRevenueInr", totalRevenuePaise / 100.0);
         res.put("openTickets", openTickets);
+        long totalReports = userReportRepository.count();
+        long pendingReports = userReportRepository.findByStatusOrderByCreatedAtDesc("PENDING").size();
+        long totalBlocks = userBlockRepository.count();
+
         res.put("totalCircles", microCommunityRepository.count());
         res.put("totalSafeSpots", safeDateSpotRepository.count());
+        res.put("totalReports", totalReports);
+        res.put("pendingReports", pendingReports);
+        res.put("totalBlocks", totalBlocks);
         res.put("topCities", topCities);
         res.put("recentUsers", recentUsers);
 
@@ -903,6 +911,71 @@ public class AdminController {
         return ResponseEntity.ok(result);
     }
 
+    @GetMapping("/blocks")
+    public ResponseEntity<List<Map<String, Object>>> getBlockedProfiles(HttpServletRequest request) {
+        requireAdmin(request, "SUPER_ADMIN", "SUPPORT_AGENT");
+
+        List<UserBlock> allBlocks = userBlockRepository.findAllByOrderByCreatedAtDesc();
+
+        // Group by blockedUserId
+        Map<UUID, List<UserBlock>> grouped = allBlocks.stream()
+                .collect(Collectors.groupingBy(UserBlock::getBlockedUserId, LinkedHashMap::new, Collectors.toList()));
+
+        Map<UUID, Profile> profileMap = profileRepository.findAllById(grouped.keySet()).stream()
+                .collect(Collectors.toMap(Profile::getUserId, p -> p, (a, b) -> a));
+        Map<UUID, User> userMap = userRepository.findAllById(grouped.keySet()).stream()
+                .collect(Collectors.toMap(User::getId, u -> u, (a, b) -> a));
+
+        Set<UUID> blockerIds = allBlocks.stream().map(UserBlock::getBlockerId).collect(Collectors.toSet());
+        Map<UUID, Profile> blockerProfiles = profileRepository.findAllById(blockerIds).stream()
+                .collect(Collectors.toMap(Profile::getUserId, p -> p, (a, b) -> a));
+        Map<UUID, User> blockerUsers = userRepository.findAllById(blockerIds).stream()
+                .collect(Collectors.toMap(User::getId, u -> u, (a, b) -> a));
+
+        List<Map<String, Object>> result = new ArrayList<>();
+
+        for (Map.Entry<UUID, List<UserBlock>> entry : grouped.entrySet()) {
+            UUID blockedUserId = entry.getKey();
+            List<UserBlock> userBlocks = entry.getValue();
+
+            User blockedUser = userMap.get(blockedUserId);
+            Profile blockedProfile = profileMap.get(blockedUserId);
+
+            Map<String, Object> card = new LinkedHashMap<>();
+            card.put("blockedUserId", blockedUserId);
+            card.put("displayName", (blockedProfile != null && blockedProfile.getDisplayName() != null) ? blockedProfile.getDisplayName().trim() : "Member");
+            card.put("phoneMasked", blockedUser != null ? maskPhone(blockedUser.getPhoneE164()) : "—");
+            card.put("city", (blockedProfile != null && blockedProfile.getCity() != null) ? blockedProfile.getCity().trim() : "—");
+            card.put("isSuspended", blockedUser != null && Boolean.TRUE.equals(blockedUser.getIsIncognito()));
+            card.put("karmaScore", blockedUser != null && blockedUser.getKarmaScore() != null ? blockedUser.getKarmaScore() : 100);
+            card.put("primaryPhoto", blockedProfile != null ? extractPrimaryPhoto(blockedProfile) : null);
+            card.put("totalBlocksCount", userBlocks.size());
+            card.put("latestBlockedAt", userBlocks.get(0).getCreatedAt());
+
+            List<Map<String, Object>> blocksList = new ArrayList<>();
+            for (UserBlock b : userBlocks) {
+                Profile bProf = blockerProfiles.get(b.getBlockerId());
+                User bUser = blockerUsers.get(b.getBlockerId());
+
+                Map<String, Object> bMap = new LinkedHashMap<>();
+                bMap.put("id", b.getId());
+                bMap.put("blockerId", b.getBlockerId());
+                bMap.put("blockerName", (bProf != null && bProf.getDisplayName() != null) ? bProf.getDisplayName().trim() : "Anonymous User");
+                bMap.put("blockerPhoneMasked", bUser != null ? maskPhone(bUser.getPhoneE164()) : "—");
+                bMap.put("reason", b.getReason() != null ? b.getReason() : "Direct Block");
+                bMap.put("remarks", b.getRemarks());
+                bMap.put("createdAt", b.getCreatedAt());
+                blocksList.add(bMap);
+            }
+            card.put("blocks", blocksList);
+            result.add(card);
+        }
+
+        result.sort((a, b) -> Integer.compare((int) b.get("totalBlocksCount"), (int) a.get("totalBlocksCount")));
+
+        return ResponseEntity.ok(result);
+    }
+
     @PostMapping("/reports/user/{targetUserId}/action")
     public ResponseEntity<Map<String, Object>> takeActionOnReportedUser(
             @PathVariable UUID targetUserId,
@@ -922,6 +995,7 @@ public class AdminController {
         if (adminMsg.isBlank()) {
             adminMsg = switch (action) {
                 case "PROFILE_SUSPENDED" -> "Thank you for reporting. We have reviewed your report against " + targetName + " and suspended this profile for violating our community guidelines.";
+                case "RESTORE_PROFILE", "UNBAN" -> "Your report has been reviewed. The profile status for " + targetName + " has been reassessed and restored.";
                 case "CONTENT_REMOVED" -> "Thank you for reporting. We have reviewed " + targetName + "'s profile and removed the inappropriate content.";
                 case "WARNING_ISSUED" -> "Thank you for reporting. A formal warning and karma penalty have been issued to " + targetName + ".";
                 case "DISMISSED" -> "Thank you for your report. After thorough review, no community guideline violation was detected at this time.";
@@ -930,7 +1004,10 @@ public class AdminController {
         }
 
         // If suspendAccount or action == PROFILE_SUSPENDED, shadowban the target user
-        if (Boolean.TRUE.equals(req.getSuspendAccount()) || "PROFILE_SUSPENDED".equals(action)) {
+        if ("RESTORE_PROFILE".equals(action) || "UNBAN".equals(action)) {
+            targetUser.setIsIncognito(false);
+            userRepository.save(targetUser);
+        } else if (Boolean.TRUE.equals(req.getSuspendAccount()) || "PROFILE_SUSPENDED".equals(action)) {
             targetUser.setIsIncognito(true);
             int currentKarma = targetUser.getKarmaScore() != null ? targetUser.getKarmaScore() : 100;
             targetUser.setKarmaScore(Math.max(0, currentKarma - 50));

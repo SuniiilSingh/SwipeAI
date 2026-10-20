@@ -13,6 +13,12 @@ public interface UserBlockRepository extends JpaRepository<UserBlock, UUID> {
 
     List<UserBlock> findByBlockerIdOrderByCreatedAtDesc(UUID blockerId);
 
+    List<UserBlock> findByBlockedUserIdOrderByCreatedAtDesc(UUID blockedUserId);
+
+    List<UserBlock> findAllByOrderByCreatedAtDesc();
+
+    long countByBlockedUserId(UUID blockedUserId);
+
     Optional<UserBlock> findByBlockerIdAndBlockedUserId(UUID blockerId, UUID blockedUserId);
 
     boolean existsByBlockerIdAndBlockedUserId(UUID blockerId, UUID blockedUserId);

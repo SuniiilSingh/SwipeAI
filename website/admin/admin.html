@@ -859,6 +859,26 @@
       border-color: var(--brand);
       box-shadow: 0 4px 12px var(--brand-glow);
     }
+    .tab-pill {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 700;
+      padding: 7px 16px;
+      border-radius: 9px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .tab-pill:hover {
+      color: #FFF;
+      background: rgba(255, 255, 255, 0.06);
+    }
+    .tab-pill.active {
+      background: var(--brand);
+      color: #FFF;
+      box-shadow: 0 4px 14px var(--brand-glow);
+    }
 
     /* Lightbox Modal */
     #lightbox-backdrop {
@@ -1010,6 +1030,10 @@
           <div class="nav-item" data-tab="users" onclick="switchTab('users')">
             <span>👥 360° User Directory</span>
             <span class="nav-badge" id="badge-total-users" style="background: rgba(255,255,255,0.12);">0</span>
+          </div>
+          <div class="nav-item" data-tab="reported" onclick="switchTab('reported')">
+            <span>🚨 Reported & Blocked</span>
+            <span class="nav-badge danger" id="badge-reported-users" style="display:none;background:#EF4444;color:#FFF;">0</span>
           </div>
           <div class="nav-item" data-tab="safety" onclick="switchTab('safety')">
             <span>🛡️ Trust & ShadowShield</span>
@@ -1177,6 +1201,121 @@
             </div>
           </section>
 
+          <!-- MODULE 3B: DEDICATED REPORTED & BLOCKED PROFILES MODERATION DESK -->
+          <section id="pane-reported" class="module-pane">
+            <div class="section-header">
+              <div>
+                <h1 class="section-title">🚨 Reported & Blocked Profiles Review Center</h1>
+                <p class="section-sub">Comprehensive moderation desk: inspect who reported or blocked whom, investigate violation remarks, suspend abusive accounts, and dispatch resolution messages to reporters.</p>
+              </div>
+              <div style="display:flex;gap:10px;align-items:center;">
+                <button class="btn btn-primary btn-sm" onclick="loadReportedTab()">🔄 Refresh Feed</button>
+              </div>
+            </div>
+
+            <div class="kpi-grid" id="reported-kpi-grid">
+              <div class="kpi-card">
+                <div class="kpi-label">Reported Profiles</div>
+                <div class="kpi-value" id="kpi-total-reported" style="color:#FF385C">0</div>
+                <div class="kpi-meta">Flagged by community members</div>
+              </div>
+              <div class="kpi-card">
+                <div class="kpi-label">Pending Investigation</div>
+                <div class="kpi-value" id="kpi-pending-reports" style="color:#F59E0B">0</div>
+                <div class="kpi-meta">Require admin review & action</div>
+              </div>
+              <div class="kpi-card">
+                <div class="kpi-label">Action Taken / Resolved</div>
+                <div class="kpi-value" id="kpi-resolved-reports" style="color:#10B981">0</div>
+                <div class="kpi-meta">Reporter notified & closed</div>
+              </div>
+              <div class="kpi-card">
+                <div class="kpi-label">User-Blocked Profiles</div>
+                <div class="kpi-value" id="kpi-total-blocked" style="color:#818CF8">0</div>
+                <div class="kpi-meta">Direct user-to-user blocks</div>
+              </div>
+            </div>
+
+            <!-- SUB-NAVIGATION / SECTION TABS -->
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin:20px 0 16px;flex-wrap:wrap;">
+              <div style="display:flex;gap:8px;background:var(--bg-elevated);padding:4px;border-radius:12px;border:1px solid var(--border);">
+                <button class="tab-pill active" id="subtab-reported-view" onclick="switchReportedSubView('reported')">
+                  🚨 Reported Profiles (<span id="count-subtab-reported">0</span>)
+                </button>
+                <button class="tab-pill" id="subtab-blocked-view" onclick="switchReportedSubView('blocked')">
+                  🚫 Blocked Profiles (<span id="count-subtab-blocked">0</span>)
+                </button>
+              </div>
+
+              <!-- SEARCH AND FILTERS -->
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                <input type="text" id="reported-search-input" class="form-input" placeholder="🔍 Search name, phone, or UUID..." style="width:240px;height:36px;font-size:12px;" oninput="onReportedSearchChanged()" />
+                
+                <div id="reported-filter-chips" style="display:flex;gap:6px;">
+                  <button class="filter-chip active" id="chip-repdesk-ALL" onclick="filterReportDesk('ALL')">All Reports</button>
+                  <button class="filter-chip" id="chip-repdesk-PENDING" onclick="filterReportDesk('PENDING')">⏳ Pending</button>
+                  <button class="filter-chip" id="chip-repdesk-RESOLVED" onclick="filterReportDesk('RESOLVED')">✓ Resolved</button>
+                  <button class="filter-chip" id="chip-repdesk-DISMISSED" onclick="filterReportDesk('DISMISSED')">Dismissed</button>
+                </div>
+
+                <div id="blocked-filter-chips" style="display:none;gap:6px;">
+                  <button class="filter-chip active" id="chip-blkdesk-ALL" onclick="filterBlockDesk('ALL')">All Blocks</button>
+                  <button class="filter-chip" id="chip-blkdesk-MULTI" onclick="filterBlockDesk('MULTI')">🔥 Repeat (≥2 Blocks)</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- VIEW 1: REPORTED PROFILES TABLE -->
+            <div id="desk-reported-container" class="panel-card" style="margin-bottom: 24px;">
+              <div class="panel-title" style="display:flex;justify-content:space-between;align-items:center;">
+                <span>🚩 Reported Profiles Under Review</span>
+                <span style="font-size:12px;color:var(--text-muted);font-weight:normal;">Click "Review & Take Action" to inspect report details and send in-app feedback to reporters.</span>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Reported Profile</th>
+                      <th>Total Reports</th>
+                      <th>Reporters & Violation Remarks</th>
+                      <th>Latest Activity</th>
+                      <th>Account Status</th>
+                      <th>Enforcement Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="desk-reports-body">
+                    <tr><td colspan="6" style="text-align:center;color:var(--text-dim);padding:28px;">Loading reported profiles...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- VIEW 2: BLOCKED PROFILES TABLE -->
+            <div id="desk-blocked-container" class="panel-card" style="display:none;margin-bottom: 24px;">
+              <div class="panel-title" style="display:flex;justify-content:space-between;align-items:center;">
+                <span>🚫 Member-Blocked Profiles</span>
+                <span style="font-size:12px;color:var(--text-muted);font-weight:normal;">Identifies profiles frequently blocked by other users for ghosting, harassment, or undesirable behavior.</span>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Blocked Profile</th>
+                      <th>Block Count</th>
+                      <th>Blockers & Recorded Reasons</th>
+                      <th>Latest Block</th>
+                      <th>Account Status</th>
+                      <th>Administrative Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="desk-blocks-body">
+                    <tr><td colspan="6" style="text-align:center;color:var(--text-dim);padding:28px;">Loading blocked profiles...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
           <!-- MODULE 4: TRUST, SAFETY & SHADOWSHIELD -->
           <section id="pane-safety" class="module-pane">
             <div class="section-header">
@@ -1188,43 +1327,16 @@
 
             <div class="kpi-grid" id="safety-kpi-grid"></div>
 
-            <!-- REPORTED PROFILES & UGC SAFETY DESK -->
-            <div class="panel-card" style="margin-bottom: 20px;">
-              <div class="panel-title" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+            <!-- REPORTED & BLOCKED QUICK BANNER -->
+            <div class="panel-card" style="margin-bottom: 20px; display:flex; justify-content:space-between; align-items:center; background: linear-gradient(135deg, rgba(255,56,92,0.12), rgba(124,58,237,0.08)); border: 1px solid rgba(255,56,92,0.25);">
+              <div style="display:flex; align-items:center; gap:14px;">
+                <div style="font-size:32px;">🚨</div>
                 <div>
-                  <span style="display:flex;align-items:center;gap:8px;">
-                    <span>🚩 Reported Profiles Review Desk</span>
-                    <span class="nav-badge amber" id="panel-badge-pending-reports" style="font-size:11px;">0 Pending</span>
-                  </span>
-                  <div style="font-size:12px;color:var(--text-muted);font-weight:normal;margin-top:4px;">
-                    Review profile report counts, inspect reporters with their remarks, and take enforcement action with custom in-app feedback to reporters.
-                  </div>
-                </div>
-                <div style="display:flex;gap:6px;flex-wrap:wrap;">
-                  <button class="filter-chip active" id="chip-rep-ALL" onclick="filterReportedProfiles('ALL')">All Reports</button>
-                  <button class="filter-chip" id="chip-rep-PENDING" onclick="filterReportedProfiles('PENDING')">⏳ Pending</button>
-                  <button class="filter-chip" id="chip-rep-RESOLVED" onclick="filterReportedProfiles('RESOLVED')">✓ Resolved</button>
-                  <button class="filter-chip" id="chip-rep-DISMISSED" onclick="filterReportedProfiles('DISMISSED')">Dismissed</button>
-                  <button class="btn btn-ghost btn-sm" onclick="loadReportedProfiles(currentReportFilter)">🔄 Refresh</button>
+                  <div style="font-size:15px; font-weight:800; color:#FFF;">Reported & Blocked Profiles Review Center</div>
+                  <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">Moderation for reported members, blocks, violations, and reporter feedback has its own dedicated section.</div>
                 </div>
               </div>
-              <div class="table-wrap">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Reported Profile</th>
-                      <th>Total Reports</th>
-                      <th>Reporters & Reasons Summary</th>
-                      <th>Latest Activity</th>
-                      <th>Account Status</th>
-                      <th>Enforcement Action</th>
-                    </tr>
-                  </thead>
-                  <tbody id="safety-reports-body">
-                    <tr><td colspan="6" style="text-align:center;color:var(--text-dim);padding:24px;">Loading reported profiles...</td></tr>
-                  </tbody>
-                </table>
-              </div>
+              <button class="btn btn-primary btn-sm" onclick="switchTab('reported')">Open Reported & Blocked Section →</button>
             </div>
 
             <div class="panel-card">
@@ -1795,7 +1907,7 @@
     }
 
     function switchTab(tab) {
-      if (adminRole === 'SUPPORT_AGENT' && !['tickets', 'users', 'payments'].includes(tab)) {
+      if (adminRole === 'SUPPORT_AGENT' && !['tickets', 'users', 'payments', 'reported'].includes(tab)) {
         tab = 'tickets';
       }
       currentTab = tab;
@@ -1812,6 +1924,7 @@
       if (currentTab === 'overview') loadOverview();
       else if (currentTab === 'verification') loadVerificationQueue(currentVerFilter || 'PENDING');
       else if (currentTab === 'users') loadUsers();
+      else if (currentTab === 'reported') loadReportedTab();
       else if (currentTab === 'safety') loadSafety();
       else if (currentTab === 'payments') loadPayments();
       else if (currentTab === 'tickets') loadTickets(currentTicketFilter || 'ALL');
@@ -1828,6 +1941,12 @@
         document.getElementById('badge-pending-selfie').textContent = d.pendingSelfie || 0;
         document.getElementById('badge-total-users').textContent = d.totalUsers || 0;
         document.getElementById('badge-open-tickets').textContent = d.openTickets || 0;
+        if (document.getElementById('badge-reported-users')) {
+          const pRep = d.pendingReports || 0;
+          const b = document.getElementById('badge-reported-users');
+          b.textContent = pRep;
+          b.style.display = pRep > 0 ? 'inline-block' : 'none';
+        }
         if (document.getElementById('badge-total-safespots')) {
           document.getElementById('badge-total-safespots').textContent = d.totalSafeSpots || 0;
         }
@@ -2419,88 +2538,315 @@
       }
     }
 
-    function filterReportedProfiles(filter) {
-      currentReportFilter = filter;
-      ['ALL', 'PENDING', 'RESOLVED', 'DISMISSED'].forEach(f => {
-        const chip = document.getElementById('chip-rep-' + f);
-        if (chip) chip.classList.toggle('active', f === filter);
-      });
-      loadReportedProfiles(filter);
+    // ==================== 4B. REPORTED & BLOCKED PROFILES REVIEW DESK ====================
+    let currentReportedSubView = 'reported'; // 'reported' or 'blocked'
+    let currentReportDeskFilter = 'ALL';
+    let currentBlockDeskFilter = 'ALL';
+    let reportedDeskSearchQuery = '';
+    let rawReportedProfilesList = [];
+    let rawBlockedProfilesList = [];
+    let reportsCache = {};
+    let blocksCache = {};
+
+    async function loadReportedTab() {
+      await Promise.all([
+        loadDeskReports(currentReportDeskFilter),
+        loadDeskBlocks()
+      ]);
+      updateReportedKpis();
     }
 
-    async function loadReportedProfiles(status = 'ALL') {
-      const tbody = document.getElementById('safety-reports-body');
+    // Backwards-compatible alias
+    function loadReportedProfiles(status) {
+      return loadDeskReports(status);
+    }
+    function filterReportedProfiles(status) {
+      return filterReportDesk(status);
+    }
+
+    function switchReportedSubView(view) {
+      currentReportedSubView = view;
+      const btnRep = document.getElementById('subtab-reported-view');
+      const btnBlk = document.getElementById('subtab-blocked-view');
+      if (btnRep) btnRep.classList.toggle('active', view === 'reported');
+      if (btnBlk) btnBlk.classList.toggle('active', view === 'blocked');
+
+      const repCont = document.getElementById('desk-reported-container');
+      const blkCont = document.getElementById('desk-blocked-container');
+      if (repCont) repCont.style.display = (view === 'reported') ? 'block' : 'none';
+      if (blkCont) blkCont.style.display = (view === 'blocked') ? 'block' : 'none';
+
+      const repChips = document.getElementById('reported-filter-chips');
+      const blkChips = document.getElementById('blocked-filter-chips');
+      if (repChips) repChips.style.display = (view === 'reported') ? 'flex' : 'none';
+      if (blkChips) blkChips.style.display = (view === 'blocked') ? 'flex' : 'none';
+    }
+
+    function onReportedSearchChanged() {
+      const input = document.getElementById('reported-search-input');
+      reportedDeskSearchQuery = input ? input.value.trim().toLowerCase() : '';
+      renderDeskReports();
+      renderDeskBlocks();
+    }
+
+    function filterReportDesk(filter) {
+      currentReportDeskFilter = filter;
+      ['ALL', 'PENDING', 'RESOLVED', 'DISMISSED'].forEach(f => {
+        const chip = document.getElementById('chip-repdesk-' + f);
+        if (chip) chip.classList.toggle('active', f === filter);
+      });
+      loadDeskReports(filter);
+    }
+
+    function filterBlockDesk(filter) {
+      currentBlockDeskFilter = filter;
+      ['ALL', 'MULTI'].forEach(f => {
+        const chip = document.getElementById('chip-blkdesk-' + f);
+        if (chip) chip.classList.toggle('active', f === filter);
+      });
+      renderDeskBlocks();
+    }
+
+    async function loadDeskReports(status = currentReportDeskFilter) {
+      const tbody = document.getElementById('desk-reports-body');
       if (!tbody) return;
       try {
-        const query = status && status !== 'ALL' ? '?status=' + status : '';
+        const query = (status && status !== 'ALL') ? '?status=' + status : '';
         const list = await apiCall('/reports' + query);
+        rawReportedProfilesList = list || [];
         reportsCache = {};
-        list.forEach(item => {
+        rawReportedProfilesList.forEach(item => {
           reportsCache[item.reportedUserId] = item;
         });
 
-        if (!list.length) {
-          tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--text-dim);padding:24px;">No ${status !== 'ALL' ? status.toLowerCase() : ''} reported profiles found. Trust & Safety feed is clear.</td></tr>`;
-          return;
-        }
+        const subCount = document.getElementById('count-subtab-reported');
+        if (subCount) subCount.textContent = rawReportedProfilesList.length;
 
-        tbody.innerHTML = list.map(item => {
-          const uPhoto = item.primaryPhoto || '';
-          const pending = item.pendingReportsCount || 0;
-          const reports = item.reports || [];
-          const reportersPreview = reports.slice(0, 2).map(r => `
-            <div style="font-size:11px;margin-bottom:3px;">
-              👤 <b>${escapeHtml(r.reporterName)}</b>:
-              <span class="status-pill status-${r.status}" style="font-size:9px;padding:1px 5px;">${escapeHtml(r.reason)}</span>
-              ${r.remarks ? `<span style="color:var(--text-muted);font-style:italic;">"${escapeHtml(r.remarks.slice(0, 35))}${r.remarks.length > 35 ? '...' : ''}"</span>` : ''}
-            </div>
-          `).join('');
-          const moreCount = reports.length > 2 ? `<div style="font-size:10px;color:var(--brand);font-weight:700;">+ ${reports.length - 2} more report(s)</div>` : '';
-
-          return `
-            <tr>
-              <td>
-                <div style="display:flex;align-items:center;gap:12px;">
-                  <div style="width:44px;height:44px;border-radius:12px;overflow:hidden;border:1px solid var(--border-strong);background:#070912;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                    ${uPhoto ? `<img src="${uPhoto}" style="width:100%;height:100%;object-fit:cover;" />` : `<span style="font-size:18px;font-weight:900;color:var(--brand);">${escapeHtml(item.displayName.charAt(0))}</span>`}
-                  </div>
-                  <div>
-                    <div style="font-weight:800;color:#FFF;">${escapeHtml(item.displayName)}</div>
-                    <div style="font-size:11px;color:var(--text-dim);">${escapeHtml(item.phoneMasked)} • ${escapeHtml(item.city)}</div>
-                  </div>
-                </div>
-              </td>
-              <td>
-                <span class="status-pill status-REJECTED" style="font-size:11px;padding:4px 8px;">
-                  ⚠️ ${item.totalReportsCount} ${item.totalReportsCount === 1 ? 'Report' : 'Reports'}
-                </span>
-                ${pending > 0 ? `<div style="margin-top:4px;"><span class="status-pill status-PENDING" style="font-size:10px;">${pending} Pending Action</span></div>` : '<div style="margin-top:4px;"><span class="status-pill status-RESOLVED" style="font-size:10px;">✓ All Resolved</span></div>'}
-              </td>
-              <td>
-                ${reportersPreview || '<span style="color:var(--text-dim);font-size:11px;">No reporter details</span>'}
-                ${moreCount}
-              </td>
-              <td style="font-size:11px;color:var(--text-muted);font-family:'JetBrains Mono',monospace;">
-                ${(item.latestReportAt || '').toString().slice(0, 16).replace('T', ' ')}
-              </td>
-              <td>
-                <div style="display:flex;flex-direction:column;gap:4px;">
-                  <span class="status-pill ${item.isSuspended ? 'status-REJECTED' : 'status-VERIFIED'}">
-                    ${item.isSuspended ? '👻 SUSPENDED' : 'ACTIVE'}
-                  </span>
-                  <span style="font-size:11px;color:var(--text-dim);">Karma: <b>${item.karmaScore}</b></span>
-                </div>
-              </td>
-              <td>
-                <button class="btn btn-primary btn-sm" onclick="openReportActionModal('${item.reportedUserId}')">
-                  🛡️ Review & Action
-                </button>
-              </td>
-            </tr>
-          `;
-        }).join('');
+        renderDeskReports();
+        updateReportedKpis();
       } catch (e) {
-        tbody.innerHTML = `<tr><td colspan="6" style="color:var(--danger);text-align:center;padding:18px;">Failed to load reports: ${escapeHtml(e.message)}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" style="color:var(--danger);text-align:center;padding:24px;">Failed to load reported profiles: ${escapeHtml(e.message)}</td></tr>`;
+      }
+    }
+
+    function renderDeskReports() {
+      const tbody = document.getElementById('desk-reports-body');
+      if (!tbody) return;
+
+      let list = rawReportedProfilesList;
+      if (reportedDeskSearchQuery) {
+        const q = reportedDeskSearchQuery;
+        list = list.filter(item => {
+          const name = (item.displayName || '').toLowerCase();
+          const phone = (item.phoneMasked || '').toLowerCase();
+          const city = (item.city || '').toLowerCase();
+          const uid = (item.reportedUserId || '').toLowerCase();
+          const hasRemarks = (item.reports || []).some(r =>
+            (r.reporterName || '').toLowerCase().includes(q) ||
+            (r.reason || '').toLowerCase().includes(q) ||
+            (r.remarks || '').toLowerCase().includes(q)
+          );
+          return name.includes(q) || phone.includes(q) || city.includes(q) || uid.includes(q) || hasRemarks;
+        });
+      }
+
+      if (!list.length) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--text-dim);padding:28px;">No reported profiles matching current criteria. Feed is clear! ✨</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = list.map(item => {
+        const uPhoto = item.primaryPhoto || '';
+        const pending = item.pendingReportsCount || 0;
+        const reports = item.reports || [];
+        const reportersPreview = reports.slice(0, 2).map(r => `
+          <div style="font-size:11px;margin-bottom:4px;background:rgba(255,255,255,0.02);padding:4px 8px;border-radius:6px;border:1px solid rgba(255,255,255,0.04);">
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span>👤 <b>${escapeHtml(r.reporterName)}</b>:</span>
+              <span class="status-pill status-${r.status}" style="font-size:9px;padding:1px 5px;">${escapeHtml(r.reason)}</span>
+            </div>
+            ${r.remarks ? `<div style="color:#CBD5E1;font-size:10px;margin-top:2px;font-style:italic;">"${escapeHtml(r.remarks.slice(0, 45))}${r.remarks.length > 45 ? '...' : ''}"</div>` : ''}
+          </div>
+        `).join('');
+        const moreCount = reports.length > 2 ? `<div style="font-size:10px;color:var(--brand);font-weight:700;margin-top:2px;">+ ${reports.length - 2} more incident report(s)</div>` : '';
+
+        return `
+          <tr>
+            <td>
+              <div style="display:flex;align-items:center;gap:12px;">
+                <div style="width:46px;height:46px;border-radius:12px;overflow:hidden;border:1px solid var(--border-strong);background:#070912;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                  ${uPhoto ? `<img src="${uPhoto}" style="width:100%;height:100%;object-fit:cover;" />` : `<span style="font-size:18px;font-weight:900;color:var(--brand);">${escapeHtml(item.displayName.charAt(0))}</span>`}
+                </div>
+                <div>
+                  <div style="font-weight:800;color:#FFF;font-size:14px;">${escapeHtml(item.displayName)}</div>
+                  <div style="font-size:11px;color:var(--text-dim);">${escapeHtml(item.phoneMasked)} • ${escapeHtml(item.city)}</div>
+                </div>
+              </div>
+            </td>
+            <td>
+              <span class="status-pill status-REJECTED" style="font-size:11px;padding:4px 9px;">
+                ⚠️ ${item.totalReportsCount} ${item.totalReportsCount === 1 ? 'Report' : 'Reports'}
+              </span>
+              ${pending > 0 ? `<div style="margin-top:5px;"><span class="status-pill status-PENDING" style="font-size:10px;">${pending} Action Required</span></div>` : '<div style="margin-top:5px;"><span class="status-pill status-RESOLVED" style="font-size:10px;">✓ All Resolved</span></div>'}
+            </td>
+            <td style="max-width:280px;">
+              ${reportersPreview || '<span style="color:var(--text-dim);font-size:11px;">No reporter details</span>'}
+              ${moreCount}
+            </td>
+            <td style="font-size:11px;color:var(--text-muted);font-family:'JetBrains Mono',monospace;">
+              ${(item.latestReportAt || '').toString().slice(0, 16).replace('T', ' ')}
+            </td>
+            <td>
+              <div style="display:flex;flex-direction:column;gap:4px;">
+                <span class="status-pill ${item.isSuspended ? 'status-REJECTED' : 'status-VERIFIED'}">
+                  ${item.isSuspended ? '👻 SUSPENDED' : 'ACTIVE'}
+                </span>
+                <span style="font-size:11px;color:var(--text-dim);">Karma: <b>${item.karmaScore}</b></span>
+              </div>
+            </td>
+            <td>
+              <button class="btn btn-primary btn-sm" onclick="openReportActionModal('${item.reportedUserId}')">
+                🛡️ Review & Take Action
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    async function loadDeskBlocks() {
+      const tbody = document.getElementById('desk-blocks-body');
+      if (!tbody) return;
+      try {
+        const list = await apiCall('/blocks');
+        rawBlockedProfilesList = list || [];
+        blocksCache = {};
+        rawBlockedProfilesList.forEach(item => {
+          blocksCache[item.blockedUserId] = item;
+        });
+
+        const subCount = document.getElementById('count-subtab-blocked');
+        if (subCount) subCount.textContent = rawBlockedProfilesList.length;
+
+        renderDeskBlocks();
+        updateReportedKpis();
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="6" style="color:var(--danger);text-align:center;padding:24px;">Failed to load blocked profiles: ${escapeHtml(e.message)}</td></tr>`;
+      }
+    }
+
+    function renderDeskBlocks() {
+      const tbody = document.getElementById('desk-blocks-body');
+      if (!tbody) return;
+
+      let list = rawBlockedProfilesList;
+      if (currentBlockDeskFilter === 'MULTI') {
+        list = list.filter(item => (item.totalBlocksCount || 0) >= 2);
+      }
+      if (reportedDeskSearchQuery) {
+        const q = reportedDeskSearchQuery;
+        list = list.filter(item => {
+          const name = (item.displayName || '').toLowerCase();
+          const phone = (item.phoneMasked || '').toLowerCase();
+          const city = (item.city || '').toLowerCase();
+          const uid = (item.blockedUserId || '').toLowerCase();
+          const hasBlockers = (item.blocks || []).some(b =>
+            (b.blockerName || '').toLowerCase().includes(q) ||
+            (b.reason || '').toLowerCase().includes(q) ||
+            (b.remarks || '').toLowerCase().includes(q)
+          );
+          return name.includes(q) || phone.includes(q) || city.includes(q) || uid.includes(q) || hasBlockers;
+        });
+      }
+
+      if (!list.length) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--text-dim);padding:28px;">No blocked profiles matching criteria. Community relations are healthy! 🛡️</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = list.map(item => {
+        const uPhoto = item.primaryPhoto || '';
+        const blocks = item.blocks || [];
+        const blockersPreview = blocks.slice(0, 2).map(b => `
+          <div style="font-size:11px;margin-bottom:4px;background:rgba(255,255,255,0.02);padding:4px 8px;border-radius:6px;border:1px solid rgba(255,255,255,0.04);">
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span>👤 <b>${escapeHtml(b.blockerName)}</b>:</span>
+              <span class="status-pill status-REJECTED" style="font-size:9px;padding:1px 5px;">${escapeHtml(b.reason)}</span>
+            </div>
+            ${b.remarks ? `<div style="color:#CBD5E1;font-size:10px;margin-top:2px;font-style:italic;">"${escapeHtml(b.remarks.slice(0, 45))}${b.remarks.length > 45 ? '...' : ''}"</div>` : ''}
+          </div>
+        `).join('');
+        const moreCount = blocks.length > 2 ? `<div style="font-size:10px;color:var(--cyan);font-weight:700;margin-top:2px;">+ ${blocks.length - 2} more blocker(s)</div>` : '';
+
+        return `
+          <tr>
+            <td>
+              <div style="display:flex;align-items:center;gap:12px;">
+                <div style="width:46px;height:46px;border-radius:12px;overflow:hidden;border:1px solid var(--border-strong);background:#070912;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                  ${uPhoto ? `<img src="${uPhoto}" style="width:100%;height:100%;object-fit:cover;" />` : `<span style="font-size:18px;font-weight:900;color:var(--cyan);">${escapeHtml(item.displayName.charAt(0))}</span>`}
+                </div>
+                <div>
+                  <div style="font-weight:800;color:#FFF;font-size:14px;">${escapeHtml(item.displayName)}</div>
+                  <div style="font-size:11px;color:var(--text-dim);">${escapeHtml(item.phoneMasked)} • ${escapeHtml(item.city)}</div>
+                </div>
+              </div>
+            </td>
+            <td>
+              <span class="status-pill" style="font-size:11px;padding:4px 9px;background:rgba(129,140,248,0.15);color:#A5B4FC;border:1px solid rgba(129,140,248,0.3);">
+                🚫 Blocked by ${item.totalBlocksCount} ${item.totalBlocksCount === 1 ? 'user' : 'users'}
+              </span>
+            </td>
+            <td style="max-width:280px;">
+              ${blockersPreview || '<span style="color:var(--text-dim);font-size:11px;">Direct mutual unmatch</span>'}
+              ${moreCount}
+            </td>
+            <td style="font-size:11px;color:var(--text-muted);font-family:'JetBrains Mono',monospace;">
+              ${(item.latestBlockedAt || '').toString().slice(0, 16).replace('T', ' ')}
+            </td>
+            <td>
+              <div style="display:flex;flex-direction:column;gap:4px;">
+                <span class="status-pill ${item.isSuspended ? 'status-REJECTED' : 'status-VERIFIED'}">
+                  ${item.isSuspended ? '👻 SUSPENDED' : 'ACTIVE'}
+                </span>
+                <span style="font-size:11px;color:var(--text-dim);">Karma: <b>${item.karmaScore}</b></span>
+              </div>
+            </td>
+            <td>
+              <button class="btn btn-ghost btn-sm" onclick="openBlockActionModal('${item.blockedUserId}')">
+                🛡️ Inspect Profile
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function updateReportedKpis() {
+      const totalRep = rawReportedProfilesList.length;
+      let pendingRep = 0;
+      let resolvedRep = 0;
+      rawReportedProfilesList.forEach(item => {
+        const p = item.pendingReportsCount || 0;
+        pendingRep += p;
+        if (p === 0 && (item.totalReportsCount || 0) > 0) {
+          resolvedRep++;
+        }
+      });
+      const totalBlk = rawBlockedProfilesList.length;
+
+      const elTot = document.getElementById('kpi-total-reported');
+      if (elTot) elTot.textContent = totalRep;
+      const elPen = document.getElementById('kpi-pending-reports');
+      if (elPen) elPen.textContent = pendingRep;
+      const elRes = document.getElementById('kpi-resolved-reports');
+      if (elRes) elRes.textContent = resolvedRep;
+      const elBlk = document.getElementById('kpi-total-blocked');
+      if (elBlk) elBlk.textContent = totalBlk;
+
+      const badge = document.getElementById('badge-reported-users');
+      if (badge) {
+        badge.textContent = pendingRep;
+        badge.style.display = pendingRep > 0 ? 'inline-block' : 'none';
       }
     }
 
@@ -2513,7 +2859,6 @@
 
       const drawer = document.getElementById('report-action-modal-content');
       const reports = item.reports || [];
-      const pendingCount = item.pendingReportsCount || 0;
       const uPhoto = item.primaryPhoto || '';
 
       const defaultMsg = `Thank you for reporting. Our Trust & Safety team has reviewed your report against ${item.displayName} and suspended this profile for violating our community guidelines.`;
@@ -2568,7 +2913,7 @@
                 ${r.adminAction ? `
                   <div style="margin-top:8px;padding:8px 12px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.3);border-radius:8px;font-size:11px;color:#6EE7B7;">
                     <b>Earlier Admin Action:</b> ${escapeHtml(r.adminAction)} by ${escapeHtml(r.resolvedBy || 'Admin')} at ${(r.resolvedAt || '').toString().slice(0, 16).replace('T', ' ')}
-                    ${r.adminMessage ? `<div style="margin-top:3px;color:#CBD5E1;">Feedback sent: "${escapeHtml(r.adminMessage)}"</div>` : ''}
+                    ${r.adminMessage ? `<div style="margin-top:3px;color:#CBD5E1;">Feedback sent to reporter: "${escapeHtml(r.adminMessage)}"</div>` : ''}
                   </div>
                 ` : ''}
               </div>
@@ -2589,6 +2934,7 @@
                 <option value="PROFILE_SUSPENDED">🚫 PROFILE_SUSPENDED — Suspend & Hide from Discovery</option>
                 <option value="WARNING_ISSUED">⚠️ WARNING_ISSUED — Deduct -50 Karma & Issue Warning</option>
                 <option value="CONTENT_REMOVED">🗑️ CONTENT_REMOVED — Remove Objectionable Photo/Content</option>
+                <option value="RESTORE_PROFILE">🛡️ RESTORE_PROFILE — Lift Suspension & Restore Active Status</option>
                 <option value="DISMISSED">✓ DISMISSED — False Alarm / No Community Violation</option>
               </select>
             </div>
@@ -2615,7 +2961,7 @@
                   <span>Notify Reporter(s) In-App</span>
                 </label>
                 <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#FCA5A5;cursor:pointer;">
-                  <input type="checkbox" id="rep-suspend-chk" checked />
+                  <input type="checkbox" id="rep-suspend-chk" ${item.isSuspended ? '' : 'checked'} />
                   <span>Shadowban / Hide Account from Discovery</span>
                 </label>
               </div>
@@ -2634,6 +2980,109 @@
       document.getElementById('report-action-modal-backdrop').classList.add('open');
     }
 
+    function openBlockActionModal(blockedUserId) {
+      const item = blocksCache[blockedUserId];
+      if (!item) {
+        showToast('⚠️ Blocked profile data not found.');
+        return;
+      }
+
+      const drawer = document.getElementById('report-action-modal-content');
+      const blocks = item.blocks || [];
+      const uPhoto = item.primaryPhoto || '';
+      const defaultMsg = `Trust & Safety review completed for profile ${item.displayName}.`;
+
+      drawer.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);padding-bottom:16px;">
+          <div style="display:flex;align-items:center;gap:14px;">
+            <div style="width:58px;height:58px;border-radius:16px;overflow:hidden;border:2px solid var(--cyan);background:#070912;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              ${uPhoto ? `<img src="${uPhoto}" style="width:100%;height:100%;object-fit:cover;" />` : `<span style="font-size:24px;font-weight:900;color:var(--cyan);">${escapeHtml(item.displayName.charAt(0))}</span>`}
+            </div>
+            <div>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <span style="font-size:20px;font-weight:900;color:#FFF;">${escapeHtml(item.displayName)}</span>
+                <span class="status-pill status-REJECTED">🚫 ${item.totalBlocksCount} Member Block(s)</span>
+                <span class="status-pill ${item.isSuspended ? 'status-REJECTED' : 'status-VERIFIED'}">${item.isSuspended ? 'SUSPENDED' : 'ACTIVE'}</span>
+              </div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">
+                Phone: <b>${escapeHtml(item.phoneMasked)}</b> • City: <b>${escapeHtml(item.city)}</b> • Karma: <b>${item.karmaScore}</b> • ID: <span style="font-family:'JetBrains Mono',monospace;">${item.blockedUserId}</span>
+              </div>
+            </div>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="closeReportActionModal()">✕ Close</button>
+        </div>
+
+        <div style="margin-top:16px;">
+          <div style="font-size:13px;font-weight:800;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">
+            📋 Members Who Blocked This User (${blocks.length})
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px;max-height:280px;overflow-y:auto;padding-right:4px;">
+            ${blocks.map((b, idx) => `
+              <div style="background:#070912;border:1px solid var(--border-strong);border-radius:14px;padding:14px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <span style="font-weight:800;color:#FFF;">Block #${idx + 1}: ${escapeHtml(b.blockerName)}</span>
+                    <span style="font-size:11px;color:var(--text-dim);">(${escapeHtml(b.blockerPhoneMasked)})</span>
+                    <span class="status-pill status-PENDING" style="font-size:10px;">${escapeHtml(b.reason)}</span>
+                  </div>
+                  <span style="font-size:11px;color:var(--text-dim);font-family:'JetBrains Mono',monospace;">
+                    ${(b.createdAt || '').toString().slice(0, 16).replace('T', ' ')}
+                  </span>
+                </div>
+                ${b.remarks ? `
+                  <div style="margin-top:8px;background:rgba(255,255,255,0.03);border-left:3px solid var(--cyan);padding:8px 12px;border-radius:6px;font-size:12px;color:#E2E8F0;line-height:1.5;">
+                    "${escapeHtml(b.remarks)}"
+                  </div>
+                ` : `<div style="font-size:11px;color:var(--text-dim);margin-top:4px;">Direct user-block (reason: ${escapeHtml(b.reason)})</div>`}
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+        <div style="background:var(--bg-card);border:1px solid var(--border-strong);border-radius:16px;padding:18px;margin-top:16px;">
+          <div style="font-size:14px;font-weight:900;color:#FFF;margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+            <span>🛡️ Administrative Moderation Action</span>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+            <div class="form-group">
+              <label class="form-label">Action on Profile</label>
+              <select id="rep-action-type" class="form-select" onchange="onReportActionChange('${escapeHtml(item.displayName)}')">
+                <option value="PROFILE_SUSPENDED">🚫 PROFILE_SUSPENDED — Suspend & Hide from Discovery</option>
+                <option value="WARNING_ISSUED">⚠️ WARNING_ISSUED — Deduct -50 Karma & Issue Warning</option>
+                <option value="RESTORE_PROFILE">🛡️ RESTORE_PROFILE — Lift Suspension & Restore Active Status</option>
+                <option value="DISMISSED">✓ DISMISSED — Clear Case / False Alarm</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Admin Resolution Note</label>
+              <input type="text" id="rep-action-msg" class="form-input" value="${defaultMsg}" />
+            </div>
+
+            <div style="grid-column:span 2;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;padding-top:4px;">
+              <div style="display:flex;gap:16px;align-items:center;">
+                <input type="checkbox" id="rep-notify-chk" style="display:none;" />
+                <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#FCA5A5;cursor:pointer;">
+                  <input type="checkbox" id="rep-suspend-chk" ${item.isSuspended ? '' : 'checked'} />
+                  <span>Shadowban / Hide Account from Discovery</span>
+                </label>
+              </div>
+
+              <div style="display:flex;gap:10px;">
+                <button class="btn btn-ghost" onclick="closeReportActionModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="submitReportAction('${item.blockedUserId}')">
+                  🚀 Enforce Action
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('report-action-modal-backdrop').classList.add('open');
+    }
+
     function onReportActionChange(displayName) {
       const sel = document.getElementById('rep-action-type').value;
       const txt = document.getElementById('rep-action-msg');
@@ -2642,6 +3091,9 @@
       if (sel === 'PROFILE_SUSPENDED') {
         txt.value = `Thank you for reporting. Our Trust & Safety team has reviewed your report against ${displayName} and suspended this profile for violating our community guidelines.`;
         if (suspendChk) suspendChk.checked = true;
+      } else if (sel === 'RESTORE_PROFILE') {
+        txt.value = `Your report regarding ${displayName} has been reviewed by our Trust & Safety team. The profile has been reassessed and cleared.`;
+        if (suspendChk) suspendChk.checked = false;
       } else if (sel === 'WARNING_ISSUED') {
         txt.value = `Thank you for reporting. We have reviewed ${displayName}'s profile and issued a formal warning and karma penalty.`;
         if (suspendChk) suspendChk.checked = false;
@@ -2661,8 +3113,8 @@
     async function submitReportAction(targetUserId) {
       const action = document.getElementById('rep-action-type').value;
       const adminMessage = document.getElementById('rep-action-msg').value.trim();
-      const notifyReporter = document.getElementById('rep-notify-chk').checked;
-      const suspendAccount = document.getElementById('rep-suspend-chk').checked;
+      const notifyReporter = document.getElementById('rep-notify-chk') ? document.getElementById('rep-notify-chk').checked : false;
+      const suspendAccount = document.getElementById('rep-suspend-chk') ? document.getElementById('rep-suspend-chk').checked : false;
 
       try {
         const res = await apiCall(`/reports/user/${targetUserId}/action`, {
@@ -2677,7 +3129,7 @@
 
         showToast(`🛡️ Enforcement complete! Notified ${res.notifiedReportersCount || 0} reporter(s).`);
         closeReportActionModal();
-        await loadSafety();
+        await loadReportedTab();
       } catch (e) {
         showToast('⚠️ ' + e.message);
       }
