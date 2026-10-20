@@ -1148,7 +1148,13 @@
                 <h1 class="section-title">🪪 Selfie & Biometric FaceMatch Queue</h1>
                 <p class="section-sub">Review pending background AI selfie verifications side-by-side against uploaded profile photos.</p>
               </div>
-              <div style="display: flex; gap: 8px;">
+              <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                <div style="display: flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.06); border: 1px solid var(--border-strong); border-radius: 10px; padding: 2px 10px;">
+                  <span style="font-size: 13px;">📍</span>
+                  <select id="vq-city-filter" class="form-select" style="width: auto; min-width: 170px; padding: 6px 8px; font-size: 12px; font-weight: 700; border: none; background: transparent; cursor: pointer; color: #FFF;" onchange="filterVerificationQueueByCity()">
+                    <option value="ALL">All Cities 🇮🇳</option>
+                  </select>
+                </div>
                 <button class="btn btn-primary btn-sm" id="btn-vq-PENDING" onclick="loadVerificationQueue('PENDING')">⏳ Pending Only</button>
                 <button class="btn btn-ghost btn-sm" id="btn-vq-WITH_SELFIE" onclick="loadVerificationQueue('WITH_SELFIE')">📸 Has Selfie</button>
                 <button class="btn btn-ghost btn-sm" id="btn-vq-VERIFIED" onclick="loadVerificationQueue('VERIFIED')">✓ Verified</button>
@@ -1997,6 +2003,8 @@
 
     // ==================== 2. SELFIE & KYC QUEUE ====================
     let currentVerFilter = 'PENDING';
+    let currentVerCity = 'ALL';
+    let rawVerificationList = [];
     const queuePhotosCache = {};
     const queuePhotoIndex = {};
 
@@ -2025,72 +2033,131 @@
 
       try {
         const list = await apiCall('/verification-queue?statusFilter=' + encodeURIComponent(filter));
-        const grid = document.getElementById('verification-mod-grid');
-        if (!list || !list.length) {
-          grid.innerHTML = `<div class="panel-card" style="grid-column:1/-1;text-align:center;padding:36px;color:var(--text-muted);">
-            <div style="font-size:24px;margin-bottom:8px;">🎉</div>
-            <div style="font-weight:700;font-size:15px;color:#FFF;">No users in "${filter}" verification queue.</div>
-            <div style="font-size:12px;margin-top:4px;">All pending biometric face checks are up to date!</div>
-          </div>`;
-          return;
-        }
-
-        grid.innerHTML = list.map(u => {
-          const rawPhotos = (u.photos || []).filter(p => !!p && typeof p === 'string' && p.trim() !== '');
-          queuePhotosCache[u.userId] = rawPhotos;
-          queuePhotoIndex[u.userId] = 0;
-
-          const totalPhotos = rawPhotos.length;
-          const primaryPhoto = totalPhotos > 0 ? rawPhotos[0] : '';
-          const hasMultiple = totalPhotos > 1;
-
-          return `
-            <div class="mod-card" id="ver-card-${u.userId}">
-              <div style="display:flex;justify-content:space-between;align-items:center;">
-                <div>
-                  <div style="font-weight:900;font-size:14px;color:#FFF;">${escapeHtml(u.displayName || 'User')}</div>
-                  <div style="font-size:11px;color:var(--text-muted);">📍 ${escapeHtml(u.city || 'India')} • ${escapeHtml(u.microCircle || 'General')}</div>
-                </div>
-                <span class="status-pill status-${u.verificationStatus}">${u.verificationStatus}</span>
-              </div>
-
-              <div class="mod-photos-compare">
-                <div class="selfie-box">
-                  ${u.selfieUrl
-                    ? `<img src="${u.selfieUrl}" alt="Live Selfie" style="cursor:zoom-in;" onclick="openLightbox('${u.selfieUrl}', 'Live 3D Selfie • ${escapeHtml(u.displayName)}')" />`
-                    : `<span style="font-size:11px;color:var(--text-dim);text-align:center;padding:8px;">No Selfie</span>`}
-                  <span class="photo-tag tag-selfie">🤳 SELFIE</span>
-                </div>
-
-                <div class="profile-compare-box">
-                  ${primaryPhoto
-                    ? `<img id="qimg-${u.userId}" src="${primaryPhoto}" alt="Profile Photo" style="cursor:zoom-in;" onclick="openLightbox(this.src, 'Profile Photo • ${escapeHtml(u.displayName)}')" />`
-                    : `<span style="font-size:11px;color:var(--text-dim);text-align:center;padding:8px;">No Photo</span>`}
-                  <span class="photo-tag tag-profile">📸 PROFILE PHOTO</span>
-                  <div class="photo-pager-bar">
-                    <button class="pager-mini-btn" onclick="cycleQueuePhoto('${u.userId}', -1)" ${hasMultiple ? '' : 'disabled'}>◀ Prev</button>
-                    <span class="pager-count-badge"><span id="qidx-${u.userId}">${totalPhotos > 0 ? 1 : 0}</span> of ${totalPhotos}</span>
-                    <button class="pager-mini-btn" onclick="cycleQueuePhoto('${u.userId}', 1)" ${hasMultiple ? '' : 'disabled'}>Next ▶</button>
-                  </div>
-                </div>
-              </div>
-
-              <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--text-muted);">
-                <span>📸 ${totalPhotos}/6 Photos</span>
-                <span>Liveness: ${(Number(u.livenessScore || 0) * 100).toFixed(0)}%</span>
-              </div>
-
-              <div style="display:flex;gap:6px;">
-                <button class="btn btn-emerald btn-sm" style="flex:1;padding:7px 10px;" onclick="decideSelfie('${u.userId}','APPROVE')">✓ Approve</button>
-                <button class="btn btn-danger btn-sm" style="flex:1;padding:7px 10px;" onclick="decideSelfie('${u.userId}','REJECT')">✕ Reject</button>
-                <button class="btn btn-ghost btn-sm" title="View Full Profile" onclick="openInspector('${u.userId}')">🔍</button>
-              </div>
-            </div>
-          `;
-        }).join('');
+        rawVerificationList = list || [];
+        updateVerificationCityDropdown(rawVerificationList);
+        renderVerificationGrid();
       } catch (e) {
         showToast('⚠️ ' + e.message);
       }
+    }
+
+    function updateVerificationCityDropdown(list) {
+      const citySelect = document.getElementById('vq-city-filter');
+      if (!citySelect) return;
+      const prevVal = currentVerCity || 'ALL';
+
+      const cityCounts = {};
+      list.forEach(u => {
+        const rawCity = (u.city && typeof u.city === 'string' && u.city.trim() !== '' && u.city.trim() !== 'Not specified')
+          ? u.city.trim()
+          : 'Unspecified';
+        cityCounts[rawCity] = (cityCounts[rawCity] || 0) + 1;
+      });
+
+      const sortedCities = Object.keys(cityCounts).sort((a, b) => {
+        if (a === 'Unspecified') return 1;
+        if (b === 'Unspecified') return -1;
+        return (cityCounts[b] - cityCounts[a]) || a.localeCompare(b);
+      });
+
+      let optionsHtml = `<option value="ALL" style="background:#111422;color:#FFF;">All Cities 🇮🇳 (${list.length})</option>`;
+      sortedCities.forEach(city => {
+        optionsHtml += `<option value="${escapeHtml(city)}" style="background:#111422;color:#FFF;">📍 ${escapeHtml(city)} (${cityCounts[city]})</option>`;
+      });
+
+      citySelect.innerHTML = optionsHtml;
+
+      if (sortedCities.some(c => c.toLowerCase() === prevVal.toLowerCase())) {
+        citySelect.value = prevVal;
+        currentVerCity = prevVal;
+      } else {
+        citySelect.value = 'ALL';
+        currentVerCity = 'ALL';
+      }
+    }
+
+    function filterVerificationQueueByCity() {
+      const citySelect = document.getElementById('vq-city-filter');
+      if (citySelect) {
+        currentVerCity = citySelect.value;
+      }
+      renderVerificationGrid();
+    }
+
+    function renderVerificationGrid() {
+      const grid = document.getElementById('verification-mod-grid');
+      if (!grid) return;
+
+      const filtered = (rawVerificationList || []).filter(u => {
+        if (!currentVerCity || currentVerCity === 'ALL') return true;
+        const rawCity = (u.city && typeof u.city === 'string' && u.city.trim() !== '' && u.city.trim() !== 'Not specified')
+          ? u.city.trim()
+          : 'Unspecified';
+        return rawCity.toLowerCase() === currentVerCity.toLowerCase();
+      });
+
+      if (!filtered.length) {
+        grid.innerHTML = `<div class="panel-card" style="grid-column:1/-1;text-align:center;padding:36px;color:var(--text-muted);">
+          <div style="font-size:24px;margin-bottom:8px;">${currentVerCity !== 'ALL' ? '📍' : '🎉'}</div>
+          <div style="font-weight:700;font-size:15px;color:#FFF;">No users in "${currentVerFilter}" queue ${currentVerCity !== 'ALL' ? 'for ' + escapeHtml(currentVerCity) : ''}.</div>
+          <div style="font-size:12px;margin-top:4px;">${currentVerCity !== 'ALL' ? 'Switch back to "All Cities" or check another status filter.' : 'All pending biometric face checks are up to date!'}</div>
+        </div>`;
+        return;
+      }
+
+      grid.innerHTML = filtered.map(u => {
+        const rawPhotos = (u.photos || []).filter(p => !!p && typeof p === 'string' && p.trim() !== '');
+        queuePhotosCache[u.userId] = rawPhotos;
+        queuePhotoIndex[u.userId] = 0;
+
+        const totalPhotos = rawPhotos.length;
+        const primaryPhoto = totalPhotos > 0 ? rawPhotos[0] : '';
+        const hasMultiple = totalPhotos > 1;
+
+        return `
+          <div class="mod-card" id="ver-card-${u.userId}">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                <div style="font-weight:900;font-size:14px;color:#FFF;">${escapeHtml(u.displayName || 'User')}</div>
+                <div style="font-size:11px;color:var(--text-muted);">📍 <span style="color:#FFF;font-weight:700;">${escapeHtml(u.city || 'India')}</span> • ${escapeHtml(u.microCircle || 'General')}</div>
+              </div>
+              <span class="status-pill status-${u.verificationStatus}">${u.verificationStatus}</span>
+            </div>
+
+            <div class="mod-photos-compare">
+              <div class="selfie-box">
+                ${u.selfieUrl
+                  ? `<img src="${u.selfieUrl}" alt="Live Selfie" style="cursor:zoom-in;" onclick="openLightbox('${u.selfieUrl}', 'Live 3D Selfie • ${escapeHtml(u.displayName)}')" />`
+                  : `<span style="font-size:11px;color:var(--text-dim);text-align:center;padding:8px;">No Selfie</span>`}
+                <span class="photo-tag tag-selfie">🤳 SELFIE</span>
+              </div>
+
+              <div class="profile-compare-box">
+                ${primaryPhoto
+                  ? `<img id="qimg-${u.userId}" src="${primaryPhoto}" alt="Profile Photo" style="cursor:zoom-in;" onclick="openLightbox(this.src, 'Profile Photo • ${escapeHtml(u.displayName)}')" />`
+                  : `<span style="font-size:11px;color:var(--text-dim);text-align:center;padding:8px;">No Photo</span>`}
+                <span class="photo-tag tag-profile">📸 PROFILE PHOTO</span>
+                <div class="photo-pager-bar">
+                  <button class="pager-mini-btn" onclick="cycleQueuePhoto('${u.userId}', -1)" ${hasMultiple ? '' : 'disabled'}>◀ Prev</button>
+                  <span class="pager-count-badge"><span id="qidx-${u.userId}">${totalPhotos > 0 ? 1 : 0}</span> of ${totalPhotos}</span>
+                  <button class="pager-mini-btn" onclick="cycleQueuePhoto('${u.userId}', 1)" ${hasMultiple ? '' : 'disabled'}>Next ▶</button>
+                </div>
+              </div>
+            </div>
+
+            <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--text-muted);">
+              <span>📸 ${totalPhotos}/6 Photos</span>
+              <span>Liveness: ${(Number(u.livenessScore || 0) * 100).toFixed(0)}%</span>
+            </div>
+
+            <div style="display:flex;gap:6px;">
+              <button class="btn btn-emerald btn-sm" style="flex:1;padding:7px 10px;" onclick="decideSelfie('${u.userId}','APPROVE')">✓ Approve</button>
+              <button class="btn btn-danger btn-sm" style="flex:1;padding:7px 10px;" onclick="decideSelfie('${u.userId}','REJECT')">✕ Reject</button>
+              <button class="btn btn-ghost btn-sm" title="View Full Profile" onclick="openInspector('${u.userId}')">🔍</button>
+            </div>
+          </div>
+        `;
+      }).join('');
     }
 
     async function decideSelfie(userId, decision) {
@@ -2106,19 +2173,22 @@
         });
         showToast(decision === 'APPROVE' ? '✅ Selfie Approved & User Notified!' : '⚠️ Selfie Marked Rejected & User Notified');
 
+        rawVerificationList = rawVerificationList.filter(item => String(item.userId) !== String(userId));
         const cardEl = document.getElementById('ver-card-' + userId);
         if (cardEl) {
           cardEl.style.opacity = '0';
           cardEl.style.transform = 'scale(0.92)';
           setTimeout(() => {
             if (cardEl) cardEl.remove();
+            updateVerificationCityDropdown(rawVerificationList);
             const grid = document.getElementById('verification-mod-grid');
             if (grid && grid.querySelectorAll('.mod-card').length === 0) {
-              loadVerificationQueue(currentVerFilter);
+              renderVerificationGrid();
             }
           }, 240);
         } else {
-          loadVerificationQueue(currentVerFilter);
+          updateVerificationCityDropdown(rawVerificationList);
+          renderVerificationGrid();
         }
         loadOverview();
       } catch (e) {

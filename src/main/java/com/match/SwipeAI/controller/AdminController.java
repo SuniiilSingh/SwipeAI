@@ -452,6 +452,7 @@ public class AdminController {
     @GetMapping("/verification-queue")
     public ResponseEntity<List<Map<String, Object>>> getVerificationQueue(
             @RequestParam(defaultValue = "PENDING") String statusFilter,
+            @RequestParam(required = false) String city,
             HttpServletRequest request) {
         requireAdmin(request, "SUPER_ADMIN");
 
@@ -469,6 +470,13 @@ public class AdminController {
             if ("REJECTED".equalsIgnoreCase(statusFilter) && !"REJECTED".equals(status)) continue;
             if ("VERIFIED".equalsIgnoreCase(statusFilter) && !"VERIFIED".equals(status)) continue;
             if ("WITH_SELFIE".equalsIgnoreCase(statusFilter) && !hasSelfie) continue;
+
+            if (city != null && !city.isBlank() && !"ALL".equalsIgnoreCase(city.trim())) {
+                String userCity = p != null ? p.getCity() : null;
+                if (userCity == null || !userCity.trim().toLowerCase().contains(city.trim().toLowerCase())) {
+                    continue;
+                }
+            }
 
             Map<String, Object> item = buildCompactUserRow(u, p, true);
             queue.add(item);
