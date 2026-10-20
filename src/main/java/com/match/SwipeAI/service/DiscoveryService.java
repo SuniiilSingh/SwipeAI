@@ -184,6 +184,11 @@ public class DiscoveryService {
         int requestedLimit = request.getLimit() != null ? request.getLimit() : 10;
         int fetchLimit = Math.max(50, requestedLimit * 5);
 
+        String explicitCommunity = request.getMicroCircle();
+        String userCommunity = (viewerProfile != null && viewerProfile.getMicroCircle() != null && !viewerProfile.getMicroCircle().isBlank())
+                ? viewerProfile.getMicroCircle() : null;
+        String effectiveComm = (explicitCommunity != null && !explicitCommunity.isBlank()) ? explicitCommunity : userCommunity;
+
         CandidateSearchRepository.Criteria candidateCriteria = CandidateSearchRepository.Criteria.builder()
                 .viewerId(viewerId)
                 .targetGender(targetGender)
@@ -194,7 +199,8 @@ public class DiscoveryService {
                 .maxLon(maxLon)
                 .minBirthDate(minBirthDate)
                 .maxBirthDate(maxBirthDate)
-                .microCircle(request.getMicroCircle())
+                .microCircle(explicitCommunity)
+                .userCommunity(userCommunity)
                 .dietaryPreferences(dietaryPreferences)
                 .limit(fetchLimit)
                 .build();
@@ -217,11 +223,13 @@ public class DiscoveryService {
                 continue;
             }
 
-            // 4. Filter by Micro-Circle if requested
-            if (request.getMicroCircle() != null && !request.getMicroCircle().isBlank()) {
-                if (candidateProfile == null || !request.getMicroCircle().equalsIgnoreCase(candidateProfile.getMicroCircle())) {
-                    continue;
-                }
+            // 4. Micro-Community Match Detection (ADD-ON filter)
+            boolean isSharedCommunity = false;
+            if (effectiveComm != null && candidateProfile != null && candidateProfile.getMicroCircle() != null) {
+                isSharedCommunity = isSharedCommunityMatch(effectiveComm, candidateProfile.getMicroCircle());
+            }
+            if (!isSharedCommunity && userCommunity != null && candidateProfile != null && candidateProfile.getMicroCircle() != null) {
+                isSharedCommunity = isSharedCommunityMatch(userCommunity, candidateProfile.getMicroCircle());
             }
 
             // 4a. Filter by Dietary Preferences if requested in feed request
@@ -312,20 +320,23 @@ public class DiscoveryService {
             );
 
             // Strict Search Radius Limit: Only match profiles within effective radius limit
-            if (distanceKm > maxRadiusKm) {
+            // ADD-ON EXCEPTION: Shared community members bypass the geographic distance cap!
+            if (!isSharedCommunity && distanceKm > maxRadiusKm) {
                 log.debug("Candidate {} excluded: distance {} km exceeds max radius {} km",
                         candidate.getId(), distanceKm, maxRadiusKm);
                 continue;
             }
 
             // 7. Multi-Objective Compatibility Score Calculation
+            // For shared community matches across cities, cap distance decay to 5km to preserve high synergy score
+            double effectiveDistForScoring = isSharedCommunity ? Math.min(5.0, distanceKm) : distanceKm;
             int compScore;
             Integer desireScorePercent = null;
             List<String> desireHighlights = List.of();
 
             if (hasConfiguredDesire) {
                 DesireProfileService.DesireMatchResult desireResult = desireProfileService.calculateDesireMatch(
-                        viewerDesire, candidateProfile, candidateAge, distanceKm
+                        viewerDesire, candidateProfile, candidateAge, effectiveDistForScoring
                 );
                 desireScorePercent = desireResult.scorePercent();
                 desireHighlights = desireResult.highlights();
@@ -334,7 +345,7 @@ public class DiscoveryService {
                 compScore = matchEngine.calculateCompatibilityScoreWithDesire(
                         viewer, viewerProfile,
                         candidate, candidateProfile,
-                        distanceKm,
+                        effectiveDistForScoring,
                         desireScorePercent
                 );
             } else {
@@ -342,15 +353,13 @@ public class DiscoveryService {
                 compScore = matchEngine.calculateCompatibilityScore(
                         viewer, viewerProfile,
                         candidate, candidateProfile,
-                        distanceKm
+                        effectiveDistForScoring
                 );
             }
 
             // Micro-Community Synergy Bonus (+15% if viewer and candidate belong to the same circle)
-            if (viewerProfile != null && viewerProfile.getMicroCircle() != null && candidateProfile != null && candidateProfile.getMicroCircle() != null) {
-                if (viewerProfile.getMicroCircle().trim().equalsIgnoreCase(candidateProfile.getMicroCircle().trim())) {
-                    compScore = Math.min(99, compScore + 15);
-                }
+            if (isSharedCommunity) {
+                compScore = Math.min(99, compScore + 15);
             }
 
             // Incoming Like Priority Bonus: If candidate already liked the viewer, boost their position to top of feed
@@ -363,7 +372,7 @@ public class DiscoveryService {
             }
 
             candidateCards.add(buildCandidateCard(viewerId, candidate, candidateProfile, distanceKm, compScore,
-                    desireScorePercent, desireHighlights));
+                    desireScorePercent, desireHighlights, isSharedCommunity));
         }
 
         // Fallback: If no candidate matched strict filters/bounding box, return all available active profiles (except self)
@@ -375,23 +384,34 @@ public class DiscoveryService {
                 // If user requested a specific micro-community circle, strictly filter fallback by that circle
                 if (request.getMicroCircle() != null && !request.getMicroCircle().isBlank()) {
                     String reqCircle = request.getMicroCircle().trim().toLowerCase();
-                    if (p.getMicroCircle() == null || !p.getMicroCircle().toLowerCase().contains(reqCircle)) {
+                    if (p.getMicroCircle() == null || !isSharedCommunityMatch(reqCircle, p.getMicroCircle())) {
                         continue;
                     }
                 }
 
                 User candidateUser = userRepository.findById(p.getUserId()).orElse(null);
                 if (candidateUser == null) continue;
-                int age = candidateUser.getBirthDate() != null
-                        ? Period.between(candidateUser.getBirthDate(), LocalDate.now()).getYears()
-                        : 24;
-                candidateCards.add(buildCandidateCard(viewerId, candidateUser, p, 3.5, 88, 88, List.of("High Synergy", "Local Circle")));
+                if (!isGenderAndInterestMatch(viewer, viewerProfile, candidateUser, p)) continue;
+                if (shadowShieldService.isShielded(viewer, viewerProfile, candidateUser, p)) continue;
+
+                boolean isShared = false;
+                if (effectiveComm != null && p.getMicroCircle() != null) {
+                    isShared = isSharedCommunityMatch(effectiveComm, p.getMicroCircle());
+                }
+                if (!isShared && userCommunity != null && p.getMicroCircle() != null) {
+                    isShared = isSharedCommunityMatch(userCommunity, p.getMicroCircle());
+                }
+
+                candidateCards.add(buildCandidateCard(viewerId, candidateUser, p, 3.5, 88, 88, List.of("High Synergy", "Local Circle"), isShared));
             }
         }
 
-        // Sort ascending by shortest distance first (closest/top), then descending by compatibility score
-        candidateCards.sort(Comparator.comparingDouble(DiscoveryDto.CandidateCardDto::getDistanceKm)
-                .thenComparing(Comparator.comparingInt(DiscoveryDto.CandidateCardDto::getCompatibilityScore).reversed()));
+        // Sort: Shared community members and high compatibility first, then closest distance
+        candidateCards.sort(
+                Comparator.comparing((DiscoveryDto.CandidateCardDto c) -> Boolean.TRUE.equals(c.getIsSharedCommunity()) ? 0 : 1)
+                        .thenComparing(Comparator.comparingDouble(DiscoveryDto.CandidateCardDto::getDistanceKm))
+                        .thenComparing(Comparator.comparingInt(DiscoveryDto.CandidateCardDto::getCompatibilityScore).reversed())
+        );
 
         // Limit results (up to requested limit or 50 by default to provide all candidates within search radius)
         int limit = request.getLimit() != null ? request.getLimit() : 50;
@@ -549,16 +569,21 @@ public class DiscoveryService {
     }
 
     public DiscoveryDto.CandidateCardDto buildCandidateCard(User user, Profile profile, double distanceKm, int compScore) {
-        return buildCandidateCard(null, user, profile, distanceKm, compScore, 88, List.of("High vibe alignment ✨"));
+        return buildCandidateCard(null, user, profile, distanceKm, compScore, 88, List.of("High vibe alignment ✨"), false);
     }
 
     public DiscoveryDto.CandidateCardDto buildCandidateCard(User user, Profile profile, double distanceKm, int compScore,
                                                              Integer desireMatchPercent, List<String> desireMatchHighlights) {
-        return buildCandidateCard(null, user, profile, distanceKm, compScore, desireMatchPercent, desireMatchHighlights);
+        return buildCandidateCard(null, user, profile, distanceKm, compScore, desireMatchPercent, desireMatchHighlights, false);
     }
 
     public DiscoveryDto.CandidateCardDto buildCandidateCard(UUID viewerId, User user, Profile profile, double distanceKm, int compScore,
                                                              Integer desireMatchPercent, List<String> desireMatchHighlights) {
+        return buildCandidateCard(viewerId, user, profile, distanceKm, compScore, desireMatchPercent, desireMatchHighlights, false);
+    }
+
+    public DiscoveryDto.CandidateCardDto buildCandidateCard(UUID viewerId, User user, Profile profile, double distanceKm, int compScore,
+                                                             Integer desireMatchPercent, List<String> desireMatchHighlights, boolean isSharedCommunity) {
         int age = 24;
         if (user.getBirthDate() != null) {
             age = Period.between(user.getBirthDate(), LocalDate.now()).getYears();
@@ -703,9 +728,24 @@ public class DiscoveryService {
             distanceTier = Math.round(distanceKm) + " km";
         }
 
-        String fuzzyDistance = (locationArea != null && !locationArea.equalsIgnoreCase("Bengaluru") && !locationArea.equalsIgnoreCase("Bangalore"))
-                ? locationArea + " · " + distanceTier
-                : distanceTier;
+        String candCity = (profile != null && profile.getCity() != null && !profile.getCity().isBlank())
+                ? profile.getCity().trim() : (locationArea != null ? locationArea : "India");
+
+        String fuzzyDistance;
+        if (isSharedCommunity && distanceKm > 50.0) {
+            // Member from another city connected via shared micro-community!
+            fuzzyDistance = candCity + " · Shared Tribe";
+        } else if (isSharedCommunity) {
+            fuzzyDistance = (locationArea != null && !locationArea.equalsIgnoreCase("Bengaluru") && !locationArea.equalsIgnoreCase("Bangalore"))
+                    ? locationArea + " · " + distanceTier + " · Shared Tribe"
+                    : distanceTier + " · Shared Tribe";
+        } else {
+            fuzzyDistance = (locationArea != null && !locationArea.equalsIgnoreCase("Bengaluru") && !locationArea.equalsIgnoreCase("Bangalore"))
+                    ? locationArea + " · " + distanceTier
+                    : distanceTier;
+        }
+
+        double displayDistanceKm = (isSharedCommunity && distanceKm > 50.0) ? 1.5 : distanceKm;
 
         return DiscoveryDto.CandidateCardDto.builder()
                 .userId(user.getId())
@@ -715,8 +755,9 @@ public class DiscoveryService {
                 .isDigilockerVerified(Boolean.TRUE.equals(user.getDigilockerVerified()))
                 .isWhatsappVerified(Boolean.TRUE.equals(user.getWhatsappVerified()))
                 .livenessScore(user.getLivenessScore() != null ? user.getLivenessScore() : 0.98)
-                .distanceKm(distanceKm)
+                .distanceKm(displayDistanceKm)
                 .fuzzyDistance(fuzzyDistance)
+                .isSharedCommunity(isSharedCommunity)
                 .culturalBadges(DiscoveryDto.CulturalBadges.builder()
                         .diet(profile != null && profile.getDietaryPref() != null ? profile.getDietaryPref() : DietaryPreference.PURE_VEG)
                         .living(profile != null && profile.getLivingStatus() != null ? profile.getLivingStatus() : LivingStatus.INDEPENDENT_FLAT)
@@ -884,5 +925,40 @@ public class DiscoveryService {
                 .canSendFree(remaining > 0)
                 .resetsAt(tomorrowMidnight.toString())
                 .build();
+    }
+
+    private boolean isSharedCommunityMatch(String commA, String commB) {
+        if (commA == null || commB == null) return false;
+        String a = commA.trim().toLowerCase();
+        String b = commB.trim().toLowerCase();
+        if (a.isEmpty() || b.isEmpty()) return false;
+        if (a.equalsIgnoreCase(b)) return true;
+
+        String cleanA = a.replaceAll("[^a-z0-9]", "");
+        String cleanB = b.replaceAll("[^a-z0-9]", "");
+        if (!cleanA.isEmpty() && !cleanB.isEmpty()) {
+            if (cleanA.contains(cleanB) || cleanB.contains(cleanA)) return true;
+        }
+
+        // Token intersection check for multi-word communities (e.g. "Cyber Hub")
+        Set<String> stopWords = Set.of("and", "the", "&", "club", "circle", "phase", "road", "scene", "collective", "tribe", "founders", "builders");
+        String[] tokensA = a.split("[\\s\\-_/&]+");
+        String[] tokensB = b.split("[\\s\\-_/&]+");
+        int matchCount = 0;
+        int meaningfulA = 0;
+        for (String tA : tokensA) {
+            String tClean = tA.replaceAll("[^a-z0-9]", "");
+            if (tClean.length() < 3 || stopWords.contains(tClean)) continue;
+            meaningfulA++;
+            for (String tB : tokensB) {
+                String tbClean = tB.replaceAll("[^a-z0-9]", "");
+                if (tbClean.length() < 3 || stopWords.contains(tbClean)) continue;
+                if (tClean.equals(tbClean) || tClean.contains(tbClean) || tbClean.contains(tClean)) {
+                    matchCount++;
+                    break;
+                }
+            }
+        }
+        return meaningfulA > 0 && matchCount >= Math.min(2, meaningfulA);
     }
 }

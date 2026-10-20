@@ -45,6 +45,7 @@ public class CandidateSearchRepository {
         private LocalDate minBirthDate;
         private LocalDate maxBirthDate;
         private String microCircle;
+        private String userCommunity;
         private List<DietaryPreference> dietaryPreferences;
         private int limit;
     }
@@ -79,14 +80,43 @@ public class CandidateSearchRepository {
             }
         }
 
-        // 5. Spatial bounding box pushdown (utilizes idx_users_lat_lng)
-        if (criteria.getMinLat() != null && criteria.getMaxLat() != null &&
-            criteria.getMinLon() != null && criteria.getMaxLon() != null) {
+        // 5. Spatial bounding box & Micro-Circle ADD-ON pushdown
+        boolean hasSpatial = criteria.getMinLat() != null && criteria.getMaxLat() != null &&
+                             criteria.getMinLon() != null && criteria.getMaxLon() != null;
+        String explicitCircle = (criteria.getMicroCircle() != null && !criteria.getMicroCircle().isBlank())
+                                ? criteria.getMicroCircle().trim().toLowerCase() : null;
+        String userCircle = (criteria.getUserCommunity() != null && !criteria.getUserCommunity().isBlank())
+                            ? criteria.getUserCommunity().trim().toLowerCase() : null;
+
+        if (hasSpatial && (explicitCircle != null || userCircle != null)) {
+            // ADD-ON MATCHING: Candidate is within local radius OR shares the micro-community!
+            jpql.append("AND ((u.latitude IS NULL OR (u.latitude BETWEEN :minLat AND :maxLat AND u.longitude BETWEEN :minLon AND :maxLon)) ");
+            if (explicitCircle != null && userCircle != null && !explicitCircle.equals(userCircle)) {
+                jpql.append("OR (p.microCircle IS NOT NULL AND (LOWER(p.microCircle) LIKE :expLike OR LOWER(p.microCircle) LIKE :userLike))) ");
+                params.put("expLike", "%" + getCoreKeyword(explicitCircle) + "%");
+                params.put("userLike", "%" + getCoreKeyword(userCircle) + "%");
+            } else {
+                String target = explicitCircle != null ? explicitCircle : userCircle;
+                jpql.append("OR (p.microCircle IS NOT NULL AND (LOWER(p.microCircle) = :targetCircle OR LOWER(p.microCircle) LIKE :targetLike))) ");
+                params.put("targetCircle", target);
+                params.put("targetLike", "%" + getCoreKeyword(target) + "%");
+            }
+            params.put("minLat", criteria.getMinLat());
+            params.put("maxLat", criteria.getMaxLat());
+            params.put("minLon", criteria.getMinLon());
+            params.put("maxLon", criteria.getMaxLon());
+        } else if (hasSpatial) {
+            // Standard spatial filter
             jpql.append("AND (u.latitude IS NULL OR (u.latitude BETWEEN :minLat AND :maxLat AND u.longitude BETWEEN :minLon AND :maxLon)) ");
             params.put("minLat", criteria.getMinLat());
             params.put("maxLat", criteria.getMaxLat());
             params.put("minLon", criteria.getMinLon());
             params.put("maxLon", criteria.getMaxLon());
+        } else if (explicitCircle != null || userCircle != null) {
+            String target = explicitCircle != null ? explicitCircle : userCircle;
+            jpql.append("AND (p.microCircle IS NOT NULL AND (LOWER(p.microCircle) = :targetCircle OR LOWER(p.microCircle) LIKE :targetLike)) ");
+            params.put("targetCircle", target);
+            params.put("targetLike", "%" + getCoreKeyword(target) + "%");
         }
 
         // 6. Age boundaries pushdown (utilizes idx_users_discovery & idx_users_active_gender_age)
@@ -94,13 +124,6 @@ public class CandidateSearchRepository {
             jpql.append("AND (u.birthDate IS NULL OR u.birthDate BETWEEN :minBirthDate AND :maxBirthDate) ");
             params.put("minBirthDate", criteria.getMinBirthDate());
             params.put("maxBirthDate", criteria.getMaxBirthDate());
-        }
-
-        // 7. Micro-circle pushdown (utilizes idx_profiles_micro_circle)
-        if (criteria.getMicroCircle() != null && !criteria.getMicroCircle().isBlank()) {
-            jpql.append("AND (LOWER(p.microCircle) = :microCircle OR LOWER(p.microCircle) LIKE :microCircleLike) ");
-            params.put("microCircle", criteria.getMicroCircle().trim().toLowerCase());
-            params.put("microCircleLike", "%" + criteria.getMicroCircle().trim().toLowerCase() + "%");
         }
 
         // 8. Dietary preferences pushdown (utilizes idx_profiles_dietary)
@@ -129,5 +152,17 @@ public class CandidateSearchRepository {
         }
 
         return results;
+    }
+
+    private String getCoreKeyword(String text) {
+        if (text == null || text.isBlank()) return "";
+        String clean = text.toLowerCase().replaceAll("[^a-z0-9 ]", " ").trim();
+        String[] tokens = clean.split("\\s+");
+        for (String t : tokens) {
+            if (t.length() >= 4 && !t.equals("tech") && !t.equals("club") && !t.equals("circle")) {
+                return t;
+            }
+        }
+        return tokens.length > 0 ? tokens[0] : "";
     }
 }
