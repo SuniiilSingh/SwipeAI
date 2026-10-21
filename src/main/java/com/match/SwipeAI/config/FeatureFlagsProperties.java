@@ -39,7 +39,7 @@ public class FeatureFlagsProperties {
     public static class FaceMatch {
         private boolean enabled = true;
         private String serviceUrl = "http://facematch:5000";
-        private double threshold = 0.363;
+        private double threshold = 0.32;
     }
 
     @Data

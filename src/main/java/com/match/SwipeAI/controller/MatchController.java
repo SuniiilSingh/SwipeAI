@@ -169,6 +169,20 @@ public class MatchController {
     }
 
     /**
+     * Cancel a planned date with respect.
+     * Reverts match status to ACTIVE_CHAT, notifies partner, and preserves Rule of 5 slot without negative karma.
+     */
+    @PostMapping("/{id}/cancel-date")
+    public ResponseEntity<MatchDto.MatchResponseDto> cancelDate(
+            @AuthenticationPrincipal UUID userId,
+            @PathVariable UUID id,
+            @RequestBody(required = false) MatchDto.DatePlanRequest request) {
+        String note = request != null ? request.getNote() : "Date cancelled with respect";
+        MatchDto.MatchResponseDto res = matchService.cancelPlannedDate(id, userId, note);
+        return ResponseEntity.ok(res);
+    }
+
+    /**
      * Graceful exit: send polite farewell and close chat to free an active slot.
      */
     @PostMapping("/{id}/graceful-exit")

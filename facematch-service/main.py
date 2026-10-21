@@ -24,8 +24,10 @@ YUNET_PATH = os.path.join(MODEL_DIR, "face_detection_yunet.onnx")
 SFACE_PATH = os.path.join(MODEL_DIR, "face_recognition_sface.onnx")
 NSFW_ONNX_PATH = os.path.join(MODEL_DIR, "open_nsfw.onnx")
 
-# Face recognition threshold (OpenCV SFace standard is 0.363 for cosine similarity)
-DEFAULT_COSINE_THRESHOLD = 0.363
+# Adaptive Multi-Tier Face Recognition Thresholds
+DEFAULT_COSINE_THRESHOLD = 0.32  # Green Tier: High confidence instant match
+AMBER_COSINE_THRESHOLD = 0.20    # Amber Tier: Stylized / High-Fashion / Angles / Studio Shadows
+RED_CATFISH_THRESHOLD = 0.17     # Red Tier: Definite Mismatch / Non-matching stranger
 
 recognizer: Optional[cv2.FaceRecognizerSF] = None
 nsfw_net: Optional[cv2.dnn.Net] = None
@@ -145,7 +147,29 @@ def load_image(image_input: Optional[str], fallback_url: Optional[str] = None) -
     raise ValueError(f"Unsupported image input format: {raw_str[:60]}...")
 
 
-def detect_faces_and_orient(img: np.ndarray, score_threshold: float = 0.35) -> Tuple[np.ndarray, np.ndarray]:
+def filter_valid_faces(faces: Optional[np.ndarray], img_shape: Tuple[int, int], is_selfie: bool = False) -> np.ndarray:
+    """
+    Filter out tiny background false-positives and distant poster faces.
+    In a front-camera selfie, the user's face is prominent (occupies >= 1.5% of total frame area).
+    """
+    if faces is None or len(faces) == 0:
+        return np.array([])
+    h, w = img_shape[:2]
+    total_area = h * w
+    min_area = total_area * 0.015 if is_selfie else total_area * 0.003
+    valid = []
+    for f in faces:
+        fw, fh = float(f[2]), float(f[3])
+        if (fw * fh) >= min_area:
+            valid.append(f)
+    if not valid and len(faces) > 0:
+        # Fallback to largest face
+        sorted_faces = sorted(faces, key=lambda f: float(f[2]) * float(f[3]), reverse=True)
+        return np.array([sorted_faces[0]])
+    return np.array(valid)
+
+
+def detect_faces_and_orient(img: np.ndarray, score_threshold: float = 0.35, is_selfie: bool = False) -> Tuple[np.ndarray, np.ndarray]:
     """
     Detect faces using YuNet with 4-orientation scanning (0°, 90° CW, 270° CW, 180°).
     If a face is detected in any rotation, returns (upright_img, faces).
@@ -159,7 +183,8 @@ def detect_faces_and_orient(img: np.ndarray, score_threshold: float = 0.35) -> T
         YUNET_PATH, "", (w, h), score_threshold=score_threshold, nms_threshold=0.3, top_k=10
     )
     _, faces = detector.detect(img)
-    if faces is not None and len(faces) > 0:
+    faces = filter_valid_faces(faces, (h, w), is_selfie=is_selfie)
+    if len(faces) > 0:
         return img, faces
 
     # Fallback rotations: 90° Clockwise, 90° Counter-Clockwise (270°), 180°
@@ -176,7 +201,8 @@ def detect_faces_and_orient(img: np.ndarray, score_threshold: float = 0.35) -> T
             YUNET_PATH, "", (rw, rh), score_threshold=score_threshold, nms_threshold=0.3, top_k=10
         )
         _, rot_faces = rot_detector.detect(rotated)
-        if rot_faces is not None and len(rot_faces) > 0:
+        rot_faces = filter_valid_faces(rot_faces, (rh, rw), is_selfie=is_selfie)
+        if len(rot_faces) > 0:
             logger.info(f"Detected face after auto-rotation to {rot_name} (dimensions: {rw}x{rh})")
             return rotated, rot_faces
 
@@ -229,8 +255,8 @@ def match_faces(req: MatchRequest):
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Profile photo error: {str(e)}")
 
-    # 3. Detect faces in selfie with multi-orientation support
-    selfie_img, selfie_faces = detect_faces_and_orient(selfie_img, score_threshold=0.35)
+    # 3. Detect faces in selfie with multi-orientation support and prominence filtering
+    selfie_img, selfie_faces = detect_faces_and_orient(selfie_img, score_threshold=0.35, is_selfie=True)
     if len(selfie_faces) == 0:
         logger.warning("Face matching rejected: 0 faces detected in selfie across all 4 orientations.")
         return MatchResponse(
@@ -244,7 +270,7 @@ def match_faces(req: MatchRequest):
         )
 
     # 4. Detect faces in profile photo with multi-orientation support
-    photo_img, photo_faces = detect_faces_and_orient(photo_img, score_threshold=0.35)
+    photo_img, photo_faces = detect_faces_and_orient(photo_img, score_threshold=0.35, is_selfie=False)
     if len(photo_faces) == 0:
         logger.warning("Face matching rejected: 0 faces detected in profile photo across all 4 orientations.")
         return MatchResponse(
@@ -267,6 +293,7 @@ def match_faces(req: MatchRequest):
 
     # 6. Compare with all faces in profile photo to support solo or group photos
     threshold = req.threshold if req.threshold is not None else DEFAULT_COSINE_THRESHOLD
+    amber_threshold = AMBER_COSINE_THRESHOLD
     best_cosine_score = -1.0
     best_l2_score = 999.0
 
@@ -283,22 +310,28 @@ def match_faces(req: MatchRequest):
 
     logger.info(
         f"Face match result: cosine={best_cosine_score:.4f}, L2={best_l2_score:.4f}, "
-        f"threshold={threshold:.3f}, selfie_faces={len(selfie_faces)}, photo_faces={len(photo_faces)}"
+        f"threshold={threshold:.3f}, amber={amber_threshold:.3f}, selfie_faces={len(selfie_faces)}, photo_faces={len(photo_faces)}"
     )
 
-    is_match = best_cosine_score >= threshold
-
-    # Compute normalized confidence percentage (0% - 100%)
-    if is_match:
-        # Map [threshold, 0.75] -> [75.0%, 99.5%]
+    if best_cosine_score >= threshold:
+        # Green Tier: Instant High-Confidence Match
+        is_match = True
         ratio = min(1.0, max(0.0, (best_cosine_score - threshold) / max(0.01, 0.75 - threshold)))
-        confidence_percent = round(75.0 + ratio * 24.5, 1)
+        confidence_percent = round(80.0 + ratio * 19.5, 1)
         resp_status = "SUCCESS"
-        message = "Biometric identity verified! Face matches your profile photos."
+        message = "Biometric identity verified! Face matches your profile photo."
+    elif best_cosine_score >= amber_threshold:
+        # Amber Tier: Stylized / High-Fashion / Angles / Studio Shadows accepted
+        is_match = True
+        ratio = min(1.0, max(0.0, (best_cosine_score - amber_threshold) / max(0.01, threshold - amber_threshold)))
+        confidence_percent = round(70.0 + ratio * 9.5, 1)
+        resp_status = "SUCCESS"
+        message = "Biometric match verified! (High-fashion / stylized pose accepted)"
     else:
-        # Map [0, threshold] -> [0.0%, 65.0%]
-        ratio = max(0.0, best_cosine_score / max(0.01, threshold))
-        confidence_percent = round(min(65.0, ratio * 65.0), 1)
+        # Red Tier: Definite Mismatch / Catfish
+        is_match = False
+        ratio = max(0.0, best_cosine_score / max(0.01, amber_threshold))
+        confidence_percent = round(min(55.0, ratio * 55.0), 1)
         resp_status = "MISMATCH"
         message = "Selfie does not match the person in the profile photo. Please ensure both show your real face."
 
@@ -373,7 +406,7 @@ def match_all_photos(req: BatchMatchRequest):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Selfie error: {str(e)}")
 
     # 2. Detect face in selfie
-    selfie_img, selfie_faces = detect_faces_and_orient(selfie_img, score_threshold=0.35)
+    selfie_img, selfie_faces = detect_faces_and_orient(selfie_img, score_threshold=0.35, is_selfie=True)
     if len(selfie_faces) == 0:
         logger.warning("Batch face match rejected: 0 faces detected in selfie.")
         return BatchMatchResponse(
@@ -396,23 +429,87 @@ def match_all_photos(req: BatchMatchRequest):
     primary_selfie_face = selfie_faces_sorted[0]
     selfie_aligned = recognizer.alignCrop(selfie_img, primary_selfie_face)
     selfie_feature = recognizer.feature(selfie_aligned)
+    selfie_norm = float(np.linalg.norm(selfie_feature))
+    if selfie_norm > 1e-6:
+        selfie_feature = selfie_feature / selfie_norm
 
     threshold = req.threshold if req.threshold is not None else DEFAULT_COSINE_THRESHOLD
+    amber_threshold = AMBER_COSINE_THRESHOLD
+    red_catfish_threshold = RED_CATFISH_THRESHOLD
 
-    slot_results: List[PhotoSlotVerificationResult] = []
-    matched_count = 0
-    mismatch_count = 0
-    lifestyle_count = 0
-    primary_matched = False
+    # Step 1: Decode all photos and detect Primary Anchor Portrait
+    decoded_photos = []
+    primary_anchor_feat = None
+    best_primary_score = -1.0
+    primary_slot_candidate = None
 
     for item in req.photos:
         slot_num = item.slot
         photo_ref = item.photo_url or ""
         try:
             photo_img = load_image(item.photo_base64, item.photo_url)
-            photo_img, photo_faces = detect_faces_and_orient(photo_img, score_threshold=0.35)
+            photo_img, photo_faces = detect_faces_and_orient(photo_img, score_threshold=0.35, is_selfie=False)
+
+            extracted_face_feats = []
+            if len(photo_faces) > 0:
+                for p_face in photo_faces:
+                    p_aligned = recognizer.alignCrop(photo_img, p_face)
+                    p_feat = recognizer.feature(p_aligned)
+                    p_norm = float(np.linalg.norm(p_feat))
+                    if p_norm > 1e-6:
+                        p_feat = p_feat / p_norm
+                    extracted_face_feats.append(p_feat)
+
+                    # Check match against raw selfie
+                    cos = float(recognizer.match(selfie_feature, p_feat, cv2.FaceRecognizerSF_FR_COSINE))
+                    if cos > best_primary_score:
+                        best_primary_score = cos
+                        if cos >= amber_threshold:
+                            primary_anchor_feat = p_feat
+                            primary_slot_candidate = slot_num
+
+            decoded_photos.append({
+                "slot": slot_num,
+                "photo_ref": photo_ref,
+                "photo_faces": photo_faces,
+                "face_feats": extracted_face_feats,
+                "load_error": None,
+            })
         except Exception as e:
             logger.warning(f"Error loading photo slot {slot_num}: {e}")
+            decoded_photos.append({
+                "slot": slot_num,
+                "photo_ref": photo_ref,
+                "photo_faces": np.array([]),
+                "face_feats": [],
+                "load_error": str(e),
+            })
+
+    # Step 2: Compute Fused Anchor Embedding (Selfie + Primary Portrait)
+    if primary_anchor_feat is not None:
+        fused_anchor = (selfie_feature + primary_anchor_feat) / 2.0
+        fused_norm = float(np.linalg.norm(fused_anchor))
+        if fused_norm > 1e-6:
+            fused_anchor = fused_anchor / fused_norm
+        logger.info(
+            f"Fused anchor created from selfie + Photo {primary_slot_candidate} (primary score: {best_primary_score:.4f})"
+        )
+    else:
+        fused_anchor = selfie_feature
+
+    # Step 3: Classify each slot using multi-anchor comparison
+    slot_results: List[PhotoSlotVerificationResult] = []
+    matched_count = 0
+    amber_count = 0
+    mismatch_count = 0
+    lifestyle_count = 0
+    primary_matched = False
+
+    for pd in decoded_photos:
+        slot_num = pd["slot"]
+        photo_ref = pd["photo_ref"]
+
+        if pd["load_error"]:
             slot_results.append(
                 PhotoSlotVerificationResult(
                     slot=slot_num,
@@ -423,13 +520,14 @@ def match_all_photos(req: BatchMatchRequest):
                     similarity_score=0.0,
                     confidence_percent=0.0,
                     faces_detected=0,
-                    message=f"Could not load image: {str(e)}",
+                    message=f"Could not load image: {pd['load_error']}",
                 )
             )
             continue
 
-        if len(photo_faces) == 0:
-            if slot_num == 1:
+        faces_count = len(pd["photo_faces"])
+        if faces_count == 0:
+            if slot_num == 1 and not (best_primary_score >= amber_threshold):
                 slot_results.append(
                     PhotoSlotVerificationResult(
                         slot=slot_num,
@@ -450,7 +548,7 @@ def match_all_photos(req: BatchMatchRequest):
                         slot=slot_num,
                         photo_url=photo_ref,
                         status="LIFESTYLE",
-                        is_match=False,
+                        is_match=True,
                         is_blocked=False,
                         similarity_score=0.0,
                         confidence_percent=0.0,
@@ -460,23 +558,25 @@ def match_all_photos(req: BatchMatchRequest):
                 )
             continue
 
-        # Face(s) detected: compare all faces against primary selfie embedding
-        best_cosine = -1.0
-        for p_face in photo_faces:
-            p_aligned = recognizer.alignCrop(photo_img, p_face)
-            p_feat = recognizer.feature(p_aligned)
-            cos_score = float(recognizer.match(selfie_feature, p_feat, cv2.FaceRecognizerSF_FR_COSINE))
-            if cos_score > best_cosine:
-                best_cosine = cos_score
+        # Compare each face against raw selfie AND fused anchor
+        best_cos = -1.0
+        for p_feat in pd["face_feats"]:
+            cos_selfie = float(recognizer.match(selfie_feature, p_feat, cv2.FaceRecognizerSF_FR_COSINE))
+            cos_fused = float(recognizer.match(fused_anchor, p_feat, cv2.FaceRecognizerSF_FR_COSINE))
+            combined = max(cos_selfie, cos_fused)
+            if combined > best_cos:
+                best_cos = combined
 
-        is_match = best_cosine >= threshold
-        if is_match:
+        logger.info(f"Slot {slot_num} match result: best_cos={best_cos:.4f} (faces={faces_count})")
+
+        if best_cos >= threshold:
+            # Green Tier: High confidence match
             matched_count += 1
-            if slot_num == 1:
+            if slot_num == 1 or slot_num == primary_slot_candidate:
                 primary_matched = True
-            st = "GROUP_MATCHED" if len(photo_faces) > 1 else "MATCHED"
-            ratio = min(1.0, max(0.0, (best_cosine - threshold) / max(0.01, 0.75 - threshold)))
-            conf = round(75.0 + ratio * 24.5, 1)
+            st = "GROUP_MATCHED" if faces_count > 1 else "MATCHED"
+            ratio = min(1.0, max(0.0, (best_cos - threshold) / max(0.01, 0.75 - threshold)))
+            conf = round(80.0 + ratio * 19.5, 1)
             slot_results.append(
                 PhotoSlotVerificationResult(
                     slot=slot_num,
@@ -484,17 +584,53 @@ def match_all_photos(req: BatchMatchRequest):
                     status=st,
                     is_match=True,
                     is_blocked=False,
-                    similarity_score=round(best_cosine, 4),
+                    similarity_score=round(best_cos, 4),
                     confidence_percent=conf,
-                    faces_detected=len(photo_faces),
+                    faces_detected=faces_count,
                     message="Face verified with 3D selfie.",
                 )
             )
+        elif best_cos >= amber_threshold:
+            # Amber Tier: Stylized / High-Fashion / Studio Lighting / Contouring
+            matched_count += 1
+            amber_count += 1
+            if slot_num == 1 or slot_num == primary_slot_candidate:
+                primary_matched = True
+            ratio = min(1.0, max(0.0, (best_cos - amber_threshold) / max(0.01, threshold - amber_threshold)))
+            conf = round(70.0 + ratio * 9.5, 1)
+            slot_results.append(
+                PhotoSlotVerificationResult(
+                    slot=slot_num,
+                    photo_url=photo_ref,
+                    status="STYLED_MATCH",
+                    is_match=True,
+                    is_blocked=False,
+                    similarity_score=round(best_cos, 4),
+                    confidence_percent=conf,
+                    faces_detected=faces_count,
+                    message="Stylized/editorial portrait authenticated.",
+                )
+            )
+        elif best_cos >= red_catfish_threshold and faces_count > 1:
+            # Group photo with partial occlusion or distant face
+            slot_results.append(
+                PhotoSlotVerificationResult(
+                    slot=slot_num,
+                    photo_url=photo_ref,
+                    status="GROUP_UNCERTAIN",
+                    is_match=True,
+                    is_blocked=False,
+                    similarity_score=round(best_cos, 4),
+                    confidence_percent=60.0,
+                    faces_detected=faces_count,
+                    message="Group photo detected with partial resemblance.",
+                )
+            )
         else:
-            # Human face detected but does not match reference selfie -> Catfish / Mismatch
+            # Red Tier: Definite Mismatch / Catfish
             mismatch_count += 1
-            ratio = max(0.0, best_cosine / max(0.01, threshold))
-            conf = round(min(65.0, ratio * 65.0), 1)
+            ratio = max(0.0, best_cos / max(0.01, amber_threshold))
+            conf = round(min(55.0, ratio * 55.0), 1)
             slot_results.append(
                 PhotoSlotVerificationResult(
                     slot=slot_num,
@@ -502,26 +638,42 @@ def match_all_photos(req: BatchMatchRequest):
                     status="MISMATCH",
                     is_match=False,
                     is_blocked=True,
-                    similarity_score=round(best_cosine, 4),
+                    similarity_score=round(best_cos, 4),
                     confidence_percent=conf,
-                    faces_detected=len(photo_faces),
+                    faces_detected=faces_count,
                     message="Face does not match your 3D selfie. Replacement required.",
                 )
             )
 
     # Determine overall profile verification status
-    if mismatch_count > 0:
+    if not primary_matched and (best_primary_score >= amber_threshold):
+        primary_matched = True
+
+    if mismatch_count > 1:
+        overall = "REJECTED_MISMATCH"
+        verified = False
+        summary = f"{mismatch_count} photos do not match your 3D selfie. Please replace mismatched photos."
+    elif mismatch_count == 1 and matched_count >= 2 and primary_matched:
+        # Strong identity confirmation (2+ matched photos including primary) with 1 ambiguous/shadowed photo:
+        # Pass verification provisionally rather than blocking user
+        overall = "VERIFIED"
+        verified = True
+        summary = f"Identity verified! {matched_count} photo(s) authenticated. 1 photo flagged for routine review."
+    elif mismatch_count > 0:
         overall = "REJECTED_MISMATCH"
         verified = False
         summary = f"{mismatch_count} photo(s) do not match your 3D selfie. Please replace mismatched photos."
-    elif not primary_matched and any(r.slot == 1 for r in slot_results):
+    elif not primary_matched:
         overall = "PRIMARY_PHOTO_FAILED"
         verified = False
-        summary = "Your primary photo (Photo 1) must be a clear photo of yourself matching your 3D selfie."
+        summary = "Your primary photo must be a clear photo of yourself matching your 3D selfie."
     elif matched_count >= 1:
         overall = "VERIFIED"
         verified = True
-        summary = f"Identity verified! {matched_count} photo(s) authenticated with 3D selfie."
+        if amber_count > 0:
+            summary = f"Identity verified! {matched_count} photo(s) authenticated (including {amber_count} stylized fashion poses)."
+        else:
+            summary = f"Identity verified! {matched_count} photo(s) authenticated with 3D selfie."
     else:
         overall = "PENDING_PHOTOS"
         verified = False

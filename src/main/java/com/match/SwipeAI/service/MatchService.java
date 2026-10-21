@@ -238,6 +238,29 @@ public class MatchService {
     }
 
     @Transactional
+    public MatchDto.MatchResponseDto cancelPlannedDate(UUID matchId, UUID userId, String note) {
+        Match match = matchRepository.findById(matchId)
+                .orElseThrow(() -> new IllegalArgumentException("Match not found: " + matchId));
+
+        if (!match.getUserAId().equals(userId) && !match.getUserBId().equals(userId)) {
+            throw new org.springframework.security.access.AccessDeniedException("Not authorized");
+        }
+
+        match.setStatus(MatchStatus.ACTIVE_CHAT);
+        match = matchRepository.save(match);
+        log.info("Match {} planned date cancelled by user {}. Status reverted to ACTIVE_CHAT.", matchId, userId);
+
+        UUID otherUserId = match.getUserAId().equals(userId) ? match.getUserBId() : match.getUserAId();
+        User otherUser = userRepository.findById(otherUserId).orElseThrow();
+        Profile otherProfile = profileRepository.findById(otherUserId).orElse(null);
+
+        // Notify other user respectfully
+        pushNotificationService.sendMatchNotification(userId, otherUserId, matchId, "⚠️ Date Cancelled with Respect", "Upcoming date cancelled. Rule of 5 slot preserved.");
+
+        return mapToMatchDto(match, userId, otherUser, otherProfile);
+    }
+
+    @Transactional
     public void gracefulExit(UUID matchId, UUID userId, String farewellNote) {
         Match match = matchRepository.findById(matchId)
                 .orElseThrow(() -> new IllegalArgumentException("Match not found: " + matchId));
