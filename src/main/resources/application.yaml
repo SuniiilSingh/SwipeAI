@@ -64,7 +64,7 @@ app:
     facematch:
       enabled: ${FEATURE_FACEMATCH_ENABLED:true}
       service-url: ${FACEMATCH_SERVICE_URL:http://localhost:5000}
-      threshold: ${FACEMATCH_THRESHOLD:0.32}
+      threshold: ${FACEMATCH_THRESHOLD:0.35}
     twilio:
       enabled: ${FEATURE_TWILIO_ENABLED:true}
       mock-otp: ${FEATURE_MOCK_OTP:true}
