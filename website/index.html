@@ -943,58 +943,273 @@
     /* Photographic Catfish Slider */
     .cf-slider-container {
       position: relative;
-      height: 380px;
+      height: 440px;
       border-radius: 28px;
       overflow: hidden;
       user-select: none;
-      touch-action: pan-y;
+      -webkit-user-select: none;
+      touch-action: none;
       cursor: ew-resize;
       border: 1.5px solid rgba(255, 255, 255, 0.16);
-      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7), 0 0 40px rgba(0, 0, 0, 0.5);
+      background: #0B0D15;
     }
-    .cf-bg-verified {
+    @media (max-width: 640px) {
+      .cf-slider-container {
+        height: 380px;
+      }
+    }
+    .cf-layer {
       position: absolute;
       inset: 0;
-      background: url('/images/hero-profile.jpg') center top / cover no-repeat;
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-end;
-      padding: 24px;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
     }
-    .cf-bg-fake {
-      position: absolute;
-      inset: 0;
-      background: url('https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop&q=40') center top / cover no-repeat;
-      filter: blur(2px) saturate(2) contrast(1.2);
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-end;
-      padding: 24px;
+    .cf-layer-fake {
       clip-path: inset(0 50% 0 0);
+      z-index: 2;
+    }
+    .cf-fake-img-wrap {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+    .cf-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center 20%;
+      display: block;
+    }
+    .cf-img-filtered {
+      filter: blur(3px) saturate(2.2) contrast(1.2) brightness(1.12);
+      transform: scale(1.04);
+      transform-origin: center 20%;
+    }
+    .cf-fake-filter-overlay {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 50% 28%, rgba(255, 180, 210, 0.32) 0%, rgba(255, 90, 140, 0.12) 50%, transparent 75%),
+                  linear-gradient(180deg, rgba(239, 68, 68, 0.15) 0%, transparent 40%, rgba(11, 13, 21, 0.6) 100%);
+      mix-blend-mode: screen;
+      pointer-events: none;
+    }
+    .cf-ai-retouch-hud {
+      position: absolute;
+      top: 18%;
+      left: 50%;
+      transform: translateX(-50%);
+      pointer-events: none;
+    }
+    .cf-hud-box {
+      position: relative;
+      border: 1.5px dashed rgba(239, 68, 68, 0.65);
+      background: rgba(239, 68, 68, 0.12);
+      backdrop-filter: blur(4px);
+      padding: 10px 14px;
+      border-radius: 12px;
+      min-width: 200px;
+      text-align: center;
+      box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+    }
+    .cf-hud-corner {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      border-color: #EF4444;
+      border-style: solid;
+    }
+    .cf-hud-corner.tl { top: -2px; left: -2px; border-width: 2px 0 0 2px; }
+    .cf-hud-corner.tr { top: -2px; right: -2px; border-width: 2px 2px 0 0; }
+    .cf-hud-corner.bl { bottom: -2px; left: -2px; border-width: 0 0 2px 2px; }
+    .cf-hud-corner.br { bottom: -2px; right: -2px; border-width: 0 2px 2px 0; }
+    .cf-hud-label {
+      font-size: 0.72rem;
+      font-weight: 900;
+      color: #FCA5A5;
+      letter-spacing: 0.06em;
+      margin-bottom: 4px;
+    }
+    .cf-hud-stats {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      font-size: 0.64rem;
+      font-weight: 700;
+      color: #FECACA;
+      opacity: 0.9;
+    }
+
+    /* Badges positioned cleanly to avoid collisions */
+    .cf-badge-fake {
+      position: absolute;
+      top: 18px;
+      left: 18px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(239, 68, 68, 0.94);
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      color: #FFF;
+      font-size: 0.82rem;
+      font-weight: 800;
+      padding: 7px 16px;
+      border-radius: 999px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.6), 0 0 15px rgba(239, 68, 68, 0.4);
+      backdrop-filter: blur(12px);
+      white-space: nowrap;
+      pointer-events: auto;
     }
     .cf-badge-verified {
-      align-self: flex-start;
-      background: rgba(16, 185, 129, 0.92);
+      position: absolute;
+      top: 18px;
+      right: 18px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(16, 185, 129, 0.94);
       border: 1px solid rgba(255, 255, 255, 0.4);
       color: #FFF;
-      font-size: 0.85rem;
+      font-size: 0.82rem;
       font-weight: 800;
-      padding: 6px 16px;
+      padding: 7px 16px;
       border-radius: 999px;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.5);
-      backdrop-filter: blur(10px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.6), 0 0 15px rgba(16, 185, 129, 0.4);
+      backdrop-filter: blur(12px);
+      white-space: nowrap;
+      pointer-events: auto;
     }
-    .cf-badge-fake {
-      align-self: flex-start;
-      background: rgba(239, 68, 68, 0.92);
-      border: 1px solid rgba(255, 255, 255, 0.4);
-      color: #FFF;
-      font-size: 0.85rem;
+    .cf-status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+    .cf-status-dot.red {
+      background: #FFF;
+      box-shadow: 0 0 8px #FFF;
+    }
+    .cf-status-dot.green {
+      background: #FFF;
+      box-shadow: 0 0 8px #FFF;
+    }
+
+    /* Draggable Handle */
+    .cf-handle {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 50%;
+      width: 3px;
+      background: #FFFFFF;
+      transform: translateX(-50%);
+      box-shadow: 0 0 18px rgba(255, 255, 255, 0.95), 0 0 35px rgba(255, 56, 92, 0.7);
+      z-index: 10;
+      touch-action: none;
+      pointer-events: none;
+    }
+    .cf-handle-knob {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      background: #FFFFFF;
+      color: #0B0D15;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 0.95rem;
+      letter-spacing: -1px;
+      box-shadow: 0 4px 25px rgba(0,0,0,0.7), 0 0 20px rgba(255, 255, 255, 0.5);
+      border: 3px solid #FF385C;
+      cursor: ew-resize;
+      pointer-events: auto;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .cf-handle-knob:hover {
+      transform: translate(-50%, -50%) scale(1.1);
+      box-shadow: 0 6px 30px rgba(0,0,0,0.8), 0 0 30px rgba(255, 56, 92, 0.8);
+    }
+
+    /* Bottom Comparison Pills */
+    .cf-bottom-pills {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 18px;
+    }
+    @media (max-width: 640px) {
+      .cf-bottom-pills {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+      .cf-badge-fake, .cf-badge-verified {
+        font-size: 0.72rem;
+        padding: 5px 12px;
+      }
+      .cf-hud-box {
+        min-width: 160px;
+        padding: 6px 10px;
+      }
+      .cf-hud-stats {
+        flex-direction: column;
+        gap: 2px;
+      }
+    }
+    .cf-pill-col {
+      padding: 18px 20px;
+      border-radius: 20px;
+      backdrop-filter: blur(12px);
+    }
+    .cf-pill-col.bad {
+      background: rgba(239, 68, 68, 0.08);
+      border: 1px solid rgba(239, 68, 68, 0.25);
+    }
+    .cf-pill-col.good {
+      background: rgba(16, 185, 129, 0.08);
+      border: 1px solid rgba(16, 185, 129, 0.28);
+    }
+    .cf-pill-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .cf-pill-tag {
+      font-size: 0.75rem;
       font-weight: 800;
-      padding: 6px 16px;
+      letter-spacing: 0.06em;
+    }
+    .cf-pill-col.bad .cf-pill-tag { color: #FCA5A5; }
+    .cf-pill-col.good .cf-pill-tag { color: #6EE7B7; }
+    .cf-pill-risk {
+      font-size: 0.75rem;
+      font-weight: 800;
+      color: #EF4444;
+      background: rgba(239, 68, 68, 0.15);
+      padding: 3px 8px;
       border-radius: 999px;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.5);
-      backdrop-filter: blur(10px);
+    }
+    .cf-pill-guarantee {
+      font-size: 0.75rem;
+      font-weight: 800;
+      color: #10B981;
+      background: rgba(16, 185, 129, 0.15);
+      padding: 3px 8px;
+      border-radius: 999px;
+    }
+    .cf-pill-desc {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.5;
+      margin: 0;
     }
 
     /* Hyper-Local Neighborhood Radar */
@@ -2647,24 +2862,77 @@
   </section>
 
   <!-- Catfish vs BlunderR Photographic Interactive Slider -->
-  <section class="cf-section" style="max-width:840px;margin:0 auto 70px;padding:0 24px;">
+  <section class="cf-section" style="max-width:860px;margin:0 auto 70px;padding:0 24px;">
     <div class="section-header" style="padding-top:0;">
       <div class="section-badge">🎣 Spot The Difference</div>
-      <h2 class="section-title">Catfish vs. 100% 3D Verified</h2>
-      <p class="section-subtitle">Drag the handle to reveal how other dating apps hide behind AI filters, while BlunderR guarantees 100% authentic humans.</p>
+      <h2 class="section-title">AI Filter Trap vs. 100% 3D Verified</h2>
+      <p class="section-subtitle">Drag the handle to reveal how other dating apps hide behind AI beauty filters, while BlunderR guarantees 100% authentic humans.</p>
     </div>
+
     <div id="cfSlider" class="cf-slider-container">
-      <!-- Base Layer: 100% Verified BlunderR Human -->
-      <div class="cf-bg-verified">
-        <div class="cf-badge-verified">🛡️ BlunderR: 100% 3D Biometric Verified Human • Indiranagar</div>
+      <!-- Base Layer: 100% Verified BlunderR Human (Right) -->
+      <div class="cf-layer cf-layer-verified">
+        <picture>
+          <source srcset="/images/hero-profile.webp" type="image/webp">
+          <img src="/images/hero-profile.jpg" class="cf-img" alt="BlunderR 100% Verified Authentic Human" onerror="this.onerror=null; this.src='/downloads/blunderr-model-pink-offshoulder.jpg';" />
+        </picture>
+        <div class="cf-badge-verified">
+          <span class="cf-status-dot green"></span>
+          <span>🛡️ BlunderR: 100% 3D Verified Human</span>
+        </div>
       </div>
-      <!-- Top Draggable Layer: Typical Catfish / AI filtered bot -->
-      <div id="cfTop" class="cf-bg-fake">
-        <div class="cf-badge-fake">❌ Typical Dating App: Stolen Photos, AI Filters & Bots</div>
+
+      <!-- Top Draggable Layer: Typical Catfish / AI filtered bot (Left) -->
+      <div id="cfTop" class="cf-layer cf-layer-fake">
+        <div class="cf-fake-img-wrap">
+          <picture>
+            <source srcset="/images/hero-profile.webp" type="image/webp">
+            <img src="/images/hero-profile.jpg" class="cf-img cf-img-filtered" alt="Other Dating Apps: AI Filter / Catfish" onerror="this.onerror=null; this.src='/downloads/blunderr-model-pink-offshoulder.jpg';" />
+          </picture>
+          <div class="cf-fake-filter-overlay"></div>
+          <!-- AI Face Retouch HUD Target -->
+          <div class="cf-ai-retouch-hud">
+            <div class="cf-hud-box">
+              <span class="cf-hud-corner tl"></span><span class="cf-hud-corner tr"></span>
+              <span class="cf-hud-corner bl"></span><span class="cf-hud-corner br"></span>
+              <div class="cf-hud-label">⚠️ AI BEAUTY RETOUCH: +98%</div>
+              <div class="cf-hud-stats">
+                <span>Skin Smooth: MAX</span>
+                <span>Pores: ERASED</span>
+                <span>Liveness: UNVERIFIED</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="cf-badge-fake">
+          <span class="cf-status-dot red"></span>
+          <span>❌ Other Apps: AI Face Tune & Filter</span>
+        </div>
       </div>
+
       <!-- Draggable Split Handle -->
-      <div id="cfHandle" style="position:absolute;top:0;bottom:0;left:50%;width:4px;background:#FFF;transform:translateX(-50%);box-shadow:0 0 16px rgba(255,255,255,0.8);z-index:10;">
-        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:46px;height:46px;border-radius:50%;background:#FFF;color:#0B0D15;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1.15rem;box-shadow:0 4px 20px rgba(0,0,0,0.6);cursor:ew-resize;">⇆</div>
+      <div id="cfHandle" class="cf-handle">
+        <div class="cf-handle-knob" title="Drag left or right">
+          <span>❮ ❯</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Comparison Pills -->
+    <div class="cf-bottom-pills">
+      <div class="cf-pill-col bad">
+        <div class="cf-pill-header">
+          <span class="cf-pill-tag">OTHER DATING APPS</span>
+          <span class="cf-pill-risk">43% Catfish Risk</span>
+        </div>
+        <p class="cf-pill-desc">Heavy porcelain blur, synthetic skin smoothing, stolen or outdated gallery photos, zero live camera checks.</p>
+      </div>
+      <div class="cf-pill-col good">
+        <div class="cf-pill-header">
+          <span class="cf-pill-tag">BLUNDERR GUARANTEE</span>
+          <span class="cf-pill-guarantee">100% Real Humans</span>
+        </div>
+        <p class="cf-pill-desc">Real camera 3D biometric liveness, authentic skin texture & pores, DigiLocker verified identity. Who you see is who you meet.</p>
       </div>
     </div>
   </section>
@@ -3428,14 +3696,32 @@
         card.style.transform='perspective(900px) rotateY('+(x*10)+'deg) rotateX('+(-y*10)+'deg)';});
       wrap.addEventListener('mouseleave',function(){card.style.transform='';});
     }
-    // Catfish slider
-    var sl=document.getElementById('cfSlider'),top=document.getElementById('cfTop'),h=document.getElementById('cfHandle');
-    if(sl){var drag=false;
-      function set(x){var r=sl.getBoundingClientRect();var p=Math.max(6,Math.min(94,(x-r.left)/r.width*100));
-        top.style.clipPath='inset(0 '+(100-p)+'% 0 0)';h.style.left=p+'%';}
-      sl.addEventListener('pointerdown',function(e){drag=true;sl.setPointerCapture(e.pointerId);set(e.clientX);});
-      sl.addEventListener('pointermove',function(e){if(drag)set(e.clientX);});
-      sl.addEventListener('pointerup',function(){drag=false;});
+    // Catfish vs 3D Verified slider
+    var sl = document.getElementById('cfSlider'),
+        topLayer = document.getElementById('cfTop'),
+        h = document.getElementById('cfHandle');
+    if (sl && topLayer && h) {
+      var drag = false;
+      function setSliderPos(clientX) {
+        var r = sl.getBoundingClientRect();
+        var p = Math.max(5, Math.min(95, ((clientX - r.left) / r.width) * 100));
+        topLayer.style.clipPath = 'inset(0 ' + (100 - p) + '% 0 0)';
+        h.style.left = p + '%';
+      }
+      function stopDrag() {
+        drag = false;
+      }
+      sl.addEventListener('pointerdown', function(e) {
+        drag = true;
+        try { sl.setPointerCapture(e.pointerId); } catch(err){}
+        setSliderPos(e.clientX);
+      });
+      sl.addEventListener('pointermove', function(e) {
+        if (drag) setSliderPos(e.clientX);
+      });
+      sl.addEventListener('pointerup', stopDrag);
+      sl.addEventListener('pointercancel', stopDrag);
+      window.addEventListener('pointerup', stopDrag);
     }
   })();
   </script>
