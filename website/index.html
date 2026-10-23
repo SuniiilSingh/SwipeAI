@@ -50,17 +50,32 @@
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     "name": "BlunderR",
-    "alternateName": ["blunderr", "blunderr.in", "Blunderr App"],
+    "alternateName": ["blunderr", "blunderr.in", "Blunderr App", "Blunder Dating App"],
     "applicationCategory": "LifestyleApplication",
     "operatingSystem": "Android, iOS, Web",
     "url": "https://blunderr.in",
     "image": "https://blunderr.in/favicon-512x512.png",
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": "4.9",
+      "reviewCount": "1480",
+      "bestRating": "5",
+      "worstRating": "1"
+    },
     "offers": {
       "@type": "Offer",
       "price": "0",
       "priceCurrency": "INR"
     },
     "description": "Stop wasting time on fake profiles. BlunderR is India's 100% face-verified dating app for real singles. 72h real dates, zero ghosting, zero penpals. Try live free.",
+    "featureList": [
+      "3D Biometric Liveness Verification",
+      "Anti-Ghosting 5-Match Limit",
+      "72-Hour Real Date Countdown Clock",
+      "SafeDate Shield & Partner Venues",
+      "15s Encrypted Virtual Chai Voice Notes",
+      "Hyper-Local Neighborhood Circles in Bengaluru, Mumbai, Delhi-NCR, Pune"
+    ],
     "publisher": {
       "@type": "Organization",
       "name": "BlunderR",
@@ -74,6 +89,64 @@
       "email": "admin@blunderr.in",
       "sameAs": ["https://www.instagram.com/blunderr.in/"]
     }
+  }
+  </script>
+
+  <!-- JSON-LD: FAQPage Schema for Google Search Rich Snippet Expansion -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Which is the best dating app in India with real verified profiles?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "BlunderR is India's premier verified dating app engineered to eliminate catfish profiles and bot accounts. Every single member must pass a real-time 3D Biometric Liveness camera check and optional DigiLocker ID verification before swiping, guaranteeing 100% authentic human profiles."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How does BlunderR prevent fake profiles and catfish photos?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "BlunderR uses on-device 3D Biometric Liveness detection. Users cannot upload stolen gallery photos or AI-altered portraits without a live anti-spoofing facial camera verification that matches their profile photos in real time."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What is the 72-Hour Real Date Countdown Clock?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "To stop endless texting and penpal traps, when two verified singles match on BlunderR, a 72-hour countdown timer begins. Within 72 hours, both members choose a SafeDate partner cafe or schedule a call, turning matches into genuine real-world dates."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How does BlunderR eliminate ghosting on dating apps?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "BlunderR enforces an Anti-Ghosting Matrix with a strict 5-match active limit. Members cannot collect 200 inactive matches; to swipe on new people, you must actively chat, date, or gracefully unmatch, keeping conversations responsive and authentic."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Is BlunderR safe for women in India?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. BlunderR includes SafeDate Shield™ with verified public partner venues (Third Wave Coffee, Blue Tokai, Araku, Toit), emergency contact pinging, screenshot blocking, and 15-second encrypted Virtual Chai voice notes so women never need to give away their private mobile number or social media handles."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Can I use BlunderR directly on the web without installing an app?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes! BlunderR features a full-featured Instant Web App at blunderr.in/webview. You can swipe, match, and chat instantly in Safari, Chrome, or any mobile browser with zero download required."
+        }
+      }
+    ]
   }
   </script>
   
@@ -3167,23 +3240,33 @@
     </div>
 
     <div class="faq-item active" onclick="toggleFaq(this)">
+      <div class="faq-q">Which is the best dating app in India with real verified profiles? <span>▾</span></div>
+      <div class="faq-a">BlunderR is India's premier verified dating app engineered to eliminate catfish profiles and bot accounts. Every single member must pass a real-time 3D Biometric Liveness camera check and optional DigiLocker ID verification before swiping, guaranteeing 100% authentic human profiles.</div>
+    </div>
+
+    <div class="faq-item" onclick="toggleFaq(this)">
+      <div class="faq-q">How does BlunderR prevent fake profiles and catfish photos? <span>▾</span></div>
+      <div class="faq-a">BlunderR uses on-device 3D Biometric Liveness detection. Users cannot upload stolen gallery photos or AI-altered portraits without a live anti-spoofing facial camera verification that matches their profile photos in real time.</div>
+    </div>
+
+    <div class="faq-item" onclick="toggleFaq(this)">
+      <div class="faq-q">What is the 72-Hour Real Date Countdown Clock? <span>▾</span></div>
+      <div class="faq-a">To stop endless texting and penpal traps, when two verified singles match on BlunderR, a 72-hour countdown timer begins. Within 72 hours, both members choose a SafeDate partner cafe or schedule a call, turning matches into genuine real-world dates.</div>
+    </div>
+
+    <div class="faq-item" onclick="toggleFaq(this)">
+      <div class="faq-q">How does BlunderR eliminate ghosting on dating apps? <span>▾</span></div>
+      <div class="faq-a">BlunderR enforces an Anti-Ghosting Matrix with a strict 5-match active limit. Members cannot collect 200 inactive matches; to swipe on new people, you must actively chat, date, or gracefully unmatch, keeping conversations responsive and authentic.</div>
+    </div>
+
+    <div class="faq-item" onclick="toggleFaq(this)">
+      <div class="faq-q">Is BlunderR safe for women in India? <span>▾</span></div>
+      <div class="faq-a">Yes. BlunderR includes SafeDate Shield™ with verified public partner venues (Third Wave Coffee, Blue Tokai, Araku, Toit), emergency contact pinging, screenshot blocking, and 15-second encrypted Virtual Chai voice notes so women never need to give away their private mobile number or social media handles.</div>
+    </div>
+
+    <div class="faq-item" onclick="toggleFaq(this)">
       <div class="faq-q">Can I use BlunderR directly on the web without installing an app? <span>▾</span></div>
-      <div class="faq-a">Yes! Click <strong>"Open Web View"</strong> anywhere on this page to launch the complete interactive experience directly in Chrome, Safari, or Edge. You can swipe profiles, join Micro-Circles, match, and chat instantly.</div>
-    </div>
-
-    <div class="faq-item" onclick="toggleFaq(this)">
-      <div class="faq-q">How does 3D Biometric Liveness prevent catfish profiles? <span>▾</span></div>
-      <div class="faq-a">During onboarding, BlunderR conducts a fast 3-second 3D liveness scan to verify that the person behind the camera is genuine and matches their uploaded photos. Zero AI deepfakes, bots, or stolen Instagram photos are permitted.</div>
-    </div>
-
-    <div class="faq-item" onclick="toggleFaq(this)">
-      <div class="faq-q">What are Micro-Community Circles? <span>▾</span></div>
-      <div class="faq-a">Circles allow you to filter candidates by your actual hyper-local lifestyle—such as Bengaluru Tech Founders, Bandra Creatives, or DMRC Yellow Line commuters—ensuring you meet people who share your daily wavelength.</div>
-    </div>
-
-    <div class="faq-item" onclick="toggleFaq(this)">
-      <div class="faq-q">How do I download the Android and iOS apps? <span>▾</span></div>
-      <div class="faq-a">You can tap <strong>"Android APK"</strong> to download the Android package directly, or tap <strong>"Download for iOS"</strong> to download the official iOS app package straight to your Apple device.</div>
+      <div class="faq-a">Yes! Click <strong>"Open Web View"</strong> anywhere on this page to launch the complete interactive experience directly in Chrome, Safari, or Edge. You can swipe profiles, join Micro-Circles, match, and chat instantly with zero download required.</div>
     </div>
   </section>
 
