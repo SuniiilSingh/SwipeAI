@@ -1137,7 +1137,7 @@
     /* Footer */
     footer {
       border-top: 1px solid var(--card-border);
-      padding: 50px 24px 40px;
+      padding: 60px 24px calc(110px + env(safe-area-inset-bottom, 24px));
       text-align: center;
       color: var(--muted);
       font-size: 0.94rem;
@@ -1145,11 +1145,41 @@
       z-index: 10;
     }
     footer .legal-links {
-      margin-top: 16px;
+      margin-top: 24px;
       display: flex;
       justify-content: center;
-      gap: 24px;
+      gap: 10px;
       flex-wrap: wrap;
+    }
+    .legal-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 18px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 999px;
+      color: #E2E8F0;
+      font-size: 0.88rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+    .legal-pill:hover {
+      background: rgba(255, 56, 92, 0.15);
+      border-color: rgba(255, 56, 92, 0.4);
+      color: #FFF;
+      transform: translateY(-2px);
+    }
+    .legal-pill.highlight {
+      background: rgba(255, 56, 92, 0.12);
+      border-color: rgba(255, 56, 92, 0.35);
+      color: #FFA4B6;
+    }
+    .legal-pill.highlight:hover {
+      background: rgba(255, 56, 92, 0.25);
+      border-color: rgba(255, 56, 92, 0.6);
+      color: #FFF;
     }
     footer a {
       color: var(--muted);
@@ -2028,9 +2058,6 @@
     <a href="/" class="brand-wordmark">BLUNDER<span class="flip-r">R</span></a>
 
     <div class="nav-right">
-      <a href="/safety" class="nav-link">🛡️ Safety</a>
-      <a href="/privacy" class="nav-link">Privacy</a>
-      <button onclick="openContactModal()" class="nav-link" style="background:none;border:none;cursor:pointer;font-family:inherit;font-size:inherit;">Contact</button>
       <a href="/webview" class="btn-nav-web">🚀 Open Web View</a>
       
       <!-- Android & Apple Download Buttons -->
@@ -2716,12 +2743,12 @@
       📍 Headquartered in <strong>New Delhi, India</strong> &nbsp;•&nbsp; ✉️ Official Desk: <a href="mailto:admin@blunderr.in" style="color:var(--coral); font-weight:700;">admin@blunderr.in</a>
     </p>
     <div class="legal-links">
-      <a href="https://www.instagram.com/blunderr.in/" target="_blank" rel="noopener noreferrer" style="color:#FF385C; font-weight:700;">📸 Instagram</a>
-      <a href="/contact">Contact Us & Grievance</a>
-      <a href="/privacy">Privacy Policy</a>
-      <a href="/terms">Terms of Service</a>
-      <a href="/safety">Trust & Safety Guidelines</a>
-      <a href="/delete-account">Delete Account</a>
+      <a href="/safety" class="legal-pill highlight">🛡️ Safety Guidelines</a>
+      <a href="/privacy" class="legal-pill">🔒 Privacy Policy</a>
+      <a href="javascript:void(0)" onclick="openContactModal()" class="legal-pill highlight">✉️ Contact & Grievance</a>
+      <a href="/terms" class="legal-pill">📜 Terms of Service</a>
+      <a href="/delete-account" class="legal-pill">🗑️ Delete Account</a>
+      <a href="https://www.instagram.com/blunderr.in/" target="_blank" rel="noopener noreferrer" class="legal-pill">📸 Instagram</a>
     </div>
   </footer>
 
@@ -3082,9 +3109,18 @@
     }
 
     const mobileStickyBar = document.getElementById('mobileStickyBar');
+    const footerElem = document.querySelector('footer');
     if (mobileStickyBar) {
       window.addEventListener('scroll', () => {
-        if (window.scrollY > 380) {
+        const scrollPos = window.scrollY;
+        let nearFooter = false;
+        if (footerElem) {
+          const rect = footerElem.getBoundingClientRect();
+          if (rect.top <= (window.innerHeight - 30)) {
+            nearFooter = true;
+          }
+        }
+        if (scrollPos > 380 && !nearFooter) {
           mobileStickyBar.classList.add('visible');
         } else {
           mobileStickyBar.classList.remove('visible');
