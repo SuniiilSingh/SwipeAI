@@ -931,6 +931,187 @@
     .compare-table td.muted-col {
       color: #64748B;
     }
+    .compare-table td.bad-col {
+      color: #FDA4AF;
+      background: rgba(239, 68, 68, 0.05);
+    }
+    .compare-table td.good-col {
+      color: #6EE7B7;
+      font-weight: 700;
+    }
+
+    /* Photographic Catfish Slider */
+    .cf-slider-container {
+      position: relative;
+      height: 380px;
+      border-radius: 28px;
+      overflow: hidden;
+      user-select: none;
+      touch-action: pan-y;
+      cursor: ew-resize;
+      border: 1.5px solid rgba(255, 255, 255, 0.16);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7);
+    }
+    .cf-bg-verified {
+      position: absolute;
+      inset: 0;
+      background: url('/images/hero-profile.jpg') center top / cover no-repeat;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 24px;
+    }
+    .cf-bg-fake {
+      position: absolute;
+      inset: 0;
+      background: url('https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop&q=40') center top / cover no-repeat;
+      filter: blur(2px) saturate(2) contrast(1.2);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 24px;
+      clip-path: inset(0 50% 0 0);
+    }
+    .cf-badge-verified {
+      align-self: flex-start;
+      background: rgba(16, 185, 129, 0.92);
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      color: #FFF;
+      font-size: 0.85rem;
+      font-weight: 800;
+      padding: 6px 16px;
+      border-radius: 999px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+      backdrop-filter: blur(10px);
+    }
+    .cf-badge-fake {
+      align-self: flex-start;
+      background: rgba(239, 68, 68, 0.92);
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      color: #FFF;
+      font-size: 0.85rem;
+      font-weight: 800;
+      padding: 6px 16px;
+      border-radius: 999px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+      backdrop-filter: blur(10px);
+    }
+
+    /* Hyper-Local Neighborhood Radar */
+    .radar-section {
+      max-width: 1080px;
+      margin: 70px auto 40px;
+      padding: 0 24px;
+      position: relative;
+      z-index: 10;
+    }
+    .radar-card {
+      background: linear-gradient(145deg, rgba(18, 22, 38, 0.95), rgba(10, 13, 22, 0.98));
+      border: 1.5px solid rgba(255, 56, 92, 0.35);
+      border-radius: 32px;
+      padding: 38px 32px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7), 0 0 40px rgba(255, 56, 92, 0.12);
+      backdrop-filter: blur(18px);
+    }
+    .city-pills-row {
+      display: flex;
+      gap: 12px;
+      margin: 24px 0 20px;
+      flex-wrap: wrap;
+    }
+    .city-pill-btn {
+      padding: 10px 22px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      color: #CBD5E1;
+      font-weight: 700;
+      font-size: 0.92rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+    .city-pill-btn:hover {
+      background: rgba(255, 56, 92, 0.15);
+      border-color: rgba(255, 56, 92, 0.4);
+      color: #FFF;
+    }
+    .city-pill-btn.active {
+      background: var(--coral);
+      color: #FFF;
+      border-color: var(--coral);
+      box-shadow: 0 4px 16px rgba(255, 56, 92, 0.45);
+    }
+    .radar-stats-box {
+      background: rgba(14, 18, 32, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 20px;
+      padding: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 18px;
+    }
+    .radar-pulse-dot {
+      display: inline-block;
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      background: #10B981;
+      box-shadow: 0 0 12px #10B981;
+      margin-right: 8px;
+      animation: pulseRadar 1.8s infinite;
+    }
+    @keyframes pulseRadar {
+      0% { transform: scale(0.9); opacity: 0.8; }
+      50% { transform: scale(1.35); opacity: 1; }
+      100% { transform: scale(0.9); opacity: 0.8; }
+    }
+
+    /* Vibe Micro-Quiz inside Cosmic Calculator */
+    .vibe-quiz-box {
+      background: rgba(12, 16, 28, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 22px;
+      padding: 24px;
+      margin-bottom: 26px;
+    }
+    .vibe-step-title {
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: #E2E8F0;
+      margin-bottom: 12px;
+    }
+    .vibe-options-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .vibe-opt-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      color: #E2E8F0;
+      padding: 12px 14px;
+      border-radius: 14px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+    .vibe-opt-btn:hover {
+      background: rgba(255, 56, 92, 0.15);
+      border-color: rgba(255, 56, 92, 0.4);
+    }
+    .vibe-opt-btn.active {
+      background: linear-gradient(135deg, var(--coral), #E11D48);
+      border-color: var(--coral);
+      color: #FFF;
+      box-shadow: 0 4px 16px rgba(255, 56, 92, 0.4);
+    }
 
     /* Features Section Below */
     .section-header {
@@ -2428,65 +2609,96 @@
   <!-- Comparison Section: Why BlunderR vs Others -->
   <section class="compare-section">
     <div class="section-header" style="padding-top:0;">
-      <div class="section-badge">✨ Groundbreaking Difference</div>
-      <h2 class="section-title">Built Different for Real Resonance</h2>
-      <p class="section-subtitle">Dating in India shouldn't feel like an endless swipe casino. Here is why BlunderR wins.</p>
+      <div class="section-badge">⚡ Groundbreaking Difference</div>
+      <h2 class="section-title">Dating Was Broken. We Built the Fix.</h2>
+      <p class="section-subtitle">Dating in India shouldn't feel like an endless swipe casino of fake profiles, silent ghosting, and dead-end texting penpals.</p>
     </div>
 
     <table class="compare-table">
       <thead>
         <tr>
-          <th>Key Experience</th>
-          <th class="highlight-col">⚡ BlunderR</th>
-          <th>Traditional Dating Apps</th>
+          <th>The Old Dating App Nightmare 😴</th>
+          <th class="highlight-col">⚡ The BlunderR Guarantee</th>
         </tr>
       </thead>
       <tbody>
         <tr>
-          <td>Catfish & Bot Protection</td>
-          <td class="highlight-col">🛡️ 100% 3D Biometric Liveness Face Verified</td>
-          <td class="muted-col">40%+ fake bots, catfish & stolen photos</td>
+          <td class="bad-col">❌ 40%+ fake bots, AI beauty filters & stolen photos</td>
+          <td class="highlight-col good-col">🛡️ 100% 3D Biometric Liveness Face Verified</td>
         </tr>
         <tr>
-          <td>Daily Swipe Fatigue</td>
-          <td class="highlight-col">🎯 25 High-Intent Daily Cap (Quality First)</td>
-          <td class="muted-col">Endless mindless swipe casino addiction</td>
+          <td class="bad-col">❌ Collecting 200 silent matches that never speak (Ghosting)</td>
+          <td class="highlight-col good-col">🔒 Strict 5-Match Limit (Zero Ghosting Guaranteed)</td>
         </tr>
         <tr>
-          <td>Icebreakers & Spark</td>
-          <td class="highlight-col">☕ 15s Encrypted Virtual Chai Voice Notes</td>
-          <td class="muted-col">Dead conversations and ghosted "Hey" messages</td>
+          <td class="bad-col">❌ Texting for 3 weeks that never leads to a real date</td>
+          <td class="highlight-col good-col">⚡ 72-Hour Real Date Countdown Clock</td>
         </tr>
         <tr>
-          <td>Emotional Synergy</td>
-          <td class="highlight-col">✨ Vedic Cosmic Synastry + Psychological Desires</td>
-          <td class="muted-col">Surface-level photos with zero wavelength match</td>
+          <td class="bad-col">❌ Awkward phone number sharing with strangers</td>
+          <td class="highlight-col good-col">☕ 15s Encrypted Virtual Chai Voice Calls</td>
         </tr>
         <tr>
-          <td>Neighborhood Tribes</td>
-          <td class="highlight-col">🏙️ Filter by Koramangala, Indiranagar, Bandra, etc.</td>
-          <td class="muted-col">Random city-wide radius noise</td>
+          <td class="bad-col">❌ Forced 100MB download before seeing anything</td>
+          <td class="highlight-col good-col">🚀 Instant Live Web App (Zero Install Required)</td>
         </tr>
       </tbody>
     </table>
   </section>
 
-
-  <!-- Catfish vs BlunderR slider -->
-  <section class="cf-section" style="max-width:760px;margin:0 auto 60px;padding:0 20px;">
+  <!-- Catfish vs BlunderR Photographic Interactive Slider -->
+  <section class="cf-section" style="max-width:840px;margin:0 auto 70px;padding:0 24px;">
     <div class="section-header" style="padding-top:0;">
       <div class="section-badge">🎣 Spot The Difference</div>
-      <h2 class="section-title">Catfish vs BlunderR</h2>
-      <p class="section-subtitle">Drag the handle to reveal what a verified profile looks like.</p>
+      <h2 class="section-title">Catfish vs. 100% 3D Verified</h2>
+      <p class="section-subtitle">Drag the handle to reveal how other dating apps hide behind AI filters, while BlunderR guarantees 100% authentic humans.</p>
     </div>
-    <div id="cfSlider" style="position:relative;height:300px;border-radius:24px;overflow:hidden;user-select:none;touch-action:pan-y;cursor:ew-resize;border:1px solid rgba(255,255,255,.12);">
-      <div style="position:absolute;inset:0;background:linear-gradient(135deg,#10b981,#6366f1);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;text-align:center;padding:20px;">
-        <div style="font-size:3rem">🛡️</div><div style="font-size:1.4rem;font-weight:800">BlunderR Verified</div>
-        <div style="opacity:.9;margin-top:6px">3D liveness face check • Real human • Zero catfish</div></div>
-      <div id="cfTop" style="position:absolute;inset:0;background:linear-gradient(135deg,#334155,#0f172a);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#cbd5e1;text-align:center;padding:20px;clip-path:inset(0 50% 0 0);">
-        <div style="font-size:3rem">🎭</div><div style="font-size:1.4rem;font-weight:800">Typical Dating App</div>
-        <div style="opacity:.8;margin-top:6px">Stolen photos • Bots • 40%+ fake profiles</div></div>
-      <div id="cfHandle" style="position:absolute;top:0;bottom:0;left:50%;width:4px;background:#fff;transform:translateX(-50%);"><div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:44px;height:44px;border-radius:50%;background:#fff;color:#111;display:flex;align-items:center;justify-content:center;font-weight:800;box-shadow:0 4px 16px rgba(0,0,0,.4)">⇆</div></div>
+    <div id="cfSlider" class="cf-slider-container">
+      <!-- Base Layer: 100% Verified BlunderR Human -->
+      <div class="cf-bg-verified">
+        <div class="cf-badge-verified">🛡️ BlunderR: 100% 3D Biometric Verified Human • Indiranagar</div>
+      </div>
+      <!-- Top Draggable Layer: Typical Catfish / AI filtered bot -->
+      <div id="cfTop" class="cf-bg-fake">
+        <div class="cf-badge-fake">❌ Typical Dating App: Stolen Photos, AI Filters & Bots</div>
+      </div>
+      <!-- Draggable Split Handle -->
+      <div id="cfHandle" style="position:absolute;top:0;bottom:0;left:50%;width:4px;background:#FFF;transform:translateX(-50%);box-shadow:0 0 16px rgba(255,255,255,0.8);z-index:10;">
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:46px;height:46px;border-radius:50%;background:#FFF;color:#0B0D15;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1.15rem;box-shadow:0 4px 20px rgba(0,0,0,0.6);cursor:ew-resize;">⇆</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Hyper-Local Neighborhood Radar Section -->
+  <section class="radar-section">
+    <div class="radar-card">
+      <div class="section-header" style="padding-top:0;">
+        <div class="section-badge">🏙️ Live Connection Radar</div>
+        <h2 class="section-title">Hyper-Local Neighborhood Circles</h2>
+        <p class="section-subtitle">Real connections happen in your neighborhood. Discover verified singles and SafeDate partner venues active in your city right now.</p>
+      </div>
+
+      <div class="city-pills-row">
+        <button type="button" class="city-pill-btn active" onclick="switchCityRadar('Bengaluru', '1,420', 'Indiranagar (100ft Rd), Koramangala (4th Block), HSR Sector 4', 'Third Wave Coffee, Toit, Araku', this)">Bengaluru</button>
+        <button type="button" class="city-pill-btn" onclick="switchCityRadar('Mumbai', '1,890', 'Bandra West (Pali Hill), Juhu Tara Road, Lower Parel', 'Subko Coffee, Soho House, Veronica\'s', this)">Mumbai</button>
+        <button type="button" class="city-pill-btn" onclick="switchCityRadar('Delhi-NCR', '2,150', 'Cyber Hub Gurgaon, Hauz Khas Village, Khan Market', 'Blue Tokai, CyberHub Social, Perch', this)">Delhi-NCR</button>
+        <button type="button" class="city-pill-btn" onclick="switchCityRadar('Pune', '840', 'Koregaon Park (Lane 5), Balewadi High Street, FC Road', 'Effingut, Toit Pune, One O Eight Cafe', this)">Pune</button>
+      </div>
+
+      <div class="radar-stats-box">
+        <div>
+          <div style="font-size:1.25rem; font-weight:800; color:#FFF; margin-bottom:6px;">
+            <span class="radar-pulse-dot"></span><span id="radarCount">1,420</span> Verified Singles Active Now
+          </div>
+          <div style="font-size:0.92rem; color:var(--muted); line-height:1.5;" id="radarDesc">
+            Hotspots: <strong>Indiranagar (100ft Rd), Koramangala (4th Block), HSR Sector 4</strong><br>
+            Verified SafeDate Venues: <strong>Third Wave Coffee, Toit, Araku</strong>
+          </div>
+        </div>
+        <a href="/webview" class="btn-cta-primary" style="padding:12px 24px; font-size:0.92rem;">
+          <span>🚀 Explore <span id="radarBtnCity">Bengaluru</span> Deck</span> ➔
+        </a>
+      </div>
     </div>
   </section>
 
@@ -2496,7 +2708,26 @@
       <div class="section-header" style="padding-top:0;">
         <div class="section-badge">🔮 Interactive Algorithm Engine</div>
         <h2 class="section-title">Test Your Cosmic Resonance Synergy</h2>
-        <p class="section-subtitle">Our proprietary engine calculates 36-Guna Vedic synastry and psychological resonance in real time. Pick two signs below to test the matching algorithm in action.</p>
+        <p class="section-subtitle">Our proprietary engine calculates 36-Guna Vedic synastry and psychological resonance in real time. Pick your vibe or two signs below to test the matching algorithm in action.</p>
+      </div>
+
+      <!-- Interactive Vibe Micro-Quiz -->
+      <div class="vibe-quiz-box">
+        <div class="vibe-step-title">1. Your Ideal Sunday Morning in the City:</div>
+        <div class="vibe-options-grid">
+          <button type="button" class="vibe-opt-btn active" onclick="selectVibeOption(this, 1)">☕ Filter Coffee & Books</button>
+          <button type="button" class="vibe-opt-btn" onclick="selectVibeOption(this, 1)">🏃 10K Sunrise Run</button>
+          <button type="button" class="vibe-opt-btn" onclick="selectVibeOption(this, 1)">🥐 Rooftop Lazy Brunch</button>
+          <button type="button" class="vibe-opt-btn" onclick="selectVibeOption(this, 1)">🎨 Art Gallery Strolls</button>
+        </div>
+
+        <div class="vibe-step-title">2. Your Elemental Energy:</div>
+        <div class="vibe-options-grid">
+          <button type="button" class="vibe-opt-btn active" onclick="selectVibeOption(this, 2)">🔥 Fire (Bold & Spontaneous)</button>
+          <button type="button" class="vibe-opt-btn" onclick="selectVibeOption(this, 2)">🌍 Earth (Grounded & Aesthetic)</button>
+          <button type="button" class="vibe-opt-btn" onclick="selectVibeOption(this, 2)">💨 Air (Witty Banter & Ideas)</button>
+          <button type="button" class="vibe-opt-btn" onclick="selectVibeOption(this, 2)">🌊 Water (Deep Empath & Intuitive)</button>
+        </div>
       </div>
 
       <div class="kundali-inputs-grid">
@@ -3103,6 +3334,24 @@
       }, 420);
     }
 
+    /* Hyper-Local Neighborhood Radar Handler */
+    function switchCityRadar(city, count, hubs, venues, btn) {
+      document.querySelectorAll('.city-pill-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('radarCount').textContent = count;
+      document.getElementById('radarDesc').innerHTML = `Hotspots: <strong>${hubs}</strong><br>Verified SafeDate Venues: <strong>${venues}</strong>`;
+      const btnCity = document.getElementById('radarBtnCity');
+      if (btnCity) btnCity.textContent = city;
+    }
+
+    /* Vibe Quiz Option Selector */
+    function selectVibeOption(btn, step) {
+      const parent = btn.parentElement;
+      parent.querySelectorAll('.vibe-opt-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      calculateCosmicSynergy();
+    }
+
     /* Standard Modals & FAQ */
     function openContactModal() {
       document.getElementById('contact-modal').style.display = 'flex';
@@ -3182,7 +3431,7 @@
     // Catfish slider
     var sl=document.getElementById('cfSlider'),top=document.getElementById('cfTop'),h=document.getElementById('cfHandle');
     if(sl){var drag=false;
-      function set(x){var r=sl.getBoundingClientRect();var p=Math.max(0,Math.min(100,(x-r.left)/r.width*100));
+      function set(x){var r=sl.getBoundingClientRect();var p=Math.max(6,Math.min(94,(x-r.left)/r.width*100));
         top.style.clipPath='inset(0 '+(100-p)+'% 0 0)';h.style.left=p+'%';}
       sl.addEventListener('pointerdown',function(e){drag=true;sl.setPointerCapture(e.pointerId);set(e.clientX);});
       sl.addEventListener('pointermove',function(e){if(drag)set(e.clientX);});
