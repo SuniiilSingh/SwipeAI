@@ -502,24 +502,72 @@ public class MatchService {
     }
 
     /**
-     * 6-Hour Background Expiry Sweep:
-     * Finds active chats whose 48-hour countdown has elapsed and marks them EXPIRED.
-     * Note: We intentionally do NOT auto-delete or auto-evict them; they remain in
-     * the user's inbox marked as EXPIRED so the user can consciously decide whether
-     * to Plan a Date or Farewell them when freeing a slot under the Rule of 5.
+     * Periodic Background Expiry & Grace Period Sweep (Runs every 30 mins):
+     * 1. Finds active chats whose countdown has elapsed and marks them EXPIRED (starts 24h grace period).
+     * 2. Finds EXPIRED matches that have exceeded the 24-hour grace period and auto-archives them (UNMATCHED),
+     *    automatically freeing active slots under the Rule of 5 and promoting queued matches.
      */
-    @org.springframework.scheduling.annotation.Scheduled(fixedRate = 6 * 60 * 60 * 1000)
+    @org.springframework.scheduling.annotation.Scheduled(fixedRate = 30 * 60 * 1000)
     @Transactional
     public void processExpiredMatches() {
         OffsetDateTime now = OffsetDateTime.now();
+        
+        // 1. Mark elapsed active matches as EXPIRED (Grace period begins)
         List<Match> expiredMatches = matchRepository.findExpiredActiveMatches(now);
         if (!expiredMatches.isEmpty()) {
-            log.info("Processing {} expired matches in 6-hour scheduled job", expiredMatches.size());
+            log.info("Processing {} newly expired matches into 24h grace period", expiredMatches.size());
             for (Match m : expiredMatches) {
                 m.setStatus(MatchStatus.EXPIRED);
                 matchRepository.save(m);
             }
         }
+
+        // 2. Auto-archive matches that have been EXPIRED past 24-hour grace period
+        OffsetDateTime gracePeriodCutoff = now.minusHours(24);
+        List<Match> pastGraceMatches = matchRepository.findByStatusAndExpiresAtBefore(MatchStatus.EXPIRED, gracePeriodCutoff);
+        if (!pastGraceMatches.isEmpty()) {
+            log.info("Auto-archiving {} matches past 24h grace period to free active Rule of 5 slots", pastGraceMatches.size());
+            for (Match m : pastGraceMatches) {
+                m.setStatus(MatchStatus.UNMATCHED);
+                matchRepository.save(m);
+                promoteQueuedMatchesIfSlotsOpen(m.getUserAId());
+                promoteQueuedMatchesIfSlotsOpen(m.getUserBId());
+            }
+        }
+    }
+
+    /**
+     * Revive an expired match or extend countdown window by +24 hours.
+     * Restores status to ACTIVE_CHAT and unlocks messaging lounge.
+     */
+    @Transactional
+    public MatchDto.MatchResponseDto reviveMatch(UUID matchId, UUID userId) {
+        Match match = matchRepository.findById(matchId)
+                .orElseThrow(() -> new IllegalArgumentException("Match not found: " + matchId));
+
+        if (!match.getUserAId().equals(userId) && !match.getUserBId().equals(userId)) {
+            throw new org.springframework.security.access.AccessDeniedException("Not authorized to revive this match");
+        }
+
+        match.setStatus(MatchStatus.ACTIVE_CHAT);
+        match.setExpiresAt(OffsetDateTime.now().plusHours(24));
+        match = matchRepository.save(match);
+        log.info("Match {} revived with +24h extension by user {}", matchId, userId);
+
+        UUID otherUserId = match.getUserAId().equals(userId) ? match.getUserBId() : match.getUserAId();
+        User otherUser = userRepository.findById(otherUserId).orElseThrow();
+        Profile otherProfile = profileRepository.findById(otherUserId).orElse(null);
+
+        // Notify partner that match is revived
+        pushNotificationService.sendMatchNotification(
+                userId,
+                otherUserId,
+                matchId,
+                "⚡ Match Window Extended!",
+                "Your match revived the chat with an extra 24 hours. Keep the spark alive!"
+        );
+
+        return mapToMatchDto(match, userId, otherUser, otherProfile);
     }
 
     /**

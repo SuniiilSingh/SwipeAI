@@ -196,6 +196,30 @@ public class MatchController {
     }
 
     /**
+     * Send polite farewell, archive match, and free active slot under Rule of 5.
+     */
+    @PostMapping("/{id}/farewell")
+    public ResponseEntity<Map<String, String>> farewellMatch(
+            @AuthenticationPrincipal UUID userId,
+            @PathVariable UUID id,
+            @RequestBody(required = false) Map<String, String> body) {
+        String note = body != null && body.containsKey("note") ? body.get("note") : "Polite farewell";
+        matchService.gracefulExit(id, userId, note);
+        return ResponseEntity.ok(Map.of("status", "success", "message", "Polite farewell sent. Active slot freed under Rule of 5!"));
+    }
+
+    /**
+     * Revive an expired match or extend countdown window by +24 hours.
+     */
+    @PostMapping("/{id}/revive")
+    public ResponseEntity<MatchDto.MatchResponseDto> reviveMatch(
+            @AuthenticationPrincipal UUID userId,
+            @PathVariable UUID id) {
+        MatchDto.MatchResponseDto res = matchService.reviveMatch(id, userId);
+        return ResponseEntity.ok(res);
+    }
+
+    /**
      * Specifically unlock a queued match when a slot has been freed under the Rule of 5.
      */
     @PostMapping("/{id}/unlock-queued")

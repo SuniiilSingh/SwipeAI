@@ -92,8 +92,22 @@ public class ChatService {
         Match match = matchRepository.findById(matchId)
                 .orElseThrow(() -> new IllegalArgumentException("Match not found: " + matchId));
 
-        if (match.getStatus() == MatchStatus.UNMATCHED || match.getStatus() == MatchStatus.EXPIRED) {
-            throw new IllegalStateException("Cannot send message in inactive match.");
+        if (match.getStatus() == MatchStatus.UNMATCHED) {
+            throw new IllegalStateException("Cannot send message in unmatched conversation.");
+        }
+
+        if (match.getStatus() == MatchStatus.EXPIRED) {
+            boolean isAllowedAction = request.getContent() != null && (
+                    request.getContent().contains("DATE_PROPOSAL") ||
+                    request.getContent().contains("DATE_ACCEPTED") ||
+                    request.getContent().contains("DATE_RESCHEDULE") ||
+                    request.getContent().contains("DATE_POSTPONE") ||
+                    request.getContent().contains("FAREWELL") ||
+                    request.getContent().startsWith("E2EE:")
+            );
+            if (!isAllowedAction) {
+                throw new IllegalStateException("Match countdown has expired. Propose a date, revive the match, or send a polite farewell.");
+            }
         }
 
         // Strict Match Lounge Authorization
