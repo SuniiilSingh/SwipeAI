@@ -492,24 +492,25 @@
     }
     .phone-photo-frame {
       position: relative;
-      height: 380px;
+      height: 430px;
       overflow: hidden;
     }
     .phone-photo-img {
       width: 100%;
-      height: 100%;
+      height: calc(100% + 44px);
       object-fit: cover;
       object-position: top center;
+      transform: translateY(-38px); /* Shifting photo 1cm (~38px) up so model's face and upper body are clear and unobstructed */
     }
     .phone-photo-gradient {
       position: absolute;
       inset: 0;
       background: linear-gradient(
         180deg,
-        rgba(11, 13, 21, 0.25) 0%,
-        rgba(11, 13, 21, 0) 35%,
-        rgba(11, 13, 21, 0.7) 68%,
-        rgba(11, 13, 21, 0.98) 96%
+        rgba(11, 13, 21, 0.15) 0%,
+        rgba(11, 13, 21, 0) 45%,
+        rgba(11, 13, 21, 0.5) 75%,
+        rgba(11, 13, 21, 0.95) 100%
       );
     }
     .phone-overlay-badges {
@@ -543,9 +544,9 @@
     }
     .phone-info-content {
       position: absolute;
-      bottom: 16px;
-      left: 18px;
-      right: 18px;
+      bottom: 12px;
+      left: 16px;
+      right: 16px;
       z-index: 5;
     }
     .phone-name-row {
@@ -2002,7 +2003,7 @@
         box-shadow: 0 20px 50px rgba(0, 0, 0, 0.85);
       }
       .phone-photo-frame {
-        height: 330px;
+        height: 380px;
       }
       .phone-name {
         font-size: 1.5rem;
