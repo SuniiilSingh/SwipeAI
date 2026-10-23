@@ -502,36 +502,22 @@ public class MatchService {
     }
 
     /**
-     * Periodic Background Expiry & Grace Period Sweep (Runs every 30 mins):
-     * 1. Finds active chats whose countdown has elapsed and marks them EXPIRED (starts 24h grace period).
-     * 2. Finds EXPIRED matches that have exceeded the 24-hour grace period and auto-archives them (UNMATCHED),
-     *    automatically freeing active slots under the Rule of 5 and promoting queued matches.
+     * Periodic Background Expiry Sweep (Runs every 30 mins):
+     * Finds active chats whose countdown has elapsed and marks them EXPIRED.
+     * Note: Strictly NO auto-archiving. Matches remain safely in the user's inbox
+     * as EXPIRED so the user can consciously decide whether to Propose a Date,
+     * Revive (+24h), or Send a Polite Farewell to free their active slot.
      */
     @org.springframework.scheduling.annotation.Scheduled(fixedRate = 30 * 60 * 1000)
     @Transactional
     public void processExpiredMatches() {
         OffsetDateTime now = OffsetDateTime.now();
-        
-        // 1. Mark elapsed active matches as EXPIRED (Grace period begins)
         List<Match> expiredMatches = matchRepository.findExpiredActiveMatches(now);
         if (!expiredMatches.isEmpty()) {
-            log.info("Processing {} newly expired matches into 24h grace period", expiredMatches.size());
+            log.info("Marking {} elapsed active matches as EXPIRED (awaiting user action)", expiredMatches.size());
             for (Match m : expiredMatches) {
                 m.setStatus(MatchStatus.EXPIRED);
                 matchRepository.save(m);
-            }
-        }
-
-        // 2. Auto-archive matches that have been EXPIRED past 24-hour grace period
-        OffsetDateTime gracePeriodCutoff = now.minusHours(24);
-        List<Match> pastGraceMatches = matchRepository.findByStatusAndExpiresAtBefore(MatchStatus.EXPIRED, gracePeriodCutoff);
-        if (!pastGraceMatches.isEmpty()) {
-            log.info("Auto-archiving {} matches past 24h grace period to free active Rule of 5 slots", pastGraceMatches.size());
-            for (Match m : pastGraceMatches) {
-                m.setStatus(MatchStatus.UNMATCHED);
-                matchRepository.save(m);
-                promoteQueuedMatchesIfSlotsOpen(m.getUserAId());
-                promoteQueuedMatchesIfSlotsOpen(m.getUserBId());
             }
         }
     }
