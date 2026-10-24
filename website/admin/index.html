@@ -2203,9 +2203,9 @@
 
   <script>
     const API_BASE = '/v1/admin';
-    let adminToken = localStorage.getItem('blunderr_admin_token') || '';
-    let adminRole = localStorage.getItem('blunderr_admin_role') || '';
-    let adminEmail = localStorage.getItem('blunderr_admin_email') || '';
+    let adminToken = sessionStorage.getItem('blunderr_admin_token') || '';
+    let adminRole = sessionStorage.getItem('blunderr_admin_role') || '';
+    let adminEmail = sessionStorage.getItem('blunderr_admin_email') || '';
     let currentTab = 'overview';
 
     function showToast(msg) {
@@ -2256,9 +2256,9 @@
         adminToken = data.token;
         adminRole = data.role;
         adminEmail = data.email;
-        localStorage.setItem('blunderr_admin_token', adminToken);
-        localStorage.setItem('blunderr_admin_role', adminRole);
-        localStorage.setItem('blunderr_admin_email', adminEmail);
+        sessionStorage.setItem('blunderr_admin_token', adminToken);
+        sessionStorage.setItem('blunderr_admin_role', adminRole);
+        sessionStorage.setItem('blunderr_admin_email', adminEmail);
         enterCommandCenter();
       } catch (err) {
         errEl.textContent = '⚠️ ' + err.message;
@@ -2268,7 +2268,7 @@
 
     function handleLogout() {
       adminToken = '';
-      localStorage.removeItem('blunderr_admin_token');
+      sessionStorage.removeItem('blunderr_admin_token');
       document.getElementById('app-shell').style.display = 'none';
       document.getElementById('login-screen').style.display = 'flex';
     }
