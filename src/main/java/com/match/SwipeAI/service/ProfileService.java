@@ -17,9 +17,11 @@ import com.match.SwipeAI.enums.ActionType;
 import com.match.SwipeAI.enums.MatchStatus;
 import com.match.SwipeAI.enums.TicketCategory;
 import com.match.SwipeAI.enums.TicketStatus;
+import com.match.SwipeAI.model.AccountDeletionLog;
 import com.match.SwipeAI.model.Interaction;
 import com.match.SwipeAI.model.Match;
 import com.match.SwipeAI.model.SupportTicket;
+import com.match.SwipeAI.repository.AccountDeletionLogRepository;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -45,6 +47,7 @@ public class ProfileService {
     private final com.match.SwipeAI.service.engine.MatchKarmaService karmaService;
     private final CosmicChemistryEngine cosmicChemistryEngine;
     private final com.match.SwipeAI.service.integration.FaceMatchService faceMatchService;
+    private final AccountDeletionLogRepository accountDeletionLogRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public ProfileDto.ProfileResponse getProfile(UUID userId) {
@@ -288,6 +291,43 @@ public class ProfileService {
         } catch (Exception e) {
             log.error("Failed to save meme swipes", e);
         }
+    }
+
+    @Transactional
+    public void deleteProfileWithAudit(UUID userId, String source, String reasonCategory, String remarks, String clientIp, String userAgent) {
+        log.info("Recording churn audit & deleting account for userId: {}, source: {}, reason: {}", userId, source, reasonCategory);
+        try {
+            User user = userRepository.findById(userId).orElse(null);
+            Profile profile = profileRepository.findById(userId).orElse(null);
+            if (user != null) {
+                String phone = user.getPhoneE164();
+                String masked = maskPhoneHelper(phone);
+                AccountDeletionLog deletionLog = AccountDeletionLog.builder()
+                        .userId(userId)
+                        .phoneE164(phone != null ? phone : "UNKNOWN")
+                        .phoneMasked(masked)
+                        .displayName(profile != null && profile.getDisplayName() != null ? profile.getDisplayName().trim() : "Unknown")
+                        .email(user.getEmail())
+                        .city(profile != null ? profile.getCity() : null)
+                        .source(source != null ? source : "IN_APP_SETTINGS")
+                        .reasonCategory(reasonCategory != null && !reasonCategory.isBlank() ? reasonCategory : "OTHER")
+                        .remarks(remarks)
+                        .clientIp(clientIp)
+                        .userAgent(userAgent)
+                        .status("COMPLETED")
+                        .build();
+                accountDeletionLogRepository.save(deletionLog);
+            }
+        } catch (Exception e) {
+            log.error("Failed to save AccountDeletionLog for userId {}: {}", userId, e.getMessage());
+        }
+        deleteProfile(userId);
+    }
+
+    private String maskPhoneHelper(String p) {
+        if (p == null || p.length() < 7) return p;
+        int len = p.length();
+        return p.substring(0, 3) + " " + p.substring(3, Math.min(5, len)) + "*****" + p.substring(Math.max(0, len - 3));
     }
 
     @Transactional
@@ -872,7 +912,52 @@ public class ProfileService {
                 Profile freshProfile = profileRepository.findById(userId).orElse(p);
                 freshProfile.setPhotosVerificationJson(ledgerJson);
 
-                if (batchRes.isProfileVerified()) {
+                // Auto-promote matched photo if primary failed (< 60% match threshold)
+                boolean primarySlotPassed = false;
+                if (batchRes.getResults() != null) {
+                    FaceMatchService.PhotoSlotVerificationResultDto slot1Res = batchRes.getResults().stream()
+                            .filter(r -> r.getSlot() == 1)
+                            .findFirst().orElse(null);
+                    primarySlotPassed = slot1Res != null && slot1Res.isMatch() && slot1Res.getConfidencePercent() >= 60.0;
+
+                    // If slot 1 failed (< 60%), but an alternative slot (e.g. slot 2) matched >= 60%:
+                    if (!primarySlotPassed) {
+                        FaceMatchService.PhotoSlotVerificationResultDto bestAlternative = batchRes.getResults().stream()
+                                .filter(r -> r.getSlot() > 1 && r.isMatch() && r.getConfidencePercent() >= 60.0)
+                                .max(Comparator.comparingDouble(FaceMatchService.PhotoSlotVerificationResultDto::getConfidencePercent))
+                                .orElse(null);
+
+                        if (bestAlternative != null && bestAlternative.getPhotoUrl() != null && !bestAlternative.getPhotoUrl().isBlank()) {
+                            log.info("Auto-promoting verified photo from slot {} (confidence: {}%) to primary photo1 for user {}",
+                                    bestAlternative.getSlot(), bestAlternative.getConfidencePercent(), userId);
+
+                            String oldPhoto1 = freshProfile.getPhoto1();
+                            String newPhoto1 = bestAlternative.getPhotoUrl();
+
+                            freshProfile.setPhoto1(newPhoto1);
+                            if (bestAlternative.getSlot() == 2) freshProfile.setPhoto2(oldPhoto1);
+                            else if (bestAlternative.getSlot() == 3) freshProfile.setPhoto3(oldPhoto1);
+                            else if (bestAlternative.getSlot() == 4) freshProfile.setPhoto4(oldPhoto1);
+                            else if (bestAlternative.getSlot() == 5) freshProfile.setPhoto5(oldPhoto1);
+                            else if (bestAlternative.getSlot() == 6) freshProfile.setPhoto6(oldPhoto1);
+
+                            List<String> syncPhotos = new ArrayList<>();
+                            if (freshProfile.getPhoto1() != null && !freshProfile.getPhoto1().isBlank()) syncPhotos.add(freshProfile.getPhoto1());
+                            if (freshProfile.getPhoto2() != null && !freshProfile.getPhoto2().isBlank()) syncPhotos.add(freshProfile.getPhoto2());
+                            if (freshProfile.getPhoto3() != null && !freshProfile.getPhoto3().isBlank()) syncPhotos.add(freshProfile.getPhoto3());
+                            if (freshProfile.getPhoto4() != null && !freshProfile.getPhoto4().isBlank()) syncPhotos.add(freshProfile.getPhoto4());
+                            if (freshProfile.getPhoto5() != null && !freshProfile.getPhoto5().isBlank()) syncPhotos.add(freshProfile.getPhoto5());
+                            if (freshProfile.getPhoto6() != null && !freshProfile.getPhoto6().isBlank()) syncPhotos.add(freshProfile.getPhoto6());
+                            try {
+                                freshProfile.setPhotosJson(objectMapper.writeValueAsString(syncPhotos));
+                            } catch (Exception ignored) {}
+
+                            primarySlotPassed = true;
+                        }
+                    }
+                }
+
+                if (batchRes.isProfileVerified() || primarySlotPassed) {
                     freshUser.setFaceVerified(true);
                     freshUser.setNeedsLivenessRetry(false);
                     freshUser.setLivenessStatus("VERIFIED");
@@ -882,29 +967,16 @@ public class ProfileService {
                     userRepository.save(freshUser);
                     freshProfile.setVerificationStatus("VERIFIED");
                     profileRepository.save(freshProfile);
-                    log.info("Multi-photo selfie verification PASSED for user {}: {} matched, 0 mismatches",
-                            userId, batchRes.getMatchedCount());
+                    log.info("Multi-photo selfie verification PASSED for user {}: verified real photo active in primary slot",
+                            userId);
                 } else {
                     freshUser.setFaceVerified(false);
-                    if (batchRes.getMismatchCount() > 0) {
-                        freshUser.setNeedsLivenessRetry(false);
-                        freshUser.setLivenessStatus("MISMATCH_DETECTED");
-                        freshProfile.setVerificationStatus("REJECTED");
-                        log.warn("Multi-photo selfie verification REJECTED for user {}: {} catfish/mismatch photo(s) detected!",
-                                userId, batchRes.getMismatchCount());
-                    } else if ("PRIMARY_PHOTO_FAILED".equals(batchRes.getOverallStatus())) {
-                        freshUser.setNeedsLivenessRetry(false);
-                        freshUser.setLivenessStatus("PRIMARY_PHOTO_FAILED");
-                        freshProfile.setVerificationStatus("REJECTED");
-                        log.warn("Multi-photo selfie verification REJECTED for user {}: primary photo 1 failed to match selfie.", userId);
-                    } else {
-                        freshUser.setNeedsLivenessRetry(true);
-                        freshUser.setLivenessStatus("RETRY_NEEDED");
-                        freshProfile.setVerificationStatus("REJECTED");
-                        log.warn("Multi-photo selfie verification REJECTED for user {}: status={}", userId, batchRes.getOverallStatus());
-                    }
+                    freshUser.setNeedsLivenessRetry(false);
+                    freshUser.setLivenessStatus("PRIMARY_PHOTO_FAILED");
+                    freshProfile.setVerificationStatus("REJECTED");
                     userRepository.save(freshUser);
                     profileRepository.save(freshProfile);
+                    log.warn("Multi-photo selfie verification REJECTED for user {}: primary photos matched under 60% threshold.", userId);
                 }
             } catch (Exception e) {
                 log.error("Async multi-photo selfie verification failed for user {}: {}", userId, e.getMessage());

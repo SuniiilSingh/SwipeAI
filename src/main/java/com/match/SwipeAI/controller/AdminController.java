@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.match.SwipeAI.dto.PaymentDto;
 import com.match.SwipeAI.enums.OrderStatus;
+import com.match.SwipeAI.enums.SkuType;
 import com.match.SwipeAI.enums.TicketStatus;
 import com.match.SwipeAI.model.*;
 import com.match.SwipeAI.repository.*;
@@ -67,6 +68,8 @@ public class AdminController {
     private final UserBlockRepository userBlockRepository;
     private final MarketingEmailCampaignRepository marketingEmailCampaignRepository;
     private final PaymentAuditService paymentAuditService;
+    private final com.match.SwipeAI.service.integration.UpiPaymentService upiPaymentService;
+    private final com.match.SwipeAI.repository.AccountDeletionLogRepository accountDeletionLogRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder(10);
 
@@ -167,12 +170,16 @@ public class AdminController {
 
     @Data
     public static class UserActionRequest {
-        private String action; // VERIFY_SELFIE, REJECT_SELFIE, TOGGLE_DIGILOCKER, TOGGLE_SHADOWBAN, GRANT_CREDITS, UPDATE_KARMA, REMOVE_PHOTO, UPDATE_MARKETING_EMAIL
+        private String action; // VERIFY_SELFIE, REJECT_SELFIE, TOGGLE_DIGILOCKER, TOGGLE_SHADOWBAN, GRANT_CREDITS, GRANT_MEMBERSHIP, UPDATE_KARMA, REMOVE_PHOTO, UPDATE_MARKETING_EMAIL
         private Integer sparksDelta;
         private Integer boostsDelta;
         private Integer directDmsDelta;
         private Boolean grantVipPass;
+        private Integer vipDays;
+        private String membershipSku; // SkuType or "CUSTOM"
+        private String customPlanName;
         private Integer karmaScore;
+        private Integer karmaDelta;
         private Integer photoSlot; // 1..6
         private String email;
         private Boolean marketingOptIn;
@@ -436,6 +443,7 @@ public class AdminController {
 
         res.put("totalCircles", microCommunityRepository.count());
         res.put("totalSafeSpots", safeDateSpotRepository.count());
+        res.put("totalDeletions", accountDeletionLogRepository.count());
         res.put("totalReports", totalReports);
         res.put("pendingReports", pendingReports);
         res.put("totalBlocks", totalBlocks);
@@ -597,9 +605,10 @@ public class AdminController {
             if (!query.isEmpty()) {
                 String name = p != null && p.getDisplayName() != null ? p.getDisplayName().toLowerCase() : "";
                 String phone = u.getPhoneE164() != null ? u.getPhoneE164().toLowerCase() : "";
+                String email = u.getEmail() != null ? u.getEmail().toLowerCase() : "";
                 String uid = u.getId().toString().toLowerCase();
                 String circle = p != null && p.getMicroCircle() != null ? p.getMicroCircle().toLowerCase() : "";
-                if (!name.contains(query) && !phone.contains(query) && !uid.contains(query) && !circle.contains(query)) {
+                if (!name.contains(query) && !phone.contains(query) && !email.contains(query) && !uid.contains(query) && !circle.contains(query)) {
                     continue;
                 }
             }
@@ -724,10 +733,121 @@ public class AdminController {
                 }
                 if (req.getGrantVipPass() != null) {
                     user.setHasActivePass(req.getGrantVipPass());
-                    user.setPassExpiry(req.getGrantVipPass() ? OffsetDateTime.now().plusDays(30) : null);
+                    int days = (req.getVipDays() != null && req.getVipDays() > 0) ? req.getVipDays() : 30;
+                    if (req.getGrantVipPass()) {
+                        OffsetDateTime base = (user.getPassExpiry() != null && user.getPassExpiry().isAfter(OffsetDateTime.now()))
+                                ? user.getPassExpiry()
+                                : OffsetDateTime.now();
+                        user.setPassExpiry(base.plusDays(days));
+                    } else {
+                        user.setPassExpiry(null);
+                    }
                 }
-                auditDetail = String.format("Updated credits: sparks=%d, boosts=%d, dms=%d, vip=%s",
-                        user.getSparksBalance(), user.getBoostsBalance(), user.getDirectDmsBalance(), user.getHasActivePass());
+                auditDetail = String.format("Updated credits: sparks=%d, boosts=%d, dms=%d, vip=%s (expiry: %s)",
+                        user.getSparksBalance(), user.getBoostsBalance(), user.getDirectDmsBalance(), user.getHasActivePass(),
+                        (user.getPassExpiry() != null ? user.getPassExpiry().toString() : "none"));
+            }
+            case "GRANT_MEMBERSHIP" -> {
+                String planTitle = "Custom VIP Membership";
+                int daysToAdd = (req.getVipDays() != null && req.getVipDays() > 0) ? req.getVipDays() : 30;
+                int sparksToAdd = (req.getSparksDelta() != null) ? req.getSparksDelta() : 0;
+                int boostsToAdd = (req.getBoostsDelta() != null) ? req.getBoostsDelta() : 0;
+                int dmsToAdd = (req.getDirectDmsDelta() != null) ? req.getDirectDmsDelta() : 0;
+                int karmaToAdd = (req.getKarmaDelta() != null) ? req.getKarmaDelta() : 0;
+
+                String skuStr = req.getMembershipSku() != null ? req.getMembershipSku().trim().toUpperCase() : "";
+                if (!skuStr.isEmpty() && !skuStr.equals("CUSTOM")) {
+                    try {
+                        SkuType sku = SkuType.valueOf(skuStr);
+                        planTitle = sku.getDescription();
+                        switch (sku) {
+                            case WEEKEND_PASS_79, WEEKEND_PASS_99 -> {
+                                daysToAdd = 3;
+                                sparksToAdd = Math.max(sparksToAdd, 3);
+                            }
+                            case WINGMAN_BUNDLE_199 -> {
+                                daysToAdd = 3;
+                                sparksToAdd = Math.max(sparksToAdd, 5);
+                                boostsToAdd = Math.max(boostsToAdd, 1);
+                                dmsToAdd = Math.max(dmsToAdd, 2);
+                            }
+                            case WEEKLY_PASS_149 -> {
+                                daysToAdd = 7;
+                                sparksToAdd = Math.max(sparksToAdd, 5);
+                                boostsToAdd = Math.max(boostsToAdd, 1);
+                                dmsToAdd = Math.max(dmsToAdd, 3);
+                            }
+                            case FORTNIGHT_PASS_199 -> {
+                                daysToAdd = 14;
+                                sparksToAdd = Math.max(sparksToAdd, 6);
+                                boostsToAdd = Math.max(boostsToAdd, 2);
+                                dmsToAdd = Math.max(dmsToAdd, 5);
+                            }
+                            case MONTHLY_PASS_349 -> {
+                                daysToAdd = 30;
+                                sparksToAdd = Math.max(sparksToAdd, 15);
+                                boostsToAdd = Math.max(boostsToAdd, 4);
+                                dmsToAdd = Math.max(dmsToAdd, 10);
+                                karmaToAdd = Math.max(karmaToAdd, 10);
+                            }
+                            case SELECT_QUARTERLY_899, SELECT_QUARTERLY_999 -> {
+                                daysToAdd = 90;
+                                sparksToAdd = Math.max(sparksToAdd, 25);
+                                dmsToAdd = Math.max(dmsToAdd, 25);
+                                karmaToAdd = Math.max(karmaToAdd, 20);
+                            }
+                            case SUPER_SPARK_19, CUTTING_CHAI_21 -> {
+                                daysToAdd = 0;
+                                sparksToAdd = Math.max(sparksToAdd, 1);
+                            }
+                            case SPARKS_PACK_5_79 -> {
+                                daysToAdd = 0;
+                                sparksToAdd = Math.max(sparksToAdd, 5);
+                            }
+                            case BOOST_1X_FRIDAY_29, BOOST_1X_FRIDAY_39 -> {
+                                daysToAdd = 0;
+                                boostsToAdd = Math.max(boostsToAdd, 1);
+                            }
+                            case DIRECT_DMS_3X_49, DIRECT_DMS_3X_89 -> {
+                                daysToAdd = 0;
+                                dmsToAdd = Math.max(dmsToAdd, 3);
+                            }
+                            case REVIVE_MATCH_19 -> {
+                                daysToAdd = 0;
+                            }
+                        }
+                    } catch (Exception e) {
+                        planTitle = skuStr;
+                    }
+                } else if (req.getCustomPlanName() != null && !req.getCustomPlanName().isBlank()) {
+                    planTitle = req.getCustomPlanName().trim();
+                }
+
+                if (daysToAdd > 0) {
+                    user.setHasActivePass(true);
+                    OffsetDateTime base = (user.getPassExpiry() != null && user.getPassExpiry().isAfter(OffsetDateTime.now()))
+                            ? user.getPassExpiry()
+                            : OffsetDateTime.now();
+                    user.setPassExpiry(base.plusDays(daysToAdd));
+                }
+
+                if (sparksToAdd != 0) {
+                    user.setSparksBalance(Math.max(0, (user.getSparksBalance() != null ? user.getSparksBalance() : 0) + sparksToAdd));
+                }
+                if (boostsToAdd != 0) {
+                    user.setBoostsBalance(Math.max(0, (user.getBoostsBalance() != null ? user.getBoostsBalance() : 0) + boostsToAdd));
+                }
+                if (dmsToAdd != 0) {
+                    user.setDirectDmsBalance(Math.max(0, (user.getDirectDmsBalance() != null ? user.getDirectDmsBalance() : 0) + dmsToAdd));
+                }
+                if (karmaToAdd != 0) {
+                    user.setKarmaScore(Math.min(200, Math.max(0, (user.getKarmaScore() != null ? user.getKarmaScore() : 100) + karmaToAdd)));
+                }
+
+                String reason = (req.getReason() != null && !req.getReason().isBlank()) ? req.getReason() : "Admin manual grant";
+                auditDetail = String.format("Granted VIP: '%s' (+%d days VIP till %s, +%d sparks, +%d boosts, +%d dms, +%d karma). Reason: %s",
+                        planTitle, daysToAdd, (user.getPassExpiry() != null ? user.getPassExpiry().toString() : "N/A"),
+                        sparksToAdd, boostsToAdd, dmsToAdd, karmaToAdd, reason);
             }
             case "UPDATE_KARMA" -> {
                 if (req.getKarmaScore() != null) {
@@ -1488,6 +1608,107 @@ public class AdminController {
         return ResponseEntity.ok(Map.of("status", "deleted", "id", String.valueOf(id)));
     }
 
+    @GetMapping("/memberships")
+    public ResponseEntity<Map<String, Object>> listMemberships(HttpServletRequest request) {
+        requireAdmin(request, "SUPER_ADMIN", "SUPPORT_AGENT");
+        List<PaymentDto.CatalogItemDto> catalog = (upiPaymentService != null) ? upiPaymentService.getCatalog() : List.of();
+        List<Map<String, Object>> allSkus = Arrays.stream(SkuType.values()).map(s -> {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("sku", s.name());
+            m.put("amountPaise", s.getAmountPaise());
+            m.put("amountInr", s.getAmountPaise() / 100);
+            m.put("description", s.getDescription());
+            m.put("isPass", s.name().contains("PASS") || s.name().contains("BUNDLE") || s.name().contains("SELECT"));
+            return m;
+        }).toList();
+
+        return ResponseEntity.ok(Map.of(
+                "catalog", catalog,
+                "skus", allSkus
+        ));
+    }
+
+    // =========================================================================
+    // 8B. MODULE 7B: ACCOUNT DELETION & CHURN AUDIT DESK
+    // =========================================================================
+
+    @GetMapping("/deletions")
+    public ResponseEntity<Map<String, Object>> listAccountDeletions(
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) String reason,
+            HttpServletRequest request) {
+        requireAdmin(request, "SUPER_ADMIN", "SUPPORT_AGENT");
+
+        List<com.match.SwipeAI.model.AccountDeletionLog> all = accountDeletionLogRepository.findAllByOrderByCreatedAtDesc();
+
+        OffsetDateTime sevenDaysAgo = OffsetDateTime.now().minusDays(7);
+        long deletions7d = all.stream().filter(l -> l.getCreatedAt() != null && l.getCreatedAt().isAfter(sevenDaysAgo)).count();
+        long webOtpCount = all.stream().filter(l -> "WEB_OTP_VERIFIED".equalsIgnoreCase(l.getSource())).count();
+        long inAppCount = all.stream().filter(l -> "IN_APP_SETTINGS".equalsIgnoreCase(l.getSource())).count();
+
+        Map<String, Long> reasonCounts = all.stream()
+                .collect(Collectors.groupingBy(
+                        l -> (l.getReasonCategory() != null && !l.getReasonCategory().isBlank()) ? l.getReasonCategory() : "OTHER",
+                        Collectors.counting()
+                ));
+
+        List<com.match.SwipeAI.model.AccountDeletionLog> filtered = all.stream()
+                .filter(l -> {
+                    if (reason != null && !reason.isBlank() && !"ALL".equalsIgnoreCase(reason)) {
+                        if (!reason.equalsIgnoreCase(l.getReasonCategory())) return false;
+                    }
+                    if (q != null && !q.isBlank()) {
+                        String query = q.trim().toLowerCase();
+                        String phone = l.getPhoneE164() != null ? l.getPhoneE164().toLowerCase() : "";
+                        String name = l.getDisplayName() != null ? l.getDisplayName().toLowerCase() : "";
+                        String remarks = l.getRemarks() != null ? l.getRemarks().toLowerCase() : "";
+                        if (!phone.contains(query) && !name.contains(query) && !remarks.contains(query)) {
+                            return false;
+                        }
+                    }
+                    return true;
+                }).toList();
+
+        return ResponseEntity.ok(Map.of(
+                "totalDeletions", all.size(),
+                "deletions7d", deletions7d,
+                "webOtpCount", webOtpCount,
+                "inAppCount", inAppCount,
+                "reasonBreakdown", reasonCounts,
+                "logs", filtered
+        ));
+    }
+
+    @PostMapping("/deletions/{id}/review")
+    public ResponseEntity<com.match.SwipeAI.model.AccountDeletionLog> reviewAccountDeletion(
+            @PathVariable UUID id,
+            @RequestBody Map<String, String> body,
+            HttpServletRequest request) {
+        AdminSession session = requireAdmin(request, "SUPER_ADMIN", "SUPPORT_AGENT");
+        String ip = extractClientIp(request);
+
+        com.match.SwipeAI.model.AccountDeletionLog log = accountDeletionLogRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Deletion record not found."));
+
+        if (body.containsKey("status") && body.get("status") != null && !body.get("status").isBlank()) {
+            log.setStatus(body.get("status").trim().toUpperCase());
+        } else {
+            log.setStatus("REVIEWED");
+        }
+        if (body.containsKey("adminNotes")) {
+            log.setAdminNotes(body.get("adminNotes"));
+        }
+        log.setReviewedBy(session.email);
+        log.setReviewedAt(OffsetDateTime.now());
+
+        accountDeletionLogRepository.save(log);
+
+        recordAudit(session.email, session.role, "DELETION_REVIEW", id.toString(),
+                "Status=" + log.getStatus() + ", Notes=" + log.getAdminNotes(), ip);
+
+        return ResponseEntity.ok(log);
+    }
+
     // =========================================================================
     // 9. MODULE 8: BROADCAST CAMPAIGNS & IMMUTABLE AUDIT LOGS (SUPER_ADMIN ONLY)
     // =========================================================================
@@ -1851,10 +2072,12 @@ public class AdminController {
         row.put("karmaScore", u.getKarmaScore() != null ? u.getKarmaScore() : 100);
         row.put("isShadowbanned", Boolean.TRUE.equals(u.getIsIncognito()));
         row.put("hasActivePass", Boolean.TRUE.equals(u.getHasActivePass()));
+        row.put("passExpiry", u.getPassExpiry() != null ? u.getPassExpiry().toString() : null);
         row.put("sparksBalance", u.getSparksBalance() != null ? u.getSparksBalance() : 0);
         row.put("boostsBalance", u.getBoostsBalance() != null ? u.getBoostsBalance() : 0);
         row.put("directDmsBalance", u.getDirectDmsBalance() != null ? u.getDirectDmsBalance() : 0);
         row.put("selfieUrl", p != null ? p.getSelfieUrl() : null);
+        row.put("primaryPhoto", !photos.isEmpty() ? photos.get(0) : (p != null ? p.getSelfieUrl() : null));
         row.put("photos", photos);
         row.put("photoCount", photos.size());
         row.put("createdAt", u.getCreatedAt() != null ? u.getCreatedAt().toString() : "");

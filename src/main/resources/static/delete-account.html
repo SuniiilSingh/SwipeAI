@@ -3,134 +3,532 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Account Deletion Request — Blunderr Dating</title>
+  <title>Account & Data Deletion — BLUNDERЯ Dating</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #08080e;
-      --card: #12121a;
-      --text: #e2e8f0;
-      --muted: #94a3b8;
-      --accent: #ff2b66;
-      --border: #1e293b;
-      --input-bg: #0f172a;
+      --bg: #05060A;
+      --card: #0D101D;
+      --card-border: rgba(255, 255, 255, 0.1);
+      --text: #F8FAFC;
+      --muted: #94A3B8;
+      --dim: #64748B;
+      --brand: #FF385C;
+      --brand-glow: rgba(255, 56, 92, 0.25);
+      --input-bg: #070912;
+      --danger: #EF4444;
+      --success: #10B981;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
     }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       background-color: var(--bg);
       color: var(--text);
-      line-height: 1.7;
-      margin: 0;
-      padding: 40px 20px;
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 30px 16px;
+    }
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 24px;
+      text-decoration: none;
+    }
+    .logo-monogram {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      background: #0B0E1B;
+      border: 1.5px solid rgba(255, 255, 255, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      font-weight: 900;
+      box-shadow: 0 8px 24px var(--brand-glow);
+    }
+    .monogram-b { color: #FFF; }
+    .monogram-r { color: var(--brand); display: inline-block; transform: scaleX(-1); }
+    .brand-wordmark {
+      font-size: 20px;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+      color: #FFF;
     }
     .container {
-      max-width: 600px;
-      margin: 0 auto;
+      width: 100%;
+      max-width: 560px;
       background: var(--card);
-      padding: 40px;
-      border-radius: 16px;
-      border: 1px solid var(--border);
+      padding: 36px 32px;
+      border-radius: 24px;
+      border: 1px solid var(--card-border);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.8);
+      position: relative;
     }
     h1 {
-      color: #fff;
-      font-size: 2rem;
+      color: #FFF;
+      font-size: 1.65rem;
+      font-weight: 900;
+      letter-spacing: -0.5px;
       margin-bottom: 8px;
     }
-    p {
+    .subtitle {
       color: var(--muted);
-      font-size: 0.95rem;
+      font-size: 0.9rem;
+      margin-bottom: 24px;
+      line-height: 1.5;
     }
-    form {
-      margin-top: 24px;
+    .form-group {
+      margin-bottom: 18px;
     }
     label {
       display: block;
-      color: #cbd5e1;
-      font-size: 0.9rem;
+      color: #CBD5E1;
+      font-size: 0.85rem;
+      font-weight: 700;
       margin-bottom: 8px;
-      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
-    input, textarea {
-      width: 100%;
-      padding: 12px;
+    .phone-input-wrap {
+      display: flex;
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      overflow: hidden;
       background: var(--input-bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: #fff;
-      font-size: 1rem;
-      margin-bottom: 20px;
-      box-sizing: border-box;
+      transition: border-color 0.2s;
     }
-    button {
+    .phone-input-wrap:focus-within {
+      border-color: var(--brand);
+      box-shadow: 0 0 0 3px var(--brand-glow);
+    }
+    .phone-prefix {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 14px;
+      background: rgba(255, 255, 255, 0.05);
+      border-right: 1px solid var(--card-border);
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: #CBD5E1;
+    }
+    input[type="tel"], input[type="text"], select, textarea {
       width: 100%;
-      background: var(--accent);
-      color: #fff;
       padding: 14px;
+      background: var(--input-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      color: #FFF;
+      font-size: 0.95rem;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .phone-input-wrap input {
       border: none;
-      border-radius: 8px;
-      font-size: 1rem;
-      font-weight: 600;
+      border-radius: 0;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.05rem;
+      letter-spacing: 1px;
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--brand);
+      box-shadow: 0 0 0 3px var(--brand-glow);
+    }
+    select {
       cursor: pointer;
-      transition: opacity 0.2s;
     }
-    button:hover {
-      opacity: 0.9;
+    select option {
+      background: #0B0D16;
+      color: #FFF;
     }
-    .success-msg {
-      display: none;
-      background: rgba(34, 197, 94, 0.15);
-      color: #4ade80;
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+      line-height: 1.5;
+    }
+    .btn {
+      width: 100%;
+      background: var(--brand);
+      color: #FFF;
+      padding: 14px 20px;
+      border: none;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: opacity 0.2s, transform 0.1s;
+      box-shadow: 0 4px 18px var(--brand-glow);
+    }
+    .btn:hover {
+      opacity: 0.92;
+      transform: translateY(-1px);
+    }
+    .btn:active {
+      transform: translateY(0);
+    }
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .btn-danger {
+      background: linear-gradient(135deg, #DC2626, #991B1B);
+      box-shadow: 0 4px 18px rgba(220, 38, 38, 0.35);
+    }
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid var(--card-border);
+      color: var(--muted);
+      box-shadow: none;
+      margin-top: 10px;
+    }
+    .btn-ghost:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: #FFF;
+    }
+    .warning-box {
+      background: rgba(239, 68, 68, 0.08);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: 14px;
       padding: 16px;
-      border-radius: 8px;
-      margin-top: 20px;
-      font-weight: 500;
+      margin-bottom: 20px;
+      font-size: 0.85rem;
+      color: #FCA5A5;
+      line-height: 1.6;
+    }
+    .warning-box strong {
+      color: #FFF;
+    }
+    .alert-banner {
+      padding: 12px 14px;
+      border-radius: 10px;
+      margin-bottom: 16px;
+      font-size: 0.85rem;
+      display: none;
+    }
+    .alert-error {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      color: #FCA5A5;
+    }
+    .alert-success {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.35);
+      color: #6EE7B7;
+    }
+    .otp-input-field {
       text-align: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.6rem;
+      letter-spacing: 10px;
+      font-weight: 800;
+      padding: 14px;
+    }
+    .step-view {
+      display: none;
+      animation: fadeIn 0.25s ease-out;
+    }
+    .step-view.active {
+      display: block;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .compliance-pills {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 18px;
+      padding-top: 18px;
+      border-top: 1px solid var(--card-border);
+    }
+    .pill {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--dim);
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      padding: 3px 8px;
+      border-radius: 99px;
     }
     .footer {
-      margin-top: 40px;
-      padding-top: 20px;
-      border-top: 1px solid var(--border);
-      font-size: 0.85rem;
+      margin-top: 24px;
+      font-size: 0.8rem;
       text-align: center;
-      color: var(--muted);
+      color: var(--dim);
     }
-    a {
-      color: var(--accent);
-      text-decoration: none;
+    .footer a {
+      color: var(--muted);
+      text-decoration: underline;
+    }
+    .footer a:hover {
+      color: #FFF;
     }
   </style>
 </head>
 <body>
+
+  <a href="/" class="brand-logo">
+    <div class="logo-monogram">
+      <span class="monogram-b">B</span><span class="monogram-r">R</span>
+    </div>
+    <div class="brand-wordmark">BLUNDER<span style="color:var(--brand);display:inline-block;transform:scaleX(-1);">R</span></div>
+  </a>
+
   <div class="container">
-    <h1>Account & Data Deletion</h1>
-    <p>In compliance with Apple App Store Guideline 5.1.1(v) and Google Play Store policies, users can request full account deletion and data purging.</p>
-    
-    <p><strong>Note:</strong> Deleting your account is permanent. All profile photos, matches, chat history, and stored location data will be purged within 30 days.</p>
 
-    <form id="deleteForm">
-      <label for="phone">Registered 10-Digit Mobile Number:</label>
-      <input type="tel" id="phone" placeholder="8910653499" maxlength="10" minlength="10" pattern="[0-9]{10}" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)" required>
+    <!-- STEP 1: PHONE & REASON FORM -->
+    <div id="step-1" class="step-view active">
+      <h1>Account & Data Deletion</h1>
+      <p class="subtitle">
+        In compliance with India DPDP Act 2023, Apple App Store Guideline 5.1.1(v), and Google Play policies, you can permanently erase your BlunderR profile and data.
+      </p>
 
-      <label for="reason">Reason for deletion (Optional):</label>
-      <textarea id="reason" rows="3" placeholder="Tell us why you are leaving..."></textarea>
+      <div id="step1-alert" class="alert-banner alert-error"></div>
 
-      <button type="submit">Submit Account Deletion Request</button>
-    </form>
+      <form id="requestOtpForm" onsubmit="handleSendOtp(event)">
+        <div class="form-group">
+          <label for="del-phone">Registered 10-Digit Mobile Number</label>
+          <div class="phone-input-wrap">
+            <span class="phone-prefix">🇮🇳 +91</span>
+            <input type="tel" id="del-phone" placeholder="9812345678" maxlength="10" minlength="10" inputmode="numeric" required />
+          </div>
+          <span style="font-size:11px;color:var(--dim);margin-top:4px;display:block;">We will send a 6-digit OTP to verify ownership before deletion.</span>
+        </div>
 
-    <div id="successMsg" class="success-msg">
-      ✅ Your deletion request has been registered. You will receive an SMS confirmation, and your data will be purged within 30 days.
+        <div class="form-group">
+          <label for="del-reason">Why do you want to delete your account?</label>
+          <select id="del-reason" required>
+            <option value="FOUND_MATCH">💍 Found someone special / matched on BlunderR</option>
+            <option value="DATING_BREAK">⏳ Taking a break from dating</option>
+            <option value="PRIVACY_CONCERNS">🔒 Privacy concerns & personal data deletion</option>
+            <option value="NOT_ENOUGH_MATCHES">📉 Not enough active profiles in my city</option>
+            <option value="TECHNICAL_BUGS">🐛 App glitches or technical bugs</option>
+            <option value="EXPENSIVE_PERKS">💸 VIP passes or credits pricing</option>
+            <option value="OTHER">💬 Other reason</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="del-remarks">Remarks & Feedback (Optional)</label>
+          <textarea id="del-remarks" placeholder="Tell us why you are leaving... What could we have done better for you? Your feedback helps our team improve."></textarea>
+        </div>
+
+        <button type="submit" class="btn" id="btn-send-otp">
+          <span>📩 Send Verification OTP Code</span>
+        </button>
+      </form>
     </div>
 
-    <div class="footer">
-      &copy; 2026 Blunderr Dating. | <a href="/privacy">Privacy Policy</a> | <a href="/terms">Terms of Service</a>
+    <!-- STEP 2: OTP VERIFICATION & PERMANENT DELETE -->
+    <div id="step-2" class="step-view">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <span style="color:#F59E0B;font-size:20px;">🛡️</span>
+        <h1 style="margin:0;">Verify Deletion Code</h1>
+      </div>
+      <p class="subtitle">
+        Enter the 6-digit verification code sent to <b id="otp-target-phone" style="color:#FFF;font-family:'JetBrains Mono',monospace;">+91 98*** **499</b>.
+      </p>
+
+      <div id="step2-alert" class="alert-banner alert-error"></div>
+
+      <div class="warning-box">
+        <strong>⚠️ Permanent and Irreversible Action:</strong><br>
+        Deleting your account will immediately and permanently erase all your photos, match history, chats, verification badges, and active VIP entitlements. This data cannot be recovered.
+      </div>
+
+      <form id="verifyOtpForm" onsubmit="handleVerifyAndDelete(event)">
+        <div class="form-group">
+          <label for="del-otp">Enter 6-Digit OTP</label>
+          <input type="text" id="del-otp" class="otp-input-field" placeholder="••••••" maxlength="6" minlength="6" inputmode="numeric" required autocomplete="one-time-code" />
+        </div>
+
+        <button type="submit" class="btn btn-danger" id="btn-verify-delete">
+          <span>🗑️ Verify OTP & Permanently Erase My Account</span>
+        </button>
+
+        <button type="button" class="btn btn-ghost" onclick="backToStep1()">
+          <span>← Change Mobile Number</span>
+        </button>
+      </form>
     </div>
+
+    <!-- STEP 3: DELETION CONFIRMATION RECEIPT -->
+    <div id="step-3" class="step-view">
+      <div style="text-align:center;padding:16px 0;">
+        <div style="width:72px;height:72px;border-radius:50%;background:rgba(16,185,129,0.15);border:2px solid var(--success);display:flex;align-items:center;justify-content:center;font-size:32px;color:var(--success);margin:0 auto 18px;">
+          ✓
+        </div>
+        <h1 style="color:#FFF;margin-bottom:8px;">Account & Data Erased</h1>
+        <p style="color:var(--muted);font-size:0.95rem;line-height:1.6;margin-bottom:20px;">
+          Your BlunderR account associated with <b id="deleted-phone-label" style="color:#FFF;font-family:'JetBrains Mono',monospace;"></b> has been permanently erased.
+        </p>
+
+        <div style="background:#070912;border:1px solid var(--card-border);border-radius:14px;padding:16px;text-align:left;font-size:0.85rem;color:var(--muted);line-height:1.7;margin-bottom:24px;">
+          <div><b>Purge Receipt Details:</b></div>
+          <div>• Profile Details & Photos: <span style="color:#6EE7B7;">Permanently Purged</span></div>
+          <div>• Matches & Chat Lounge: <span style="color:#6EE7B7;">Permanently Purged</span></div>
+          <div>• Biometric Selfies & ID: <span style="color:#6EE7B7;">Securely Destroyed</span></div>
+          <div>• Complies with: <span style="color:#CBD5E1;">India DPDP Act 2023 & App Store Guidelines</span></div>
+        </div>
+
+        <a href="/" class="btn" style="text-decoration:none;">
+          <span>Return to Homepage</span>
+        </a>
+      </div>
+    </div>
+
+    <div class="compliance-pills">
+      <span class="pill">🔒 India DPDP Act 2023 Compliant</span>
+      <span class="pill">🍎 Apple Guideline 5.1.1(v)</span>
+      <span class="pill">🤖 Google Play Data Safety</span>
+    </div>
+
+  </div>
+
+  <div class="footer">
+    &copy; 2026 BLUNDERЯ Dating. Operated by Bharat Generic Enterprises. | <a href="/privacy">Privacy Policy</a> | <a href="/terms">Terms of Service</a>
   </div>
 
   <script>
-    document.getElementById('deleteForm').addEventListener('submit', function(e) {
-      e.preventDefault();
-      document.getElementById('deleteForm').style.display = 'none';
-      document.getElementById('successMsg').style.display = 'block';
+    let pendingPhone = '';
+    let pendingReason = '';
+    let pendingRemarks = '';
+
+    // Only allow numeric input on mobile and OTP
+    document.getElementById('del-phone').addEventListener('input', function(e) {
+      this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);
     });
+    document.getElementById('del-otp').addEventListener('input', function(e) {
+      this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6);
+    });
+
+    async function handleSendOtp(e) {
+      e.preventDefault();
+      const phone = document.getElementById('del-phone').value.trim();
+      const reason = document.getElementById('del-reason').value;
+      const remarks = document.getElementById('del-remarks').value.trim();
+      const alertBox = document.getElementById('step1-alert');
+      const btn = document.getElementById('btn-send-otp');
+
+      if (phone.length !== 10) {
+        showAlert(alertBox, 'Please enter a valid 10-digit mobile number.');
+        return;
+      }
+
+      alertBox.style.display = 'none';
+      btn.disabled = true;
+      btn.innerHTML = '<span>⏳ Sending Verification OTP...</span>';
+
+      try {
+        const res = await fetch('/v1/auth/delete-account/send-otp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone: phone })
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          if (res.status === 404) {
+            throw new Error(data.message || 'No account found registered with this mobile number. Please check the digits and try again.');
+          }
+          throw new Error(data.message || data.error || 'Could not send verification OTP. Please try again.');
+        }
+
+        pendingPhone = phone;
+        pendingReason = reason;
+        pendingRemarks = remarks;
+
+        document.getElementById('otp-target-phone').textContent = data.phoneMasked || ('+91 ' + phone);
+        if (data.isMockOtp && data.mockOtp) {
+          document.getElementById('del-otp').value = data.mockOtp;
+        }
+
+        // Transition to Step 2
+        document.getElementById('step-1').classList.remove('active');
+        document.getElementById('step-2').classList.add('active');
+        document.getElementById('del-otp').focus();
+      } catch (err) {
+        showAlert(alertBox, err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<span>📩 Send Verification OTP Code</span>';
+      }
+    }
+
+    async function handleVerifyAndDelete(e) {
+      e.preventDefault();
+      const otp = document.getElementById('del-otp').value.trim();
+      const alertBox = document.getElementById('step2-alert');
+      const btn = document.getElementById('btn-verify-delete');
+
+      if (otp.length !== 6) {
+        showAlert(alertBox, 'Please enter the 6-digit verification code.');
+        return;
+      }
+
+      alertBox.style.display = 'none';
+      btn.disabled = true;
+      btn.innerHTML = '<span>⏳ Verifying OTP & Purging Data...</span>';
+
+      try {
+        const res = await fetch('/v1/auth/delete-account/verify-and-delete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            phone: pendingPhone,
+            otp: otp,
+            reason: pendingReason,
+            remarks: pendingRemarks
+          })
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.message || data.error || 'Invalid or expired verification code. Please check and try again.');
+        }
+
+        document.getElementById('deleted-phone-label').textContent = data.phoneMasked || ('+91 ' + pendingPhone);
+
+        // Transition to Step 3
+        document.getElementById('step-2').classList.remove('active');
+        document.getElementById('step-3').classList.add('active');
+      } catch (err) {
+        showAlert(alertBox, err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<span>🗑️ Verify OTP & Permanently Erase My Account</span>';
+      }
+    }
+
+    function backToStep1() {
+      document.getElementById('step-2').classList.remove('active');
+      document.getElementById('step-1').classList.add('active');
+    }
+
+    function showAlert(el, msg) {
+      el.textContent = '⚠️ ' + msg;
+      el.style.display = 'block';
+    }
   </script>
 </body>
 </html>

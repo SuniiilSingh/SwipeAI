@@ -136,8 +136,17 @@ public class ProfileController {
      * @return Confirmation
      */
     @DeleteMapping("/me")
-    public ResponseEntity<Map<String, String>> deleteMyProfile(@AuthenticationPrincipal UUID userId) {
-        profileService.deleteProfile(userId);
+    public ResponseEntity<Map<String, String>> deleteMyProfile(
+            @AuthenticationPrincipal UUID userId,
+            @RequestBody(required = false) Map<String, String> body,
+            jakarta.servlet.http.HttpServletRequest request) {
+        String reason = (body != null && body.containsKey("reason")) ? body.get("reason") : "IN_APP_SETTINGS";
+        String remarks = (body != null && body.containsKey("remarks")) ? body.get("remarks") : null;
+        String clientIp = request.getHeader("X-Forwarded-For");
+        if (clientIp == null || clientIp.isBlank()) clientIp = request.getRemoteAddr();
+        String userAgent = request.getHeader("User-Agent");
+
+        profileService.deleteProfileWithAudit(userId, "IN_APP_SETTINGS", reason, remarks, clientIp, userAgent);
         return ResponseEntity.ok(Map.of("status", "success", "message", "Account and profile deleted successfully."));
     }
 
