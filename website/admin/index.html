@@ -2203,9 +2203,16 @@
 
   <script>
     const API_BASE = '/v1/admin';
-    let adminToken = sessionStorage.getItem('blunderr_admin_token') || '';
-    let adminRole = sessionStorage.getItem('blunderr_admin_role') || '';
-    let adminEmail = sessionStorage.getItem('blunderr_admin_email') || '';
+
+    // 🔒 SECURITY: Clear session on every page load/refresh.
+    // The admin must re-authenticate after every refresh.
+    sessionStorage.removeItem('blunderr_admin_token');
+    sessionStorage.removeItem('blunderr_admin_role');
+    sessionStorage.removeItem('blunderr_admin_email');
+
+    let adminToken = '';
+    let adminRole = '';
+    let adminEmail = '';
     let currentTab = 'overview';
 
     function showToast(msg) {
