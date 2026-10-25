@@ -104,7 +104,24 @@
 
     /* Navigation */
     nav { display: flex; justify-content: space-between; align-items: center; padding: 18px 28px; background: rgba(6, 7, 11, 0.85); backdrop-filter: blur(14px); position: sticky; top: 0; z-index: 100; border-bottom: 1px solid var(--card-border); }
-    .brand-logo { font-size: 1.45rem; font-weight: 900; letter-spacing: -0.5px; background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .brand-wordmark {
+      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Arial Black", Arial, sans-serif;
+      font-size: 1.85rem;
+      font-weight: 900;
+      letter-spacing: -0.05em;
+      color: #FAF7F2;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      user-select: none;
+    }
+    .flip-r {
+      display: inline-block;
+      transform: scaleX(-1);
+      color: var(--primary);
+      margin-left: 1px;
+      text-shadow: 0 0 24px rgba(255, 43, 102, 0.55);
+    }
     .nav-actions { display: flex; gap: 12px; }
     .btn-nav-primary { background: var(--primary-gradient); color: #fff; padding: 9px 18px; border-radius: 999px; font-weight: 700; font-size: 0.88rem; transition: transform 0.2s; }
     .btn-nav-secondary { background: rgba(255, 255, 255, 0.06); border: 1px solid var(--card-border); padding: 9px 18px; border-radius: 999px; font-weight: 600; font-size: 0.88rem; }
@@ -159,7 +176,7 @@
 
   <!-- Top Navigation -->
   <nav>
-    <a href="/" class="brand-logo">BlunderR⚡</a>
+    <a href="/" class="brand-wordmark">BLUNDER<span class="flip-r">R</span></a>
     <div class="nav-actions">
       <a href="/webview" class="btn-nav-primary">🚀 Launch Web View</a>
       <a href="/downloads/BlunderR.apk" class="btn-nav-secondary" download>🤖 APK</a>
@@ -327,7 +344,7 @@
 
   <!-- Footer -->
   <footer>
-    <p>&copy; 2026 Bharat Generic Enterprises. All rights reserved. • Brand: <strong>BlunderR</strong></p>
+    <p>&copy; 2026 Bharat Generic Enterprises. All rights reserved. • Brand: <strong>BLUNDER<span class="flip-r">R</span></strong></p>
     <p style="margin-top: 10px;">
       <a href="/">Home</a> • 
       <a href="/casual-dating-hookups">Casual Dating & Hookups</a> • 
