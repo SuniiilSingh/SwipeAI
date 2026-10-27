@@ -59,6 +59,8 @@ public class SecurityConfig {
                                 "/api/images/**",
                                 "/api/v1/images/**",
                                 "/uploads/**",
+                                "/v1/payments/web/**",
+                                "/api/v1/payments/web/**",
                                 "/v1/payments/upi/webhook",
                                 "/api/v1/payments/upi/webhook",
                                 "/v1/payments/cashfree/webhook",

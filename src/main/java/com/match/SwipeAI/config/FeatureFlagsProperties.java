@@ -33,6 +33,7 @@ public class FeatureFlagsProperties {
         private R2Storage r2Storage = new R2Storage();
         private Cashfree cashfree = new Cashfree();
         private Iap iap = new Iap();
+        private UpiDirect upiDirect = new UpiDirect();
     }
 
     @Data
@@ -117,5 +118,13 @@ public class FeatureFlagsProperties {
         private boolean enabled = true;
         private boolean sandbox = true;
         private String appleSharedSecret = "mock_apple_secret";
+    }
+
+    @Data
+    public static class UpiDirect {
+        private boolean enabled = true;
+        private String merchantVpa = "yb.8120969849@sbi";
+        private String merchantName = "Bharat Generic Enterprises";
+        private String mcc = "5734";
     }
 }

@@ -657,7 +657,7 @@ class SwipeAiFullCrudIntegrationTests {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.orderId").value(orderId))
                 .andExpect(jsonPath("$.status").value("CAPTURED"))
-                .andExpect(jsonPath("$.paymentProvider").value("RAZORPAY_UPI"))
+                .andExpect(jsonPath("$.paymentProvider").value("SBI_DIRECT_UPI"))
                 .andExpect(jsonPath("$.events", hasSize(greaterThanOrEqualTo(2))))
                 .andExpect(jsonPath("$.events[0].event").value("ORDER_INITIATED"))
                 .andExpect(jsonPath("$.decryptedRawPayload").exists());

@@ -27,12 +27,13 @@ class SwipeAiProdProfileTests {
     @Test
     void testProdProfileProperties() {
         assertNotNull(properties);
-        // DigiLocker disabled per version build feature flag
+        // DigiLocker & WhatsApp disabled per current release build feature flags
         assertFalse(properties.getFeatures().getDigilocker().isEnabled());
-        assertTrue(properties.getFeatures().getWhatsapp().isEnabled());
+        assertFalse(properties.getFeatures().getWhatsapp().isEnabled());
         assertTrue(properties.getFeatures().getRazorpay().isEnabled());
         assertTrue(properties.getFeatures().getLivekit().isEnabled());
         assertTrue(properties.getFeatures().getAiWingman().isEnabled());
         assertTrue(properties.getFeatures().getR2Storage().isEnabled());
+        assertTrue(properties.getFeatures().getUpiDirect().isEnabled());
     }
 }

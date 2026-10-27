@@ -67,6 +67,7 @@ public class ProfileDto {
         private String city;
         private String neighborhood;
         private String microCircle;
+        private List<String> microCircles;
         private List<String> photos;
         private DatingIntent intent;
         private Gender gender;
@@ -165,6 +166,7 @@ public class ProfileDto {
         private String city;
         private String neighborhood;
         private String microCircle;
+        private List<String> microCircles;
         private List<String> photos;
         private int completionPercentage;
         private int memeCount;

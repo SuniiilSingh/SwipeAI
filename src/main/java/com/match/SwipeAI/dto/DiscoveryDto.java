@@ -115,6 +115,7 @@ public class DiscoveryDto {
         private boolean isFaceVerified;
         private String photosVerificationJson;
         private Boolean isSharedCommunity;
+        private List<String> microCircles;
     }
 
     @Data

@@ -102,3 +102,8 @@ app:
       secret-access-key: ${R2_SECRET_ACCESS_KEY:}
       bucket-name: ${R2_BUCKET_NAME:blunderr-media}
       public-domain: ${R2_PUBLIC_DOMAIN:https://pub-f218f1444ed840668824b64cd9e1f00d.r2.dev}
+    upi-direct:
+      enabled: ${FEATURE_UPI_DIRECT_ENABLED:true}
+      merchant-vpa: ${UPI_MERCHANT_VPA:yb.8120969849@sbi}
+      merchant-name: ${UPI_MERCHANT_NAME:Bharat Generic Enterprises}
+      mcc: ${UPI_MCC:5734}

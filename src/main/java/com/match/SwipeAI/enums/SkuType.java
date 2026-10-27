@@ -12,9 +12,9 @@ public enum SkuType {
     SUPER_SPARK_19(1900, "₹19 Super Spark"),
 
     /**
-     * ₹19 Revive Match: Unfreezes an expired 48h match and restores chat access.
+     * ₹99 Revive Match: Unfreezes an expired 48h match and restores chat access.
      */
-    REVIVE_MATCH_19(1900, "₹19 Revive Expired Match"),
+    REVIVE_MATCH_19(9900, "₹99 Revive Expired Match"),
 
     /**
      * ₹21 Cutting Chai: Sends a virtual chai micro-invite + 15% partner cafe discount coupon.

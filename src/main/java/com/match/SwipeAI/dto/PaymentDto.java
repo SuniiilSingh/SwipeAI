@@ -42,7 +42,22 @@ public class PaymentDto {
         private String upiIntentUrl;
         private String qrCodeUrl;
         private String razorpayKeyId;
+        private String merchantVpa;
+        private String merchantName;
         private boolean simulated;
+    }
+
+    /**
+     * Direct SBI UPI confirmation request.
+     */
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class ConfirmDirectUpiRequest {
+        private String orderId;
+        private String utr;
+        private String provider;
     }
 
     /**

@@ -20,6 +20,11 @@ public enum PaymentProvider {
     CASHFREE,
 
     /**
+     * Direct SBI UPI Intent via YONO Business (yb.8120969849@sbi).
+     */
+    SBI_DIRECT_UPI,
+
+    /**
      * Direct NPCI UPI Intent & QR.
      */
     RAZORPAY_UPI

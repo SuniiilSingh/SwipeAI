@@ -173,6 +173,9 @@ public class Profile {
     @Column(name = "micro_circle", length = 100)
     private String microCircle;
 
+    @Column(name = "micro_circles_json", columnDefinition = "TEXT")
+    private String microCirclesJson;
+
     @Column(name = "meme_swipes", columnDefinition = "TEXT")
     private String memeSwipesJson;
 

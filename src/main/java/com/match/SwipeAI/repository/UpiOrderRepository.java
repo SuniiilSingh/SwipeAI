@@ -17,4 +17,7 @@ public interface UpiOrderRepository extends JpaRepository<UpiOrder, UUID> {
     Optional<UpiOrder> findByOrderId(String orderId);
     List<UpiOrder> findByUserIdOrderByCreatedAtDesc(UUID userId);
     List<UpiOrder> findByUserIdAndStatus(UUID userId, OrderStatus status);
+    Optional<UpiOrder> findByPaymentId(String paymentId);
+    Optional<UpiOrder> findByExternalTransactionId(String externalTransactionId);
+    boolean existsByPaymentIdOrExternalTransactionId(String paymentId, String externalTransactionId);
 }

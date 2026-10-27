@@ -185,9 +185,15 @@ public class DiscoveryService {
         int fetchLimit = Math.max(50, requestedLimit * 5);
 
         String explicitCommunity = request.getMicroCircle();
+        List<String> viewerCommunities = new ArrayList<>(extractUserMicroCircles(viewerProfile));
+        if (explicitCommunity != null && !explicitCommunity.isBlank()) {
+            String explicitClean = explicitCommunity.trim();
+            if (!viewerCommunities.contains(explicitClean)) {
+                viewerCommunities.add(0, explicitClean);
+            }
+        }
         String userCommunity = (viewerProfile != null && viewerProfile.getMicroCircle() != null && !viewerProfile.getMicroCircle().isBlank())
                 ? viewerProfile.getMicroCircle() : null;
-        String effectiveComm = (explicitCommunity != null && !explicitCommunity.isBlank()) ? explicitCommunity : userCommunity;
 
         CandidateSearchRepository.Criteria candidateCriteria = CandidateSearchRepository.Criteria.builder()
                 .viewerId(viewerId)
@@ -217,20 +223,24 @@ public class DiscoveryService {
                 continue;
             }
 
+            // 2b. Photo Verification & Catfish Filter:
+            // Do not show candidate if their photos are unverified, rejected, or found to be a mismatch!
+            if ("REJECTED".equalsIgnoreCase(candidateProfile != null ? candidateProfile.getVerificationStatus() : "")
+                    || "MISMATCH_DETECTED".equalsIgnoreCase(candidate.getLivenessStatus())
+                    || "PRIMARY_PHOTO_FAILED".equalsIgnoreCase(candidate.getLivenessStatus())) {
+                log.debug("Excluding candidate {} from feed due to photo mismatch / unverified status", candidate.getId());
+                continue;
+            }
+
             // 3. Shadow Shield Check (Family, Relatives, Boss, Corporate Domain)
             if (shadowShieldService.isShielded(viewer, viewerProfile, candidate, candidateProfile)) {
                 log.debug("Shadow Shield prevented candidate {} from appearing to viewer {}", candidate.getId(), viewerId);
                 continue;
             }
 
-            // 4. Micro-Community Match Detection (ADD-ON filter)
-            boolean isSharedCommunity = false;
-            if (effectiveComm != null && candidateProfile != null && candidateProfile.getMicroCircle() != null) {
-                isSharedCommunity = isSharedCommunityMatch(effectiveComm, candidateProfile.getMicroCircle());
-            }
-            if (!isSharedCommunity && userCommunity != null && candidateProfile != null && candidateProfile.getMicroCircle() != null) {
-                isSharedCommunity = isSharedCommunityMatch(userCommunity, candidateProfile.getMicroCircle());
-            }
+            // 4. Micro-Community Match Detection (Supports up to 5 joined communities on both sides)
+            List<String> candidateCommunities = extractUserMicroCircles(candidateProfile);
+            boolean isSharedCommunity = hasSharedCommunityMatch(viewerCommunities, candidateCommunities);
 
             // 4a. Filter by Dietary Preferences if requested in feed request
             if (request.getDietaryFilters() != null && !request.getDietaryFilters().isEmpty()) {
@@ -381,10 +391,10 @@ public class DiscoveryService {
             for (Profile p : allProfiles) {
                 if (p.getUserId() != null && p.getUserId().equals(viewerId)) continue;
 
+                List<String> candidateCommunities = extractUserMicroCircles(p);
                 // If user requested a specific micro-community circle, strictly filter fallback by that circle
                 if (request.getMicroCircle() != null && !request.getMicroCircle().isBlank()) {
-                    String reqCircle = request.getMicroCircle().trim().toLowerCase();
-                    if (p.getMicroCircle() == null || !isSharedCommunityMatch(reqCircle, p.getMicroCircle())) {
+                    if (!hasSharedCommunityMatch(List.of(request.getMicroCircle().trim()), candidateCommunities)) {
                         continue;
                     }
                 }
@@ -394,13 +404,7 @@ public class DiscoveryService {
                 if (!isGenderAndInterestMatch(viewer, viewerProfile, candidateUser, p)) continue;
                 if (shadowShieldService.isShielded(viewer, viewerProfile, candidateUser, p)) continue;
 
-                boolean isShared = false;
-                if (effectiveComm != null && p.getMicroCircle() != null) {
-                    isShared = isSharedCommunityMatch(effectiveComm, p.getMicroCircle());
-                }
-                if (!isShared && userCommunity != null && p.getMicroCircle() != null) {
-                    isShared = isSharedCommunityMatch(userCommunity, p.getMicroCircle());
-                }
+                boolean isShared = hasSharedCommunityMatch(viewerCommunities, candidateCommunities);
 
                 candidateCards.add(buildCandidateCard(viewerId, candidateUser, p, 3.5, 88, 88, List.of("High Synergy", "Local Circle"), isShared));
             }
@@ -638,7 +642,9 @@ public class DiscoveryService {
         }
 
         if (photos.isEmpty()) {
-            photos.add("https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800");
+            if (profile != null && profile.getPhoto1() != null && !profile.getPhoto1().isBlank()) {
+                photos.add(profile.getPhoto1().trim());
+            }
         }
 
         String photo1 = !photos.isEmpty() ? photos.get(0) : (profile != null ? profile.getPhoto1() : null);
@@ -797,6 +803,7 @@ public class DiscoveryService {
                 .city(profile != null ? profile.getCity() : "Bengaluru")
                 .neighborhood(profile != null ? profile.getNeighborhood() : "Indiranagar")
                 .microCircle(profile != null ? profile.getMicroCircle() : "Koramangala Tech Founders")
+                .microCircles(extractUserMicroCircles(profile))
                 .photos(photos)
                 .photo1(photo1)
                 .photo2(photo2)
@@ -960,5 +967,41 @@ public class DiscoveryService {
             }
         }
         return meaningfulA > 0 && matchCount >= Math.min(2, meaningfulA);
+    }
+
+    public List<String> extractUserMicroCircles(Profile profile) {
+        if (profile == null) return List.of();
+        List<String> circles = new ArrayList<>();
+        if (profile.getMicroCirclesJson() != null && !profile.getMicroCirclesJson().isBlank()) {
+            try {
+                List<String> parsed = objectMapper.readValue(profile.getMicroCirclesJson(), new com.fasterxml.jackson.core.type.TypeReference<>() {});
+                if (parsed != null) {
+                    for (String c : parsed) {
+                        if (c != null && !c.isBlank()) circles.add(c.trim());
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
+        if (circles.isEmpty() && profile.getMicroCircle() != null && !profile.getMicroCircle().isBlank()) {
+            String[] parts = profile.getMicroCircle().split("[,;|]+");
+            for (String p : parts) {
+                if (!p.isBlank()) circles.add(p.trim());
+            }
+        }
+        return circles.stream().distinct().limit(5).toList();
+    }
+
+    public boolean hasSharedCommunityMatch(List<String> viewerComms, List<String> candidateComms) {
+        if (viewerComms == null || viewerComms.isEmpty() || candidateComms == null || candidateComms.isEmpty()) {
+            return false;
+        }
+        for (String v : viewerComms) {
+            for (String c : candidateComms) {
+                if (isSharedCommunityMatch(v, c)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }

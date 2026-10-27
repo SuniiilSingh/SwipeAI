@@ -163,7 +163,29 @@ public class ProfileService {
         if (request.getVacationPreference() != null) profile.setVacationPreference(sanitize(request.getVacationPreference(), 50));
         if (request.getCity() != null) profile.setCity(sanitize(request.getCity(), 25));
         if (request.getNeighborhood() != null) profile.setNeighborhood(sanitize(request.getNeighborhood(), 50));
-        if (request.getMicroCircle() != null) profile.setMicroCircle(sanitize(request.getMicroCircle(), 100));
+        if (request.getMicroCircles() != null) {
+            List<String> validCircles = request.getMicroCircles().stream()
+                    .filter(s -> s != null && !s.trim().isEmpty())
+                    .map(s -> sanitize(s.trim(), 100))
+                    .distinct()
+                    .limit(5)
+                    .toList();
+            try {
+                profile.setMicroCirclesJson(objectMapper.writeValueAsString(validCircles));
+            } catch (Exception ignored) {}
+            if (!validCircles.isEmpty()) {
+                profile.setMicroCircle(validCircles.get(0));
+            } else {
+                profile.setMicroCircle(null);
+            }
+        } else if (request.getMicroCircle() != null) {
+            profile.setMicroCircle(sanitize(request.getMicroCircle(), 100));
+            if (profile.getMicroCirclesJson() == null || profile.getMicroCirclesJson().isBlank()) {
+                try {
+                    profile.setMicroCirclesJson(objectMapper.writeValueAsString(List.of(profile.getMicroCircle())));
+                } catch (Exception ignored) {}
+            }
+        }
         if (request.getVoicePromptUrl() != null) profile.setVoicePromptUrl(request.getVoicePromptUrl().trim().isEmpty() ? null : request.getVoicePromptUrl().trim());
         if (request.getVoicePromptDuration() != null) profile.setVoicePromptDuration(request.getVoicePromptDuration());
         if (request.getVoicePromptText() != null) profile.setVoicePromptText(sanitize(request.getVoicePromptText(), 300));
@@ -809,6 +831,7 @@ public class ProfileService {
                 .city(profile.getCity())
                 .neighborhood(profile.getNeighborhood())
                 .microCircle(profile.getMicroCircle())
+                .microCircles(extractUserMicroCircles(profile))
                 .photos(photos)
                 .completionPercentage(completionPct)
                 .sparksBalance(user.getSparksBalance() != null ? user.getSparksBalance() : 0)
@@ -819,6 +842,28 @@ public class ProfileService {
                 .selectedMemeTitle(profile.getSelectedMemeTitle())
                 .photosVerificationJson(profile.getPhotosVerificationJson())
                 .build();
+    }
+
+    public List<String> extractUserMicroCircles(Profile profile) {
+        if (profile == null) return List.of();
+        List<String> circles = new ArrayList<>();
+        if (profile.getMicroCirclesJson() != null && !profile.getMicroCirclesJson().isBlank()) {
+            try {
+                List<String> parsed = objectMapper.readValue(profile.getMicroCirclesJson(), new com.fasterxml.jackson.core.type.TypeReference<>() {});
+                if (parsed != null) {
+                    for (String c : parsed) {
+                        if (c != null && !c.isBlank()) circles.add(c.trim());
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
+        if (circles.isEmpty() && profile.getMicroCircle() != null && !profile.getMicroCircle().isBlank()) {
+            String[] parts = profile.getMicroCircle().split("[,;|]+");
+            for (String p : parts) {
+                if (!p.isBlank()) circles.add(p.trim());
+            }
+        }
+        return circles.stream().distinct().limit(5).toList();
     }
 
     public void triggerAsyncSelfieVerification(UUID userId) {

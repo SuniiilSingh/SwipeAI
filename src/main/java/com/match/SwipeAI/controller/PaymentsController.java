@@ -35,6 +35,7 @@ public class PaymentsController {
     private final PaymentCryptoService paymentCryptoService;
     private final com.match.SwipeAI.service.integration.PaymentExecutionLogService paymentExecutionLogService;
     private final UserRepository userRepository;
+    private final com.match.SwipeAI.repository.ProfileRepository profileRepository;
     private final PaymentExecutionLogRepository paymentExecutionLogRepository;
     private final com.match.SwipeAI.repository.UpiOrderRepository upiOrderRepository;
 
@@ -216,6 +217,29 @@ public class PaymentsController {
     }
 
     /**
+     * Confirm Direct SBI UPI Payment (yb.8120969849@sbi / Bharat Generic Enterprises).
+     * Accepts orderId and client-side bank transaction reference/UTR.
+     */
+    @com.match.SwipeAI.annotation.TrackPaymentTransaction(action = "CONFIRM_DIRECT_UPI")
+    @PostMapping("/upi/confirm-direct")
+    public ResponseEntity<Map<String, Object>> confirmDirectUpi(
+            @AuthenticationPrincipal UUID userId,
+            @RequestBody PaymentDto.ConfirmDirectUpiRequest request,
+            HttpServletRequest httpRequest) {
+        String clientIp = extractClientIp(httpRequest);
+        String userAgent = extractUserAgent(httpRequest);
+
+        boolean processed = upiPaymentService.confirmDirectUpiPayment(
+                request.getOrderId(), request.getUtr(), userId, clientIp, userAgent);
+
+        return ResponseEntity.ok(Map.of(
+                "status", processed ? "success" : "failed",
+                "orderId", request.getOrderId() != null ? request.getOrderId() : "",
+                "message", processed ? "Payment confirmed and benefits activated!" : "Order already processed or invalid"
+        ));
+    }
+
+    /**
      * Verify and credit Native In-App Purchases (Google Play Billing / Apple StoreKit).
      */
     @com.match.SwipeAI.annotation.TrackPaymentTransaction(action = "IAP_VERIFY")
@@ -339,6 +363,169 @@ public class PaymentsController {
     public ResponseEntity<List<com.match.SwipeAI.model.PaymentExecutionLog>> getExecutionLogsByOrderId(
             @PathVariable String orderId) {
         return ResponseEntity.ok(paymentExecutionLogService.getLogsByOrderId(orderId));
+    }
+
+    /**
+     * Web Checkout: Look up BlunderR profile by mobile phone number.
+     */
+    @GetMapping("/web/lookup-phone")
+    public ResponseEntity<Map<String, Object>> lookupPhone(@RequestParam String phone) {
+        String normalizedPhone = normalizePhone(phone);
+        User user = userRepository.findByPhoneE164(normalizedPhone).orElse(null);
+        if (user == null && !normalizedPhone.startsWith("+91") && normalizedPhone.length() == 10) {
+            user = userRepository.findByPhoneE164("+91" + normalizedPhone).orElse(null);
+        }
+
+        if (user == null) {
+            return ResponseEntity.ok(Map.of(
+                    "found", false,
+                    "phone", normalizedPhone,
+                    "message", "Phone number not registered on BlunderR yet."
+            ));
+        }
+
+        com.match.SwipeAI.model.Profile profile = profileRepository.findById(user.getId()).orElse(null);
+        String displayName = (profile != null && profile.getDisplayName() != null && !profile.getDisplayName().isBlank())
+                ? profile.getDisplayName()
+                : "BlunderR Member";
+        String photo = (profile != null && profile.getPhoto1() != null) ? profile.getPhoto1() : "";
+        String city = (profile != null && profile.getCity() != null) ? profile.getCity() : "";
+        boolean isFaceVerified = Boolean.TRUE.equals(user.getFaceVerified());
+
+        Map<String, Object> res = new java.util.LinkedHashMap<>();
+        res.put("found", true);
+        res.put("userId", user.getId().toString());
+        res.put("phone", user.getPhoneE164());
+        res.put("displayName", displayName);
+        res.put("photo", photo);
+        res.put("city", city);
+        res.put("faceVerified", isFaceVerified);
+        res.put("hasActivePass", Boolean.TRUE.equals(user.getHasActivePass()));
+        res.put("passExpiry", user.getPassExpiry() != null ? user.getPassExpiry().toString() : "");
+        res.put("sparksBalance", user.getSparksBalance() != null ? user.getSparksBalance() : 0);
+        res.put("boostsBalance", user.getBoostsBalance() != null ? user.getBoostsBalance() : 0);
+
+        return ResponseEntity.ok(res);
+    }
+
+    /**
+     * Web Checkout: Create direct UPI order for a phone number or userId.
+     */
+    @com.match.SwipeAI.annotation.TrackPaymentTransaction(action = "CREATE_WEB_UPI_ORDER")
+    @PostMapping("/web/create-order")
+    public ResponseEntity<PaymentDto.CreateOrderResponse> createWebOrder(
+            @RequestBody Map<String, String> request,
+            HttpServletRequest httpRequest) {
+        String phone = request.get("phone");
+        String skuStr = request.get("sku");
+        if (skuStr == null || skuStr.isBlank()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        com.match.SwipeAI.enums.SkuType sku;
+        try {
+            sku = com.match.SwipeAI.enums.SkuType.valueOf(skuStr.trim());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        UUID userId = null;
+        if (request.containsKey("userId") && request.get("userId") != null && !request.get("userId").isBlank()) {
+            try {
+                userId = UUID.fromString(request.get("userId").trim());
+            } catch (Exception ignored) {}
+        }
+
+        if (userId == null && phone != null && !phone.isBlank()) {
+            String normalizedPhone = normalizePhone(phone);
+            User user = userRepository.findByPhoneE164(normalizedPhone).orElse(null);
+            if (user == null && !normalizedPhone.startsWith("+91") && normalizedPhone.length() == 10) {
+                user = userRepository.findByPhoneE164("+91" + normalizedPhone).orElse(null);
+            }
+            if (user != null) {
+                userId = user.getId();
+            }
+        }
+
+        if (userId == null) {
+            userId = UUID.randomUUID();
+        }
+
+        String clientIp = extractClientIp(httpRequest);
+        String userAgent = extractUserAgent(httpRequest);
+        PaymentDto.CreateOrderResponse response = upiPaymentService.createOrder(userId, sku, null, clientIp, userAgent);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Web Checkout: Confirm Direct SBI UPI Payment from the website.
+     */
+    @com.match.SwipeAI.annotation.TrackPaymentTransaction(action = "CONFIRM_WEB_UPI_ORDER")
+    @PostMapping("/web/confirm-order")
+    public ResponseEntity<Map<String, Object>> confirmWebOrder(
+            @RequestBody Map<String, String> request,
+            HttpServletRequest httpRequest) {
+        String orderId = request.get("orderId");
+        String utr = request.get("utr");
+        String phone = request.get("phone");
+        if (orderId == null || orderId.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("status", "failed", "message", "Missing orderId"));
+        }
+
+        String clientIp = extractClientIp(httpRequest);
+        String userAgent = extractUserAgent(httpRequest);
+
+        var optionalOrder = upiOrderRepository.findByOrderId(orderId);
+        if (optionalOrder.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("status", "failed", "message", "Order not found"));
+        }
+
+        var order = optionalOrder.get();
+        if (phone != null && !phone.isBlank()) {
+            String normalizedPhone = normalizePhone(phone);
+            User user = userRepository.findByPhoneE164(normalizedPhone).orElse(null);
+            if (user == null && !normalizedPhone.startsWith("+91") && normalizedPhone.length() == 10) {
+                user = userRepository.findByPhoneE164("+91" + normalizedPhone).orElse(null);
+            }
+            if (user != null && !user.getId().equals(order.getUserId())) {
+                order.setUserId(user.getId());
+                upiOrderRepository.save(order);
+            }
+        }
+
+        boolean processed = upiPaymentService.confirmDirectUpiPayment(orderId, utr, order.getUserId(), clientIp, userAgent);
+        return ResponseEntity.ok(Map.of(
+                "status", processed ? "success" : "failed",
+                "orderId", orderId,
+                "message", processed ? "Payment confirmed and VIP benefits activated!" : "Transaction reference is invalid, expired, or already redeemed"
+        ));
+    }
+
+    /**
+     * Web Checkout: Poll order status by orderId.
+     */
+    @GetMapping("/web/order-status/{orderId}")
+    public ResponseEntity<Map<String, Object>> getWebOrderStatus(@PathVariable String orderId) {
+        var optionalOrder = upiOrderRepository.findByOrderId(orderId);
+        if (optionalOrder.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        var order = optionalOrder.get();
+        return ResponseEntity.ok(Map.of(
+                "orderId", order.getOrderId(),
+                "status", order.getStatus().name(),
+                "sku", order.getSku() != null ? order.getSku().name() : "",
+                "amountInr", order.getAmountPaise() != null ? order.getAmountPaise() / 100 : 0
+        ));
+    }
+
+    private String normalizePhone(String phone) {
+        if (phone == null) return "";
+        String cleaned = phone.replaceAll("[^0-9+]", "");
+        if (cleaned.startsWith("+")) return cleaned;
+        if (cleaned.startsWith("91") && cleaned.length() == 12) return "+" + cleaned;
+        if (cleaned.length() == 10) return "+91" + cleaned;
+        return cleaned;
     }
 
     private String extractClientIp(HttpServletRequest request) {
