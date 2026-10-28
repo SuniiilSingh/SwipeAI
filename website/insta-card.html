@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>BlunderR – Ultra-Rich Instagram Card Studio</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,800;1,600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #06070B;
+      color: #F8FAFC;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+    }
+    .serif-display {
+      font-family: 'Cinzel', serif;
+    }
+    .editorial-quote {
+      font-family: 'Playfair Display', Georgia, serif;
+    }
+    .flip-r {
+      display: inline-block;
+      transform: scaleX(-1);
+    }
+    
+    /* Luxury Border Themes */
+    /* 1. 24K Champagne Gold Foil */
+    .border-gold-luxe {
+      padding: 3.5px;
+      background: linear-gradient(135deg, #FFE57F 0%, #B8860B 20%, #FFF2A3 40%, #D4AF37 60%, #996515 80%, #FFDF73 100%);
+      box-shadow: 0 0 35px rgba(212, 175, 55, 0.35), 0 20px 60px rgba(0, 0, 0, 0.9);
+      border-radius: 32px;
+    }
+    .border-gold-luxe .inner-card {
+      background: #090B10;
+      border-radius: 29px;
+      box-shadow: inset 0 0 20px rgba(212, 175, 55, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.3);
+    }
+    .accent-gold-text {
+      background: linear-gradient(135deg, #FFF1B0 0%, #D4AF37 50%, #AA771C 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* 2. Imperial Emerald & Platinum */
+    .border-emerald-luxe {
+      padding: 3.5px;
+      background: linear-gradient(135deg, #E2E8F0 0%, #059669 25%, #6EE7B7 50%, #065F46 75%, #F8FAFC 100%);
+      box-shadow: 0 0 35px rgba(16, 185, 129, 0.4), 0 20px 60px rgba(0, 0, 0, 0.9);
+      border-radius: 32px;
+    }
+    .border-emerald-luxe .inner-card {
+      background: #06110D;
+      border-radius: 29px;
+      box-shadow: inset 0 0 22px rgba(16, 185, 129, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.35);
+    }
+    .accent-emerald-text {
+      background: linear-gradient(135deg, #A7F3D0 0%, #10B981 50%, #047857 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* 3. Haute Rose Gold Titanium */
+    .border-rosegold-luxe {
+      padding: 3.5px;
+      background: linear-gradient(135deg, #FFE4E6 0%, #FB7185 25%, #FFF1F2 50%, #E11D48 75%, #FDA4AF 100%);
+      box-shadow: 0 0 35px rgba(251, 113, 133, 0.38), 0 20px 60px rgba(0, 0, 0, 0.9);
+      border-radius: 32px;
+    }
+    .border-rosegold-luxe .inner-card {
+      background: #11080C;
+      border-radius: 29px;
+      box-shadow: inset 0 0 20px rgba(251, 113, 133, 0.22), inset 0 1px 1px rgba(255, 255, 255, 0.3);
+    }
+    .accent-rosegold-text {
+      background: linear-gradient(135deg, #FFE4E6 0%, #F43F5E 50%, #9F1239 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* 4. Cyberpunk Neon Aurora */
+    .border-aurora-luxe {
+      padding: 3.5px;
+      background: linear-gradient(135deg, #00F5D4 0%, #7B2CBF 35%, #F72585 70%, #4CC9F0 100%);
+      box-shadow: 0 0 40px rgba(0, 245, 212, 0.35), 0 20px 60px rgba(0, 0, 0, 0.9);
+      border-radius: 32px;
+    }
+    .border-aurora-luxe .inner-card {
+      background: #080A14;
+      border-radius: 29px;
+      box-shadow: inset 0 0 22px rgba(123, 44, 191, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.35);
+    }
+    .accent-aurora-text {
+      background: linear-gradient(135deg, #00F5D4 0%, #A855F7 50%, #EC4899 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* 5. Noir Caviar & Diamond */
+    .border-diamond-luxe {
+      padding: 3.5px;
+      background: linear-gradient(135deg, #FFFFFF 0%, #475569 25%, #E2E8F0 50%, #1E293B 75%, #FFFFFF 100%);
+      box-shadow: 0 0 35px rgba(255, 255, 255, 0.28), 0 20px 60px rgba(0, 0, 0, 0.95);
+      border-radius: 32px;
+    }
+    .border-diamond-luxe .inner-card {
+      background: #050608;
+      border-radius: 29px;
+      box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.18), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+    }
+    .accent-diamond-text {
+      background: linear-gradient(135deg, #FFFFFF 0%, #CBD5E1 50%, #64748B 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* 9:16 Instagram Story Format */
+    .aspect-story {
+      width: 360px;
+      height: 640px; /* 9:16 */
+    }
+
+    /* Glass Panels */
+    .glass-ultra {
+      background: rgba(13, 16, 27, 0.72);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+    }
+    .glass-gold-pill {
+      background: rgba(212, 175, 55, 0.12);
+      border: 1px solid rgba(212, 175, 55, 0.35);
+      color: #FFE57F;
+    }
+
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #090B10;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1E293B;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #334155;
+    }
+  </style>
+</head>
+<body class="min-h-screen pb-16">
+  <!-- Top Navigation Bar -->
+  <header class="border-b border-white/10 bg-[#090B11]/90 sticky top-0 z-50 backdrop-blur-md px-6 py-4 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#FF385C] to-[#E0284F] flex items-center justify-center font-black text-white text-xl shadow-lg shadow-[#FF385C]/30 border border-white/20">
+        B
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="serif-display font-black text-xl tracking-wider text-white">BLUNDER<span class="flip-r text-[#FF385C]">R</span></span>
+          <span class="bg-[#FF385C]/15 border border-[#FF385C]/40 text-[#FF385C] text-[11px] font-extrabold px-2 py-0.5 rounded-full tracking-wide">STUDIO</span>
+        </div>
+        <p class="text-xs text-slate-400 font-medium">Ultra-Rich Instagram Marketing & Profile Card Generator</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <button onclick="downloadCardPNG()" class="bg-gradient-to-r from-[#FF385C] to-[#E0284F] hover:brightness-110 text-white font-bold text-xs px-4 py-2 rounded-xl flex items-center gap-2 shadow-lg shadow-[#FF385C]/30 transition-all active:scale-95">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+        Export Ultra-HD Card
+      </button>
+      <button onclick="copyInstagramStoryKit()" class="bg-white/10 hover:bg-white/15 border border-white/20 text-slate-200 font-bold text-xs px-3 py-2 rounded-xl flex items-center gap-1.5 transition-all active:scale-95">
+        <span>📸</span> Copy Story Kit
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Layout: Left Controls, Right Preview Showcase -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 pt-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+    
+    <!-- LEFT COLUMN: Generator Controls (5 Cols) -->
+    <div class="lg:col-span-5 flex flex-col gap-6">
+      
+      <!-- Border Style Selector -->
+      <div class="bg-[#0C0F19] border border-white/10 rounded-2xl p-5 shadow-xl">
+        <div class="flex items-center justify-between mb-3">
+          <label class="text-xs font-extrabold tracking-wider text-slate-300 uppercase flex items-center gap-2">
+            <span>✨</span> 1. Select Luxury Border Style
+          </label>
+          <span id="borderLabelBadge" class="text-[11px] font-bold text-amber-400">24K Champagne Gold</span>
+        </div>
+        <div class="grid grid-cols-5 gap-2">
+          <!-- Gold -->
+          <button onclick="setTheme('gold', '24K Champagne Gold')" id="btn-theme-gold" class="flex flex-col items-center gap-1.5 p-2 rounded-xl border-2 border-amber-400 bg-amber-500/10 transition-all hover:scale-105">
+            <div class="w-6 h-6 rounded-full bg-gradient-to-br from-amber-200 via-amber-400 to-amber-700 shadow-sm border border-white/40"></div>
+            <span class="text-[10px] font-bold text-amber-300">Gold</span>
+          </button>
+          <!-- Emerald -->
+          <button onclick="setTheme('emerald', 'Imperial Emerald')" id="btn-theme-emerald" class="flex flex-col items-center gap-1.5 p-2 rounded-xl border border-white/10 bg-white/5 transition-all hover:scale-105">
+            <div class="w-6 h-6 rounded-full bg-gradient-to-br from-emerald-200 via-emerald-500 to-teal-900 shadow-sm border border-white/40"></div>
+            <span class="text-[10px] font-bold text-slate-300">Emerald</span>
+          </button>
+          <!-- Rose Gold -->
+          <button onclick="setTheme('rosegold', 'Haute Rose Titanium')" id="btn-theme-rosegold" class="flex flex-col items-center gap-1.5 p-2 rounded-xl border border-white/10 bg-white/5 transition-all hover:scale-105">
+            <div class="w-6 h-6 rounded-full bg-gradient-to-br from-rose-200 via-rose-400 to-rose-700 shadow-sm border border-white/40"></div>
+            <span class="text-[10px] font-bold text-slate-300">Rose</span>
+          </button>
+          <!-- Aurora -->
+          <button onclick="setTheme('aurora', 'Cyber Neon Aurora')" id="btn-theme-aurora" class="flex flex-col items-center gap-1.5 p-2 rounded-xl border border-white/10 bg-white/5 transition-all hover:scale-105">
+            <div class="w-6 h-6 rounded-full bg-gradient-to-br from-cyan-400 via-purple-500 to-pink-500 shadow-sm border border-white/40"></div>
+            <span class="text-[10px] font-bold text-slate-300">Aurora</span>
+          </button>
+          <!-- Diamond -->
+          <button onclick="setTheme('diamond', 'Noir Caviar Diamond')" id="btn-theme-diamond" class="flex flex-col items-center gap-1.5 p-2 rounded-xl border border-white/10 bg-white/5 transition-all hover:scale-105">
+            <div class="w-6 h-6 rounded-full bg-gradient-to-br from-white via-slate-300 to-slate-900 shadow-sm border border-white/40"></div>
+            <span class="text-[10px] font-bold text-slate-300">Noir</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Model & High-Resolution Image Selector -->
+      <div class="bg-[#0C0F19] border border-white/10 rounded-2xl p-5 shadow-xl">
+        <div class="flex items-center justify-between mb-3">
+          <label class="text-xs font-extrabold tracking-wider text-slate-300 uppercase flex items-center gap-2">
+            <span>💎</span> 2. Curated High-Fashion Portrait
+          </label>
+          <span class="text-[11px] text-emerald-400 font-bold">100% Studio Editorial</span>
+        </div>
+        <div class="grid grid-cols-4 gap-2.5">
+          <!-- Tara Ivory Blazer -->
+          <div onclick="setModelImage('/downloads/blunderr-model-ivory-blazer.jpg', 'Tara Sen', '25 • Founder & Angel Investor', 'Indiranagar Founders Club • Bengaluru', 'Rohini (Pada 2)', 'Taurus (वृषभ)', '34.5 / 36 (96% Match)', 'Hoping for deep existential dialogue, ended up comparing startup equity and midnight croissants.')" class="cursor-pointer group relative rounded-xl overflow-hidden border-2 border-[#FF385C] aspect-[3/4]">
+            <img src="/downloads/blunderr-model-ivory-blazer.jpg" class="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-1.5">
+              <span class="text-[10px] font-bold text-white truncate">Ivory Blazer</span>
+            </div>
+          </div>
+          <!-- Pink Off-Shoulder -->
+          <div onclick="setModelImage('/downloads/blunderr-model-pink-offshoulder.jpg', 'Ananya Roy', '24 • Creative Director', 'Bandra Sunset Club • Mumbai', 'Mrigashira (Pada 3)', 'Gemini (मिथुन)', '33.0 / 36 (92% Match)', 'I don’t text penpals. If the coffee chemistry is right, let’s explore the art biennial this Saturday.')" class="cursor-pointer group relative rounded-xl overflow-hidden border border-white/10 aspect-[3/4] hover:border-[#FF385C]">
+            <img src="/downloads/blunderr-model-pink-offshoulder.jpg" class="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-1.5">
+              <span class="text-[10px] font-bold text-white truncate">Rose Silk</span>
+            </div>
+          </div>
+          <!-- Editorial Rose -->
+          <div onclick="setModelImage('/downloads/blunderr-model-editorial-rose.jpg', 'Meera Kapoor', '26 • Luxury Architect', 'DLF Phase 5 • Gurgaon', 'Pushya (Pada 1)', 'Cancer (कर्क)', '35.0 / 36 (97% Match)', 'My red flag: I judge dates based on their spatial aesthetics, lighting choices, and vinyl records.')" class="cursor-pointer group relative rounded-xl overflow-hidden border border-white/10 aspect-[3/4] hover:border-[#FF385C]">
+            <img src="/downloads/blunderr-model-editorial-rose.jpg" class="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-1.5">
+              <span class="text-[10px] font-bold text-white truncate">Vogue Red</span>
+            </div>
+          </div>
+          <!-- Sleek Front Editorial -->
+          <div onclick="setModelImage('/downloads/blunderr-model-sleek-front.jpg', 'Kabir Malhotra', '27 • Venture Partner', 'Koramangala 4th Block • Bengaluru', 'Magha (Pada 4)', 'Leo (सिंह)', '32.5 / 36 (91% Match)', 'Looking for someone who can challenge my mental models on weekdays and get lost in Goa on weekends.')" class="cursor-pointer group relative rounded-xl overflow-hidden border border-white/10 aspect-[3/4] hover:border-[#FF385C]">
+            <img src="/downloads/blunderr-model-sleek-front.jpg" class="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-1.5">
+              <span class="text-[10px] font-bold text-white truncate">Executive</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Profile & Card Customizer Inputs -->
+      <div class="bg-[#0C0F19] border border-white/10 rounded-2xl p-5 shadow-xl flex flex-col gap-4">
+        <label class="text-xs font-extrabold tracking-wider text-slate-300 uppercase flex items-center gap-2">
+          <span>✍️</span> 3. Profile & Vedic Kundali Details
+        </label>
+        
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-[11px] font-bold text-slate-400 block mb-1">Display Name</label>
+            <input type="text" id="inputName" value="Tara Sen" oninput="updateCardContent()" class="w-full bg-[#131724] border border-white/15 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#FF385C]" />
+          </div>
+          <div>
+            <label class="text-[11px] font-bold text-slate-400 block mb-1">Age & Role</label>
+            <input type="text" id="inputRole" value="25 • Founder & Angel Investor" oninput="updateCardContent()" class="w-full bg-[#131724] border border-white/15 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#FF385C]" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-[11px] font-bold text-slate-400 block mb-1">Micro-Tribe / Community</label>
+            <input type="text" id="inputTribe" value="Indiranagar Founders Club • Bengaluru" oninput="updateCardContent()" class="w-full bg-[#131724] border border-white/15 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#FF385C]" />
+          </div>
+          <div>
+            <label class="text-[11px] font-bold text-slate-400 block mb-1">3D Biometric Badge</label>
+            <input type="text" id="inputBiometric" value="✓ 100% 3D BIOMETRIC VERIFIED" oninput="updateCardContent()" class="w-full bg-[#131724] border border-white/15 rounded-xl px-3 py-2 text-xs text-emerald-400 font-bold focus:outline-none focus:border-[#FF385C]" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2">
+          <div>
+            <label class="text-[10px] font-bold text-slate-400 block mb-1">Nakshatra</label>
+            <input type="text" id="inputNakshatra" value="Rohini (Pada 2)" oninput="updateCardContent()" class="w-full bg-[#131724] border border-white/15 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-[#FF385C]" />
+          </div>
+          <div>
+            <label class="text-[10px] font-bold text-slate-400 block mb-1">Moon Sign</label>
+            <input type="text" id="inputMoon" value="Taurus (वृषभ)" oninput="updateCardContent()" class="w-full bg-[#131724] border border-white/15 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-[#FF385C]" />
+          </div>
+          <div>
+            <label class="text-[10px] font-bold text-slate-400 block mb-1">36-Guna Score</label>
+            <input type="text" id="inputGuna" value="34.5 / 36 (96%)" oninput="updateCardContent()" class="w-full bg-[#131724] border border-white/15 rounded-xl px-2.5 py-1.5 text-xs text-emerald-400 font-bold focus:outline-none focus:border-[#FF385C]" />
+          </div>
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label class="text-[11px] font-bold text-slate-400">Editorial Vibe Quote / Prompt</label>
+            <span id="quoteWordCounter" class="text-[10px] text-amber-400 font-semibold px-2 py-0.5 rounded-full bg-amber-400/10 border border-amber-400/20">13 / 18 words (Story fit)</span>
+          </div>
+          <textarea id="inputQuote" rows="2" oninput="handleQuoteInput()" class="w-full bg-[#131724] border border-white/15 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#FF385C]">Hoping for deep existential dialogue, ended up comparing startup equity and midnight croissants.</textarea>
+          <p class="text-[10px] text-slate-500 mt-1">⚡ Max 18 words: Strictly capped to guarantee a clean 2-line fit without crowding or truncating on your 9:16 card.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT COLUMN: The Ultra-Rich Card Showcase (7 Cols) -->
+    <div class="lg:col-span-7 flex flex-col items-center">
+      
+      <div class="w-full flex items-center justify-between mb-4 px-2">
+        <div class="flex items-center gap-2">
+          <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span class="text-xs font-bold text-slate-300 uppercase tracking-wider">Live Ultra-Rich Card Render</span>
+        </div>
+        <span class="text-xs text-slate-400">Scale: 100% • Instagram Ready</span>
+      </div>
+
+      <!-- OUTER LUXURY CARD CONTAINER (Target for Border Styling) -->
+      <div id="cardOuterWrapper" class="border-gold-luxe aspect-story transition-all duration-300 relative select-none">
+        
+        <!-- INNER CARD -->
+        <div id="cardInnerFrame" class="inner-card w-full h-full relative overflow-hidden flex flex-col justify-end p-3 sm:p-4">
+          
+          <!-- Background Editorial Photo (Centered on face, 100% clear with zero face overlays) -->
+          <img id="cardBgImage" src="/downloads/blunderr-model-ivory-blazer.jpg" class="absolute inset-0 w-full h-full object-cover object-[center_12%] z-0 transition-all duration-500" />
+          
+          <!-- Cinematic Soft Vignette strictly on bottom 1/3 for readability; top 2/3 is 100% clean photo -->
+          <div class="absolute inset-x-0 bottom-0 h-[36%] bg-gradient-to-t from-[#060810]/95 via-[#060810]/75 to-transparent z-10 pointer-events-none"></div>
+
+          <!-- BOTTOM LUXURY TRAY (All content strictly within bottom 1/3, zero face overlap) -->
+          <div class="relative z-20 flex flex-col gap-1.5 bg-[#0A0D18]/85 backdrop-blur-md rounded-2xl p-3 border border-white/15 shadow-2xl">
+            
+            <!-- Row 1: Name + Cosmic 36-Guna Score Pill -->
+            <div class="flex items-center justify-between gap-2">
+              <h2 id="cardNameText" class="text-base font-black text-white tracking-tight truncate flex-1 min-w-0">Tara Sen</h2>
+              <div id="cardGunaScore" class="shrink-0 text-[10px] font-black text-amber-300 bg-amber-400/15 border border-amber-400/40 px-2 py-0.5 rounded-lg flex items-center gap-1">
+                <span>✨</span> 34.5 / 36
+              </div>
+            </div>
+
+            <!-- Row 2: 3D Biometric (One-liner) -->
+            <div class="flex items-center">
+              <div class="inline-flex items-center gap-1.5 bg-emerald-500/20 border border-emerald-400/60 px-2 py-0.5 rounded-full">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                <span id="cardBiometricText" class="text-[8.5px] font-black text-emerald-300 tracking-wider whitespace-nowrap">✓ 100% 3D BIOMETRIC VERIFIED</span>
+              </div>
+            </div>
+
+            <!-- Row 3: Age & Role (One-liner) -->
+            <p id="cardRoleText" class="text-[11px] font-bold text-rose-300 truncate whitespace-nowrap">25 • Founder & Angel Investor</p>
+            
+            <!-- Row 4: Micro-Tribe / Community (One-liner) -->
+            <div class="flex items-center gap-1.5 text-slate-300 text-[10px] font-medium truncate whitespace-nowrap">
+              <span class="text-rose-400 shrink-0">📍</span>
+              <span id="cardTribeText" class="truncate">Indiranagar Founders Club • Bengaluru</span>
+            </div>
+
+            <!-- Row 5: Compact Vedic Specs Row -->
+            <div class="grid grid-cols-2 gap-1.5 pt-1 border-t border-white/10">
+              <div class="bg-black/50 border border-white/10 rounded-lg px-2 py-1 flex items-center justify-between">
+                <span class="text-[8.5px] font-bold text-purple-300">🌙 MOON</span>
+                <span id="cardMoonText" class="text-[9.5px] font-black text-white truncate ml-1">Taurus (वृषभ)</span>
+              </div>
+              <div class="bg-black/50 border border-white/10 rounded-lg px-2 py-1 flex items-center justify-between">
+                <span class="text-[8.5px] font-bold text-amber-300">⭐ NAKSHATRA</span>
+                <span id="cardNakshatraText" class="text-[9.5px] font-black text-white truncate ml-1">Rohini (Pada 2)</span>
+              </div>
+            </div>
+
+            <!-- Row 6: Personal Vibe Prompt (Strictly clamped to 2 lines) -->
+            <div id="middlePromptBlock" class="pt-1 border-t border-white/10">
+              <p id="cardQuoteText" class="editorial-quote italic text-[10px] text-slate-200 font-medium leading-tight line-clamp-2">
+                &ldquo;Hoping for deep existential dialogue, ended up comparing startup equity and midnight croissants.&rdquo;
+              </p>
+            </div>
+
+            <!-- Row 7: Card Bottom Watermark -->
+            <div class="flex items-center justify-between pt-1 border-t border-white/10 text-[9px] text-slate-400 font-semibold">
+              <span class="flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-[#FF385C]"></span>
+                BlunderR • High-Intent Dating
+              </span>
+              <span class="text-slate-300 font-bold">@blunderr.in</span>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- Action Buttons below Preview -->
+      <div class="flex items-center gap-3 mt-6">
+        <button onclick="downloadCardPNG()" class="bg-gradient-to-r from-[#FF385C] to-[#E0284F] hover:brightness-110 text-white font-extrabold text-sm px-6 py-3 rounded-xl flex items-center gap-2 shadow-xl shadow-[#FF385C]/30 transition-all active:scale-95">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          Download Card Image (PNG)
+        </button>
+        <button onclick="copyInstagramStoryKit()" class="bg-[#131724] hover:bg-[#1C2133] border border-white/20 text-slate-200 font-extrabold text-sm px-5 py-3 rounded-xl flex items-center gap-2 transition-all active:scale-95">
+          <span>📋</span> Copy Caption & Story Tags
+        </button>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Hidden Canvas for High-DPI PNG Generation -->
+  <canvas id="exportCanvas" style="display:none;"></canvas>
+
+  <script>
+    let currentTheme = 'gold';
+
+    const themes = {
+      gold: {
+        cssClass: 'border-gold-luxe',
+        name: '24K Champagne Gold',
+        badgeBorder: 'border-amber-400',
+        badgeBg: 'bg-amber-500/10',
+        textColor: 'text-amber-400',
+        topPillClass: 'glass-gold-pill'
+      },
+      emerald: {
+        cssClass: 'border-emerald-luxe',
+        name: 'Imperial Emerald',
+        badgeBorder: 'border-emerald-400',
+        badgeBg: 'bg-emerald-500/10',
+        textColor: 'text-emerald-400',
+        topPillClass: 'bg-emerald-500/20 border border-emerald-400/50 text-emerald-300'
+      },
+      rosegold: {
+        cssClass: 'border-rosegold-luxe',
+        name: 'Haute Rose Titanium',
+        badgeBorder: 'border-rose-400',
+        badgeBg: 'bg-rose-500/10',
+        textColor: 'text-rose-400',
+        topPillClass: 'bg-rose-500/20 border border-rose-400/50 text-rose-300'
+      },
+      aurora: {
+        cssClass: 'border-aurora-luxe',
+        name: 'Cyber Neon Aurora',
+        badgeBorder: 'border-cyan-400',
+        badgeBg: 'bg-cyan-500/10',
+        textColor: 'text-cyan-400',
+        topPillClass: 'bg-cyan-500/20 border border-cyan-400/50 text-cyan-300'
+      },
+      diamond: {
+        cssClass: 'border-diamond-luxe',
+        name: 'Noir Caviar Diamond',
+        badgeBorder: 'border-white',
+        badgeBg: 'bg-white/10',
+        textColor: 'text-white',
+        topPillClass: 'bg-white/15 border border-white/40 text-white'
+      }
+    };
+
+    function setTheme(themeKey, label) {
+      currentTheme = themeKey;
+      const wrapper = document.getElementById('cardOuterWrapper');
+      
+      // Remove all theme classes
+      Object.values(themes).forEach(t => wrapper.classList.remove(t.cssClass));
+      wrapper.classList.add(themes[themeKey].cssClass);
+
+      // Update active button state
+      ['gold', 'emerald', 'rosegold', 'aurora', 'diamond'].forEach(k => {
+        const btn = document.getElementById('btn-theme-' + k);
+        if (k === themeKey) {
+          btn.className = 'flex flex-col items-center gap-1.5 p-2 rounded-xl border-2 ' + themes[k].badgeBorder + ' ' + themes[k].badgeBg + ' transition-all scale-105';
+        } else {
+          btn.className = 'flex flex-col items-center gap-1.5 p-2 rounded-xl border border-white/10 bg-white/5 transition-all hover:scale-105';
+        }
+      });
+
+      document.getElementById('borderLabelBadge').innerText = label;
+      document.getElementById('borderLabelBadge').className = 'text-[11px] font-bold ' + themes[themeKey].textColor;
+      
+      const topPill = document.getElementById('badgeTopPill');
+      if (topPill) {
+        topPill.className = themes[themeKey].topPillClass + ' px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg';
+      }
+    }
+
+    const MAX_QUOTE_WORDS = 18;
+
+    function countWords(str) {
+      if (!str || !str.trim()) return 0;
+      return str.trim().split(/\s+/).filter(Boolean).length;
+    }
+
+    function clampQuoteWords(str, max = MAX_QUOTE_WORDS) {
+      if (!str) return '';
+      const words = str.trim().split(/\s+/).filter(Boolean);
+      if (words.length <= max) return str;
+      return words.slice(0, max).join(' ');
+    }
+
+    function handleQuoteInput() {
+      const textarea = document.getElementById('inputQuote');
+      const counter = document.getElementById('quoteWordCounter');
+      let text = textarea.value;
+      const count = countWords(text);
+      
+      if (count > MAX_QUOTE_WORDS) {
+        text = clampQuoteWords(text, MAX_QUOTE_WORDS);
+        textarea.value = text;
+        counter.innerText = `${MAX_QUOTE_WORDS} / ${MAX_QUOTE_WORDS} words (Max limit)`;
+        counter.className = 'text-[10px] text-rose-400 font-bold px-2 py-0.5 rounded-full bg-rose-400/10 border border-rose-400/20';
+      } else {
+        counter.innerText = `${count} / ${MAX_QUOTE_WORDS} words (Story fit)`;
+        counter.className = 'text-[10px] text-amber-400 font-semibold px-2 py-0.5 rounded-full bg-amber-400/10 border border-amber-400/20';
+      }
+      updateCardContent();
+    }
+
+    function setModelImage(imgSrc, name, role, tribe, nakshatra, moon, guna, quote) {
+      document.getElementById('cardBgImage').src = imgSrc;
+      document.getElementById('inputName').value = name;
+      document.getElementById('inputRole').value = role;
+      document.getElementById('inputTribe').value = tribe;
+      document.getElementById('inputNakshatra').value = nakshatra;
+      document.getElementById('inputMoon').value = moon;
+      document.getElementById('inputGuna').value = guna;
+      document.getElementById('inputQuote').value = clampQuoteWords(quote, MAX_QUOTE_WORDS);
+      handleQuoteInput();
+    }
+
+    function updateCardContent() {
+      document.getElementById('cardNameText').innerText = document.getElementById('inputName').value;
+      document.getElementById('cardRoleText').innerText = document.getElementById('inputRole').value;
+      document.getElementById('cardTribeText').innerText = document.getElementById('inputTribe').value;
+      if (document.getElementById('inputBiometric') && document.getElementById('cardBiometricText')) {
+        document.getElementById('cardBiometricText').innerText = document.getElementById('inputBiometric').value;
+      }
+      document.getElementById('cardNakshatraText').innerText = document.getElementById('inputNakshatra').value;
+      document.getElementById('cardMoonText').innerText = document.getElementById('inputMoon').value;
+      document.getElementById('cardGunaScore').innerHTML = '<span>💫</span> ' + document.getElementById('inputGuna').value;
+      const cleanQuote = clampQuoteWords(document.getElementById('inputQuote').value, MAX_QUOTE_WORDS);
+      document.getElementById('cardQuoteText').innerText = '“' + cleanQuote + '”';
+    }
+
+    function copyInstagramStoryKit() {
+      const name = document.getElementById('inputName').value;
+      const role = document.getElementById('inputRole').value;
+      const tribe = document.getElementById('inputTribe').value;
+      const guna = document.getElementById('inputGuna').value;
+      const quote = document.getElementById('inputQuote').value;
+      
+      const storyText = `✨ BLUNDERR ULTRA-RICH VEDIC VIBE CARD ✨\n\n` +
+        `👤 ${name} (${role})\n` +
+        `📍 ${tribe}\n` +
+        `💫 Cosmic Synastry: ${guna}\n\n` +
+        `"${quote}"\n\n` +
+        `🛡️ 100% 3D Biometric Verified • Zero Catfishes\n` +
+        `⚡ 72-Hour Real Date Rule\n` +
+        `📲 Join high-intent dating at https://blunderr.in\n\n` +
+        `#BlunderR #VedicDating #BangaloreSingles #MumbaiDating #ModernRomance #UltraRich`;
+
+      navigator.clipboard.writeText(storyText).then(() => {
+        alert('📸 Story Kit & Caption Copied to Clipboard!\n\nPaste this caption directly into your Instagram Story or Post.');
+      }).catch(() => {
+        alert('Ready for Instagram! Take a screenshot of the card to post directly.');
+      });
+    }
+
+    function downloadCardPNG() {
+      const card = document.getElementById('cardOuterWrapper');
+      const canvas = document.getElementById('exportCanvas');
+      const ctx = canvas.getContext('2d');
+      
+      // 9:16 Instagram Story Resolution (1080 x 1920)
+      const width = 1080;
+      const height = 1920;
+
+      canvas.width = width;
+      canvas.height = height;
+
+      // Draw background border gradient
+      let grad;
+      if (currentTheme === 'gold') {
+        grad = ctx.createLinearGradient(0, 0, width, height);
+        grad.addColorStop(0, '#FFE57F');
+        grad.addColorStop(0.2, '#B8860B');
+        grad.addColorStop(0.4, '#FFF2A3');
+        grad.addColorStop(0.6, '#D4AF37');
+        grad.addColorStop(0.8, '#996515');
+        grad.addColorStop(1, '#FFDF73');
+      } else if (currentTheme === 'emerald') {
+        grad = ctx.createLinearGradient(0, 0, width, height);
+        grad.addColorStop(0, '#E2E8F0');
+        grad.addColorStop(0.25, '#059669');
+        grad.addColorStop(0.5, '#6EE7B7');
+        grad.addColorStop(0.75, '#065F46');
+        grad.addColorStop(1, '#F8FAFC');
+      } else if (currentTheme === 'rosegold') {
+        grad = ctx.createLinearGradient(0, 0, width, height);
+        grad.addColorStop(0, '#FFE4E6');
+        grad.addColorStop(0.25, '#FB7185');
+        grad.addColorStop(0.5, '#FFF1F2');
+        grad.addColorStop(0.75, '#E11D48');
+        grad.addColorStop(1, '#FDA4AF');
+      } else if (currentTheme === 'aurora') {
+        grad = ctx.createLinearGradient(0, 0, width, height);
+        grad.addColorStop(0, '#00F5D4');
+        grad.addColorStop(0.35, '#7B2CBF');
+        grad.addColorStop(0.7, '#F72585');
+        grad.addColorStop(1, '#4CC9F0');
+      } else {
+        grad = ctx.createLinearGradient(0, 0, width, height);
+        grad.addColorStop(0, '#FFFFFF');
+        grad.addColorStop(0.25, '#475569');
+        grad.addColorStop(0.5, '#E2E8F0');
+        grad.addColorStop(0.75, '#1E293B');
+        grad.addColorStop(1, '#FFFFFF');
+      }
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, width, height);
+
+      // Draw Inner Black Card
+      const borderWidth = 12;
+      ctx.fillStyle = '#07090F';
+      ctx.fillRect(borderWidth, borderWidth, width - borderWidth*2, height - borderWidth*2);
+
+      // Load background image onto canvas
+      const bgImg = new Image();
+      bgImg.crossOrigin = 'anonymous';
+      bgImg.onload = function() {
+        // Draw image cover
+        ctx.drawImage(bgImg, borderWidth, borderWidth, width - borderWidth*2, height - borderWidth*2);
+
+        // Draw Vignette Gradient
+        const vigGrad = ctx.createLinearGradient(0, 0, 0, height);
+        vigGrad.addColorStop(0, 'rgba(0,0,0,0.65)');
+        vigGrad.addColorStop(0.3, 'rgba(0,0,0,0.1)');
+        vigGrad.addColorStop(0.65, 'rgba(6,8,15,0.7)');
+        vigGrad.addColorStop(1, 'rgba(6,8,15,0.98)');
+        ctx.fillStyle = vigGrad;
+        ctx.fillRect(borderWidth, borderWidth, width - borderWidth*2, height - borderWidth*2);
+
+        // Draw Brand Header
+        ctx.font = '900 48px "Cinzel", serif';
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillText('BLUNDERR', 60, 120);
+
+        ctx.font = '700 24px "Plus Jakarta Sans", sans-serif';
+        ctx.fillStyle = '#10B981';
+        ctx.fillText('✓ 100% 3D BIOMETRIC VERIFIED', 60, 160);
+
+        // Draw Candidate Name
+        ctx.font = '900 68px "Plus Jakarta Sans", sans-serif';
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillText(document.getElementById('inputName').value, 60, height - 320);
+
+        ctx.font = '700 32px "Plus Jakarta Sans", sans-serif';
+        ctx.fillStyle = '#FDA4AF';
+        ctx.fillText(document.getElementById('inputRole').value, 60, height - 265);
+
+        ctx.font = '600 28px "Plus Jakarta Sans", sans-serif';
+        ctx.fillStyle = '#CBD5E1';
+        ctx.fillText('📍 ' + document.getElementById('inputTribe').value, 60, height - 215);
+
+        // Draw Guna Score
+        ctx.font = '800 32px "Plus Jakarta Sans", sans-serif';
+        ctx.fillStyle = '#6EE7B7';
+        ctx.fillText('💫 ' + document.getElementById('inputGuna').value, 60, height - 165);
+
+        // Draw Footer
+        ctx.font = '600 24px "Plus Jakarta Sans", sans-serif';
+        ctx.fillStyle = '#94A3B8';
+        ctx.fillText('BlunderR • Verified Cosmic Dating • blunderr.in', 60, height - 80);
+
+        // Trigger download
+        const dataUrl = canvas.toDataURL('image/png');
+        const a = document.createElement('a');
+        a.href = dataUrl;
+        a.download = `blunderr_${document.getElementById('inputName').value.toLowerCase().replace(/\\s+/g, '_')}_card.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      };
+      bgImg.src = document.getElementById('cardBgImage').src;
+    }
+  </script>
+</body>
+</html>
