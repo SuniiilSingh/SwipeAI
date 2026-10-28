@@ -52,8 +52,18 @@
     <priority>0.90</priority>
   </url>
   <url>
-    <loc>https://blunderr.in/webview</loc>
-    <lastmod>2026-10-25</lastmod>
+    <loc>https://blunderr.in/webview/</loc>
+    <lastmod>2026-10-28</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+    <image:image>
+      <image:loc>https://blunderr.in/images/hero-profile.jpg</image:loc>
+      <image:title>BlunderR Web View Instant Dating App</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://blunderr.in/insta-card.html</loc>
+    <lastmod>2026-10-28</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.90</priority>
   </url>

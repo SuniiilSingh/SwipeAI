@@ -46,6 +46,14 @@ website/webview/
 
 # Uploads directory
 uploads/
+website/downloads/*.apk
+website/downloads/*.aab
+website/downloads/*.ipa
+website/downloads/*.tar.gz
+website/downloads/*.txt
+website/downloads/*.jpg
+website/downloads/*.png
+website/downloads/*.svg
 
 # Instagram publisher
 .instagram_session.json
