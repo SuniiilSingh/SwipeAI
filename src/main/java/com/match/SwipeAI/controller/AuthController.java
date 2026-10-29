@@ -87,6 +87,49 @@ public class AuthController {
     }
 
     /**
+     * Authenticate via Firebase Phone Auth ID Token.
+     */
+    @PostMapping("/firebase-login")
+    public ResponseEntity<AuthDto.AuthResponse> firebaseLogin(@Valid @RequestBody AuthDto.FirebaseLoginRequest request) {
+        AuthDto.AuthResponse response = authService.loginWithFirebase(request);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Get active authentication provider configuration and fallbacks.
+     */
+    @GetMapping("/config")
+    public ResponseEntity<Map<String, Object>> getAuthConfig() {
+        com.match.SwipeAI.config.FeatureFlagsProperties.Firebase firebase = properties.getFeatures().getFirebase();
+        com.match.SwipeAI.config.FeatureFlagsProperties.SecondaryOtp secondary = properties.getFeatures().getSecondaryOtp();
+        com.match.SwipeAI.config.FeatureFlagsProperties.Twilio twilio = properties.getFeatures().getTwilio();
+
+        boolean hasFirebase = firebase != null && firebase.isEnabled();
+        boolean hasSecondary = (secondary != null && secondary.isEnabled() && secondary.getApiKey() != null && !secondary.getApiKey().isBlank())
+                || (twilio != null && twilio.isEnabled() && twilio.getAccountSid() != null && !twilio.getAccountSid().isBlank());
+
+        String secondaryProvider = "none";
+        if (secondary != null && secondary.isEnabled()) {
+            secondaryProvider = secondary.getProvider();
+        } else if (twilio != null && twilio.isEnabled()) {
+            secondaryProvider = "twilio";
+        }
+
+        return ResponseEntity.ok(Map.of(
+                "primaryProvider", "firebase",
+                "firebaseEnabled", hasFirebase,
+                "firebaseConfig", Map.of(
+                        "apiKey", firebase != null ? firebase.getApiKey() : "",
+                        "projectId", firebase != null ? firebase.getProjectId() : "",
+                        "authDomain", firebase != null ? firebase.getAuthDomain() : ""
+                ),
+                "secondaryConfigured", hasSecondary,
+                "secondaryProvider", secondaryProvider,
+                "isMockOtp", twilio != null && twilio.isMockOtp()
+        ));
+    }
+
+    /**
      * Dispatch OTP to user's registered phone number for account and data deletion verification.
      */
     @PostMapping("/delete-account/send-otp")

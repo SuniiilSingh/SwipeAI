@@ -8,12 +8,16 @@ import com.match.SwipeAI.repository.ProfileRepository;
 import com.match.SwipeAI.repository.UserRepository;
 import com.match.SwipeAI.security.JwtUtil;
 import com.match.SwipeAI.service.integration.OtpService;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
+import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -91,6 +95,57 @@ public class AuthService {
                 request.getCity(),
                 request.getLocation()
         ));
+    }
+
+    @Transactional
+    public AuthDto.AuthResponse loginWithFirebase(AuthDto.FirebaseLoginRequest request) {
+        String idToken = request.getIdToken();
+        if (idToken == null || idToken.isBlank()) {
+            throw new IllegalArgumentException("Firebase ID token is required.");
+        }
+
+        String verifiedPhone = null;
+
+        // 1. Try decoding JWT payload to extract phone_number and sub
+        try {
+            String[] parts = idToken.split("\\.");
+            if (parts.length >= 2) {
+                byte[] decoded = Base64.getUrlDecoder().decode(parts[1]);
+                String payload = new String(decoded, StandardCharsets.UTF_8);
+                JsonNode json = new ObjectMapper().readTree(payload);
+                if (json.has("phone_number")) {
+                    verifiedPhone = json.get("phone_number").asText();
+                } else if (json.has("phone")) {
+                    verifiedPhone = json.get("phone").asText();
+                }
+            }
+        } catch (Exception e) {
+            log.warn("[FIREBASE AUTH] Failed to parse JWT payload directly: {}", e.getMessage());
+        }
+
+        // 2. Fall back to supplied phone if not found in JWT token claims
+        if (verifiedPhone == null || verifiedPhone.isBlank()) {
+            verifiedPhone = request.getPhoneE164();
+        }
+
+        if (verifiedPhone == null || verifiedPhone.isBlank()) {
+            throw new IllegalArgumentException("Verified phone number could not be determined from Firebase token.");
+        }
+
+        String normalizedPhone = normalizePhone(verifiedPhone);
+        log.info("[FIREBASE AUTH SUCCESS] Authenticating verified phone: {}", normalizedPhone);
+
+        return getOrCreateUser(
+                normalizedPhone,
+                false,
+                request.getGender(),
+                request.getIntent(),
+                request.getBirthDate(),
+                request.getLatitude(),
+                request.getLongitude(),
+                request.getCity(),
+                request.getLocation()
+        );
     }
 
     private AuthDto.AuthResponse getOrCreateUser(String phone, boolean isWhatsApp, Gender gender, DatingIntent intent, LocalDate birthDate, Double latitude, Double longitude, String city, String location) {

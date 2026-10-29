@@ -100,3 +100,14 @@ app:
       merchant-vpa: ${UPI_MERCHANT_VPA:yb.8120969849@sbi}
       merchant-name: ${UPI_MERCHANT_NAME:Bharat Generic Enterprises}
       mcc: ${UPI_MCC:5734}
+    firebase:
+      enabled: ${FEATURE_FIREBASE_ENABLED:true}
+      api-key: ${FIREBASE_API_KEY:}
+      project-id: ${FIREBASE_PROJECT_ID:blunderr-app}
+      auth-domain: ${FIREBASE_AUTH_DOMAIN:blunderr-app.firebaseapp.com}
+    secondary-otp:
+      enabled: ${FEATURE_SECONDARY_OTP_ENABLED:false}
+      provider: ${SECONDARY_OTP_PROVIDER:mock}
+      api-key: ${SECONDARY_OTP_API_KEY:}
+      sender-id: ${SECONDARY_OTP_SENDER_ID:}
+      template-id: ${SECONDARY_OTP_TEMPLATE_ID:}

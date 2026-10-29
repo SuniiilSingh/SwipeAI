@@ -34,6 +34,25 @@ public class FeatureFlagsProperties {
         private Cashfree cashfree = new Cashfree();
         private Iap iap = new Iap();
         private UpiDirect upiDirect = new UpiDirect();
+        private Firebase firebase = new Firebase();
+        private SecondaryOtp secondaryOtp = new SecondaryOtp();
+    }
+
+    @Data
+    public static class Firebase {
+        private boolean enabled = true;
+        private String apiKey = "";
+        private String projectId = "";
+        private String authDomain = "";
+    }
+
+    @Data
+    public static class SecondaryOtp {
+        private boolean enabled = false;
+        private String provider = "mock"; // "2factor", "fast2sms", "twilio", "mock"
+        private String apiKey = "";
+        private String senderId = "";
+        private String templateId = "";
     }
 
     @Data

@@ -74,6 +74,26 @@ public class AuthDto {
     }
 
     /**
+     * Request payload for Firebase Phone Auth login.
+     */
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class FirebaseLoginRequest {
+        @NotBlank(message = "Firebase ID token or verification token is required")
+        private String idToken;
+
+        private String phoneE164;
+        private Gender gender;
+        private DatingIntent intent;
+        private LocalDate birthDate;
+        private Double latitude;
+        private Double longitude;
+        private String city;
+        private String location;
+    }
+
+    /**
      * Successful authentication response containing JWT Bearer token and user badges.
      */
     @Data
