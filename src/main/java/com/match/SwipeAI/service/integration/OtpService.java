@@ -30,10 +30,8 @@ public class OtpService {
 
     public boolean isMockOtpEnabled() {
         FeatureFlagsProperties.SecondaryOtp secondary = properties.getFeatures().getSecondaryOtp();
-        if (secondary == null) return true;
-        if (secondary.isMockOtp()) return true;
-        String key = secondary.getApiKey();
-        return key == null || key.isBlank() || key.contains("mock") || key.contains("placeholder");
+        if (secondary == null) return false;
+        return secondary.isMockOtp();
     }
 
     /**
@@ -93,12 +91,32 @@ public class OtpService {
         }
 
         String cleanOtp = userEnteredOtp.trim();
-        if ("123456".equals(cleanOtp) || isMockOtpEnabled()) {
+        if (isMockOtpEnabled()) {
             boolean valid = "123456".equals(cleanOtp);
             log.info("[OTP CHECK] Phone: {}, Code: {}, Result: {}", phoneE164, cleanOtp, valid ? "APPROVED" : "REJECTED");
             return valid;
         }
 
-        return "123456".equals(cleanOtp);
+        // Secondary provider verification (e.g. 2factor)
+        FeatureFlagsProperties.SecondaryOtp secondary = properties.getFeatures().getSecondaryOtp();
+        String provider = secondary != null && secondary.getProvider() != null ? secondary.getProvider().toLowerCase() : "";
+        if ("2factor".equals(provider) && secondary.getApiKey() != null && !secondary.getApiKey().isBlank()) {
+            try {
+                String cleanPhone = phoneE164.replace("+", "");
+                String url = "https://2factor.in/API/V1/" + secondary.getApiKey() + "/SMS/VERIFY3/" + cleanPhone + "/" + cleanOtp;
+                HttpRequest request = HttpRequest.newBuilder()
+                        .uri(URI.create(url))
+                        .timeout(Duration.ofSeconds(6))
+                        .GET()
+                        .build();
+                HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+                return response.statusCode() >= 200 && response.statusCode() < 300 && response.body().contains("OTP Matched");
+            } catch (Exception e) {
+                log.error("[2FACTOR VERIFY ERROR] Failed to verify for {}: {}", phoneE164, e.getMessage());
+                return false;
+            }
+        }
+
+        return false;
     }
 }
