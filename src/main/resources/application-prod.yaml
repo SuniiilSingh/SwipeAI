@@ -104,8 +104,8 @@ app:
     firebase:
       enabled: ${FEATURE_FIREBASE_ENABLED:true}
       api-key: ${FIREBASE_API_KEY:}
-      project-id: ${FIREBASE_PROJECT_ID:blunderr-app}
-      auth-domain: ${FIREBASE_AUTH_DOMAIN:blunderr-app.firebaseapp.com}
+      project-id: ${FIREBASE_PROJECT_ID:blunderr-e702b}
+      auth-domain: ${FIREBASE_AUTH_DOMAIN:blunderr-e702b.firebaseapp.com}
     secondary-otp:
       enabled: ${FEATURE_SECONDARY_OTP_ENABLED:false}
       provider: ${SECONDARY_OTP_PROVIDER:mock}
