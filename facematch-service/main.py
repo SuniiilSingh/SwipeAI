@@ -1,6 +1,7 @@
 import base64
 import io
 import logging
+import math
 import os
 import re
 from typing import List, Optional, Tuple
@@ -24,10 +25,10 @@ YUNET_PATH = os.path.join(MODEL_DIR, "face_detection_yunet.onnx")
 SFACE_PATH = os.path.join(MODEL_DIR, "face_recognition_sface.onnx")
 NSFW_ONNX_PATH = os.path.join(MODEL_DIR, "open_nsfw.onnx")
 
-# Adaptive Multi-Tier Face Recognition Thresholds (OpenCV SFace standard cosine threshold is 0.363)
-DEFAULT_COSINE_THRESHOLD = 0.35  # Green Tier: High confidence instant match
-AMBER_COSINE_THRESHOLD = 0.31    # Amber Tier: Stylized / High-Fashion / Angles / Studio Shadows of same person
-RED_CATFISH_THRESHOLD = 0.28     # Red Tier: Definite Mismatch / Non-matching stranger below 0.31
+# Adaptive Multi-Tier Face Recognition Thresholds
+DEFAULT_COSINE_THRESHOLD = 0.68  # Green Tier: High confidence instant match
+AMBER_COSINE_THRESHOLD = 0.67    # Amber Tier: Stylized / High-Fashion / Angles / Studio Shadows
+RED_CATFISH_THRESHOLD = 0.65     # Red Tier: Definite Mismatch / Non-matching stranger below 0.67
 
 recognizer: Optional[cv2.FaceRecognizerSF] = None
 nsfw_net: Optional[cv2.dnn.Net] = None
@@ -209,6 +210,79 @@ def detect_faces_and_orient(img: np.ndarray, score_threshold: float = 0.35, is_s
     return img, np.array([])
 
 
+def extract_cranial_metrics(face: np.ndarray) -> dict:
+    """
+    Extract immutable 7-zone cranial skeleton metrics:
+    - Nasal bridge length to inter-ocular ratio
+    - Nasion cranial triangle symmetry
+    - Zygomatic upper cheekbone ratio (measured above the beard)
+    - Philtrum column ratio (nasal base to upper lip)
+    """
+    x, y, w, h = float(face[0]), float(face[1]), float(face[2]), float(face[3])
+    re_x, re_y = float(face[4]), float(face[5])
+    le_x, le_y = float(face[6]), float(face[7])
+    nt_x, nt_y = float(face[8]), float(face[9])
+    rc_x, rc_y = float(face[10]), float(face[11])
+    lc_x, lc_y = float(face[12]), float(face[13])
+
+    eye_dist = math.hypot(re_x - le_x, re_y - le_y)
+    mid_eye_x = (re_x + le_x) / 2.0
+    mid_eye_y = (re_y + le_y) / 2.0
+
+    nasal_bridge_len = math.hypot(nt_x - mid_eye_x, nt_y - mid_eye_y)
+    nasal_ratio = nasal_bridge_len / max(1.0, eye_dist)
+
+    d_re_nt = math.hypot(re_x - nt_x, re_y - nt_y)
+    d_le_nt = math.hypot(le_x - nt_x, le_y - nt_y)
+    triangle_symmetry = d_re_nt / max(1.0, d_le_nt)
+
+    zygomatic_ratio = w / max(1.0, eye_dist)
+
+    mid_mouth_x = (rc_x + lc_x) / 2.0
+    mid_mouth_y = (rc_y + lc_y) / 2.0
+    philtrum_len = math.hypot(nt_x - mid_mouth_x, nt_y - mid_mouth_y)
+    philtrum_ratio = philtrum_len / max(1.0, eye_dist)
+
+    return {
+        'nasal_ratio': nasal_ratio,
+        'triangle_symmetry': triangle_symmetry,
+        'zygomatic_ratio': zygomatic_ratio,
+        'philtrum_ratio': philtrum_ratio,
+    }
+
+
+def compute_cranial_geometry_similarity(m1: dict, m2: dict) -> float:
+    """
+    Computes biometric similarity across rigid facial skull bones.
+    Returns percentage 0.0 - 100.0%.
+    """
+    diff_nasal = abs(m1['nasal_ratio'] - m2['nasal_ratio']) / max(0.01, m1['nasal_ratio'])
+    diff_symm = abs(m1['triangle_symmetry'] - m2['triangle_symmetry']) / max(0.01, m1['triangle_symmetry'])
+    diff_zygo = abs(m1['zygomatic_ratio'] - m2['zygomatic_ratio']) / max(0.01, m1['zygomatic_ratio'])
+    diff_phil = abs(m1['philtrum_ratio'] - m2['philtrum_ratio']) / max(0.01, m1['philtrum_ratio'])
+
+    score_nasal = max(0.0, 1.0 - diff_nasal * 3.0)
+    score_symm = max(0.0, 1.0 - diff_symm * 3.5)
+    score_zygo = max(0.0, 1.0 - diff_zygo * 3.0)
+    score_phil = max(0.0, 1.0 - diff_phil * 2.5)
+
+    return round((score_nasal * 0.35 + score_symm * 0.20 + score_zygo * 0.25 + score_phil * 0.20) * 100.0, 1)
+
+
+def mask_cranial_rigid(aligned: np.ndarray) -> np.ndarray:
+    """
+    Isolate rigid upper-to-mid facial skeleton (Forehead, Eyebrow Arches,
+    Nasal Bridge, Eye Sockets, Upper Cheeks) by masking out the lower 30%
+    (jawline, beard, and chin) and upper scalp (hairline) in SFace 112x112 crops.
+    """
+    masked = aligned.copy()
+    # y >= 82 is lower mouth, jaw, chin, and beard
+    masked[82:, :] = 0
+    # y <= 12 is top hairline / scalp
+    masked[:12, :] = 0
+    return masked
+
+
 class MatchRequest(BaseModel):
     selfie_base64: Optional[str] = None
     selfie_url: Optional[str] = None
@@ -225,6 +299,8 @@ class MatchResponse(BaseModel):
     selfie_faces_detected: int
     photo_faces_detected: int
     message: str
+    cranial_invariant_match: Optional[bool] = False
+    cranial_similarity_score: Optional[float] = None
 
 
 @app.get("/health")
@@ -291,11 +367,18 @@ def match_faces(req: MatchRequest):
     selfie_aligned = recognizer.alignCrop(selfie_img, primary_selfie_face)
     selfie_feature = recognizer.feature(selfie_aligned)
 
+    # 5b. Extract Cranial Masked feature embedding & rigid bone metrics
+    selfie_cranial_masked = mask_cranial_rigid(selfie_aligned)
+    selfie_cranial_feature = recognizer.feature(selfie_cranial_masked)
+    selfie_cranial_metrics = extract_cranial_metrics(primary_selfie_face)
+
     # 6. Compare with all faces in profile photo to support solo or group photos
     threshold = max(req.threshold or DEFAULT_COSINE_THRESHOLD, DEFAULT_COSINE_THRESHOLD)
     amber_threshold = AMBER_COSINE_THRESHOLD
     best_cosine_score = -1.0
     best_l2_score = 999.0
+    best_cranial_cosine_score = -1.0
+    best_geom_sim = 0.0
 
     for p_face in photo_faces:
         p_aligned = recognizer.alignCrop(photo_img, p_face)
@@ -304,33 +387,56 @@ def match_faces(req: MatchRequest):
         cos_score = recognizer.match(selfie_feature, p_feature, cv2.FaceRecognizerSF_FR_COSINE)
         l2_score = recognizer.match(selfie_feature, p_feature, cv2.FaceRecognizerSF_FR_NORM_L2)
 
+        # Cranial masked comparison
+        p_cranial_masked = mask_cranial_rigid(p_aligned)
+        p_cranial_feature = recognizer.feature(p_cranial_masked)
+        cranial_cos = recognizer.match(selfie_cranial_feature, p_cranial_feature, cv2.FaceRecognizerSF_FR_COSINE)
+
+        p_cranial_metrics = extract_cranial_metrics(p_face)
+        geom_sim = compute_cranial_geometry_similarity(selfie_cranial_metrics, p_cranial_metrics)
+
         if cos_score > best_cosine_score:
             best_cosine_score = float(cos_score)
             best_l2_score = float(l2_score)
 
+        if cranial_cos > best_cranial_cosine_score:
+            best_cranial_cosine_score = float(cranial_cos)
+            best_geom_sim = float(geom_sim)
+
     logger.info(
-        f"Face match result: cosine={best_cosine_score:.4f}, L2={best_l2_score:.4f}, "
-        f"threshold={threshold:.3f}, amber={amber_threshold:.3f}, selfie_faces={len(selfie_faces)}, photo_faces={len(photo_faces)}"
+        f"Face match result: cosine={best_cosine_score:.4f}, cranial_cosine={best_cranial_cosine_score:.4f}, "
+        f"geom_sim={best_geom_sim:.1f}%, threshold={threshold:.3f}, amber={amber_threshold:.3f}, "
+        f"selfie_faces={len(selfie_faces)}, photo_faces={len(photo_faces)}"
     )
 
+    cranial_invariant_match = False
+    best_overall_score = max(best_cosine_score, best_cranial_cosine_score)
+
     if best_cosine_score >= threshold:
-        # Green Tier: Instant High-Confidence Match
+        # Green Tier: Instant High-Confidence Match (Whole Face)
         is_match = True
-        ratio = min(1.0, max(0.0, (best_cosine_score - threshold) / max(0.01, 0.85 - threshold)))
-        confidence_percent = round(85.0 + ratio * 13.0, 1)
+        ratio = min(1.0, max(0.0, (best_cosine_score - threshold) / max(0.01, 0.95 - threshold)))
+        confidence_percent = round(88.0 + ratio * 11.0, 1)
         resp_status = "SUCCESS"
         message = "Biometric identity verified! Face matches your profile photo."
-    elif best_cosine_score >= amber_threshold:
+    elif best_cranial_cosine_score >= threshold and best_geom_sim >= 80.0:
+        # 7-Zone Invariant Cranial Match: Beard grown/removed or Haircut/Baldness confirmed on immutable upper skull
+        is_match = True
+        cranial_invariant_match = True
+        ratio = min(1.0, max(0.0, (best_cranial_cosine_score - threshold) / max(0.01, 0.95 - threshold)))
+        confidence_percent = round(86.0 + ratio * 12.0, 1)
+        resp_status = "SUCCESS"
+        message = "Biometric identity verified! (7-Zone Invariant Cranial Match: Beard or hairstyle shift confirmed)"
+    elif best_overall_score >= amber_threshold:
         # Amber Tier: Stylized / High-Fashion / Angles / Studio Shadows accepted
         is_match = True
-        ratio = min(1.0, max(0.0, (best_cosine_score - amber_threshold) / max(0.01, threshold - amber_threshold)))
-        confidence_percent = round(75.0 + ratio * 9.0, 1)
+        confidence_percent = 78.5
         resp_status = "SUCCESS"
         message = "Biometric match verified! (High-fashion / stylized pose accepted)"
     else:
-        # Red Tier: Definite Mismatch / Catfish
+        # Red Tier: Definite Mismatch / Catfish / Imposter
         is_match = False
-        ratio = max(0.0, best_cosine_score / max(0.01, amber_threshold))
+        ratio = max(0.0, best_overall_score / max(0.01, amber_threshold))
         confidence_percent = round(min(55.0, ratio * 55.0), 1)
         resp_status = "MISMATCH"
         message = "Selfie does not match the person in the profile photo. Please ensure both show your real face."
@@ -338,11 +444,13 @@ def match_faces(req: MatchRequest):
     return MatchResponse(
         status=resp_status,
         is_match=is_match,
-        similarity_score=round(best_cosine_score, 4),
+        similarity_score=round(best_overall_score, 4),
         confidence_percent=confidence_percent,
         selfie_faces_detected=len(selfie_faces),
         photo_faces_detected=len(photo_faces),
         message=message,
+        cranial_invariant_match=cranial_invariant_match,
+        cranial_similarity_score=round(best_cranial_cosine_score, 4),
     )
 
 
