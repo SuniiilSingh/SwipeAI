@@ -26,7 +26,6 @@ public class FeatureFlagsProperties {
         private DigiLocker digilocker = new DigiLocker();
         private WhatsApp whatsapp = new WhatsApp();
         private FaceMatch facematch = new FaceMatch();
-        private Twilio twilio = new Twilio();
         private Razorpay razorpay = new Razorpay();
         private LiveKit livekit = new LiveKit();
         private AiWingman aiWingman = new AiWingman();
@@ -49,7 +48,8 @@ public class FeatureFlagsProperties {
     @Data
     public static class SecondaryOtp {
         private boolean enabled = false;
-        private String provider = "mock"; // "2factor", "fast2sms", "twilio", "mock"
+        private boolean mockOtp = true;
+        private String provider = "mock"; // "2factor", "fast2sms", "mock"
         private String apiKey = "";
         private String senderId = "";
         private String templateId = "";
@@ -76,18 +76,6 @@ public class FeatureFlagsProperties {
         private String apiUrl = "https://graph.facebook.com/v18.0";
         private String phoneNumberId;
         private String accessToken;
-    }
-
-    @Data
-    public static class Twilio {
-        private boolean enabled = false;
-        private boolean mockOtp = true;
-        private String accountSid;
-        private String authToken;
-        private String apiKeySid;
-        private String apiKeySecret;
-        private String phoneNumber;
-        private String verifyServiceSid;
     }
 
     @Data

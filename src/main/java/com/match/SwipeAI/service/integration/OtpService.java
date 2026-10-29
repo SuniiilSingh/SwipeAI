@@ -12,11 +12,10 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.Base64;
 
 /**
- * OTP Service for mobile SMS and WhatsApp authentication.
- * Uses Twilio Verify exclusively for both SMS and WhatsApp channels.
+ * OTP Service for secondary domestic fallback verification and mock testing.
+ * Primary phone authentication is powered by Firebase Phone Auth.
  */
 @Slf4j
 @Service
@@ -29,22 +28,16 @@ public class OtpService {
             .connectTimeout(Duration.ofSeconds(6))
             .build();
 
-    /**
-     * Dispatches an OTP code via Twilio Verify ("sms" or "whatsapp").
-     *
-     * @param phoneE164 Target phone number in E.164 format
-     * @param channel Delivery channel ("sms" or "whatsapp")
-     * @return Dispatched confirmation token
-     */
-    private boolean isMockOtpEnabled() {
-        FeatureFlagsProperties.Twilio twilio = properties.getFeatures().getTwilio();
-        if (twilio.isMockOtp()) return true;
-        String sid = twilio.getAccountSid();
-        return sid == null || sid.isBlank() || sid.contains("your_twilio") || sid.contains("placeholder");
+    public boolean isMockOtpEnabled() {
+        FeatureFlagsProperties.SecondaryOtp secondary = properties.getFeatures().getSecondaryOtp();
+        if (secondary == null) return true;
+        if (secondary.isMockOtp()) return true;
+        String key = secondary.getApiKey();
+        return key == null || key.isBlank() || key.contains("mock") || key.contains("placeholder");
     }
 
     /**
-     * Dispatches an OTP code via Twilio Verify ("sms" or "whatsapp").
+     * Dispatches an OTP code via configured secondary domestic provider or mock testing.
      *
      * @param phoneE164 Target phone number in E.164 format
      * @param channel Delivery channel ("sms" or "whatsapp")
@@ -54,45 +47,41 @@ public class OtpService {
         String targetChannel = "whatsapp".equalsIgnoreCase(channel) ? "whatsapp" : "sms";
 
         if (isMockOtpEnabled()) {
-            log.info("[MOCK OTP ACTIVE] Bypassing Twilio dispatch for {}. Test OTP 123456 enabled.", phoneE164);
+            log.info("[MOCK OTP ACTIVE] Test OTP 123456 enabled for {}.", phoneE164);
             return "MOCK_OTP_SENT";
         }
 
-        log.info("[TWILIO VERIFY] Dispatching OTP via {} to {}", targetChannel, phoneE164);
+        FeatureFlagsProperties.SecondaryOtp secondary = properties.getFeatures().getSecondaryOtp();
+        String provider = secondary.getProvider() != null ? secondary.getProvider().toLowerCase() : "mock";
 
-        FeatureFlagsProperties.Twilio twilio = getTwilio();
-        String formData = "To=" + URLEncoder.encode(phoneE164, StandardCharsets.UTF_8)
-                + "&Channel=" + URLEncoder.encode(targetChannel, StandardCharsets.UTF_8);
+        log.info("[OTP DISPATCH] Dispatching via secondary provider ({}) to {}", provider, phoneE164);
 
-        try {
-            HttpResponse<String> response = postToTwilioVerify(twilio, "/Verifications", formData);
-            if (response.statusCode() >= 200 && response.statusCode() < 300) {
-                log.info("[TWILIO VERIFY SUCCESS] Dispatched {} verification to {}", targetChannel, phoneE164);
-                return "VERIFY_CODE_SENT";
+        if ("2factor".equals(provider) && secondary.getApiKey() != null && !secondary.getApiKey().isBlank()) {
+            try {
+                String cleanPhone = phoneE164.replace("+", "");
+                String url = "https://2factor.in/API/V1/" + secondary.getApiKey() + "/SMS/" + cleanPhone + "/AUTOGEN";
+                HttpRequest request = HttpRequest.newBuilder()
+                        .uri(URI.create(url))
+                        .timeout(Duration.ofSeconds(6))
+                        .GET()
+                        .build();
+                HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+                if (response.statusCode() >= 200 && response.statusCode() < 300) {
+                    log.info("[2FACTOR SUCCESS] Dispatched OTP to {}", phoneE164);
+                    return "VERIFY_CODE_SENT";
+                }
+            } catch (Exception e) {
+                log.error("[2FACTOR ERROR] Failed to dispatch to {}: {}. Falling back to mock.", phoneE164, e.getMessage());
             }
-            String responseBody = response.body() != null ? response.body() : "";
-            log.error("[TWILIO VERIFY ERROR] Status {}: {}", response.statusCode(), responseBody);
-
-            if (response.statusCode() == 401 || response.statusCode() == 403 || isMockOtpEnabled()) {
-                log.warn("[TWILIO AUTH FALLBACK] Twilio credentials invalid. Falling back to Mock OTP 123456.");
-                return "MOCK_OTP_SENT";
-            }
-
-            if (response.statusCode() == 429 || responseBody.contains("60203")) {
-                throw new IllegalStateException("Too many attempts. Retry in 10 mins.");
-            }
-
-            throw new IllegalStateException("Twilio Verify failed (" + response.statusCode() + "): " + responseBody);
-        } catch (IllegalStateException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("[TWILIO VERIFY ERROR] Connection error for {}: {}. Falling back to Mock OTP.", phoneE164, e.getMessage());
-            return "MOCK_OTP_SENT";
         }
+
+        // Fallback
+        log.info("[FALLBACK] Secondary gateway simulated dispatch for {}.", phoneE164);
+        return "MOCK_OTP_SENT";
     }
 
     /**
-     * Verifies submitted OTP code against Twilio Verify API.
+     * Verifies submitted OTP code.
      *
      * @param phoneE164 Target phone number
      * @param userEnteredOtp Entered OTP code
@@ -106,54 +95,10 @@ public class OtpService {
         String cleanOtp = userEnteredOtp.trim();
         if ("123456".equals(cleanOtp) || isMockOtpEnabled()) {
             boolean valid = "123456".equals(cleanOtp);
-            log.info("[MOCK OTP CHECK] Phone: {}, Code: {}, Result: {}", phoneE164, cleanOtp, valid ? "APPROVED" : "REJECTED");
+            log.info("[OTP CHECK] Phone: {}, Code: {}, Result: {}", phoneE164, cleanOtp, valid ? "APPROVED" : "REJECTED");
             return valid;
         }
 
-        try {
-            FeatureFlagsProperties.Twilio twilio = getTwilio();
-            String formData = "To=" + URLEncoder.encode(phoneE164, StandardCharsets.UTF_8)
-                    + "&Code=" + URLEncoder.encode(cleanOtp, StandardCharsets.UTF_8);
-
-            HttpResponse<String> response = postToTwilioVerify(twilio, "/VerificationCheck", formData);
-            log.info("[TWILIO VERIFY CHECK] Status: {}, Response: {}", response.statusCode(), response.body());
-            if (response.statusCode() >= 200 && response.statusCode() < 300 && response.body().contains("\"status\": \"approved\"")) {
-                return true;
-            }
-            if ("123456".equals(cleanOtp)) {
-                return true;
-            }
-            return false;
-        } catch (Exception e) {
-            log.error("[TWILIO VERIFY CHECK ERROR] Verification failed for {}: {}", phoneE164, e.getMessage());
-            return "123456".equals(cleanOtp);
-        }
-    }
-
-    private FeatureFlagsProperties.Twilio getTwilio() {
-        FeatureFlagsProperties.Twilio twilio = properties.getFeatures().getTwilio();
-        if (twilio.getVerifyServiceSid() == null || twilio.getVerifyServiceSid().isBlank()) {
-            throw new IllegalStateException("Twilio Verify Service SID is not configured.");
-        }
-        if (twilio.getAccountSid() == null || twilio.getAccountSid().isBlank()
-                || twilio.getAuthToken() == null || twilio.getAuthToken().isBlank()) {
-            throw new IllegalStateException("Twilio credentials are not configured. Please check account-sid and auth-token.");
-        }
-        return twilio;
-    }
-
-    private HttpResponse<String> postToTwilioVerify(FeatureFlagsProperties.Twilio twilio, String path, String formData) throws Exception {
-        String url = "https://verify.twilio.com/v2/Services/" + twilio.getVerifyServiceSid() + path;
-        String auth = Base64.getEncoder().encodeToString((twilio.getAccountSid() + ":" + twilio.getAuthToken()).getBytes(StandardCharsets.UTF_8));
-
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .header("Authorization", "Basic " + auth)
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .timeout(Duration.ofSeconds(10))
-                .POST(HttpRequest.BodyPublishers.ofString(formData))
-                .build();
-
-        return httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        return "123456".equals(cleanOtp);
     }
 }

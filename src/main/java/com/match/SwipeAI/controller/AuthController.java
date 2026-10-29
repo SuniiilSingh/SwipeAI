@@ -34,7 +34,7 @@ public class AuthController {
     private final OtpService otpService;
 
     /**
-     * Dispatch an OTP to the given phone number via WhatsApp or Twilio SMS.
+     * Dispatch an OTP to the given phone number via WhatsApp or domestic SMS.
      *
      * @param request Contains phone number in E.164 format (+918910653499)
      * @return Confirmation response with channel and OTP length
@@ -47,7 +47,7 @@ public class AuthController {
         authService.sendOtp(request.getPhoneE164(), channel);
         String channelName = "whatsapp".equalsIgnoreCase(channel) ? "WhatsApp" : "SMS";
 
-        boolean isMock = properties.getFeatures().getTwilio().isMockOtp();
+        boolean isMock = otpService.isMockOtpEnabled();
         String message = isMock
                 ? "⚡ Test Mode Active: Use verification code 123456"
                 : "OTP sent via " + channelName;
@@ -102,17 +102,13 @@ public class AuthController {
     public ResponseEntity<Map<String, Object>> getAuthConfig() {
         com.match.SwipeAI.config.FeatureFlagsProperties.Firebase firebase = properties.getFeatures().getFirebase();
         com.match.SwipeAI.config.FeatureFlagsProperties.SecondaryOtp secondary = properties.getFeatures().getSecondaryOtp();
-        com.match.SwipeAI.config.FeatureFlagsProperties.Twilio twilio = properties.getFeatures().getTwilio();
 
         boolean hasFirebase = firebase != null && firebase.isEnabled();
-        boolean hasSecondary = (secondary != null && secondary.isEnabled() && secondary.getApiKey() != null && !secondary.getApiKey().isBlank())
-                || (twilio != null && twilio.isEnabled() && twilio.getAccountSid() != null && !twilio.getAccountSid().isBlank());
+        boolean hasSecondary = secondary != null && secondary.isEnabled() && secondary.getApiKey() != null && !secondary.getApiKey().isBlank();
 
         String secondaryProvider = "none";
         if (secondary != null && secondary.isEnabled()) {
             secondaryProvider = secondary.getProvider();
-        } else if (twilio != null && twilio.isEnabled()) {
-            secondaryProvider = "twilio";
         }
 
         return ResponseEntity.ok(Map.of(
@@ -125,7 +121,7 @@ public class AuthController {
                 ),
                 "secondaryConfigured", hasSecondary,
                 "secondaryProvider", secondaryProvider,
-                "isMockOtp", twilio != null && twilio.isMockOtp()
+                "isMockOtp", otpService.isMockOtpEnabled()
         ));
     }
 
@@ -144,7 +140,7 @@ public class AuthController {
                         "No registered account found with mobile number " + rawPhone + ". Please check your number."));
 
         otpService.sendOtp(normalized, "sms");
-        boolean isMock = properties.getFeatures().getTwilio().isMockOtp();
+        boolean isMock = otpService.isMockOtpEnabled();
 
         return ResponseEntity.ok(Map.of(
                 "status", "success",
